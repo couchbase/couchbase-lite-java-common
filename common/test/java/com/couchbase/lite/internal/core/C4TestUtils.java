@@ -134,8 +134,8 @@ public class C4TestUtils {
 
     // managed: Java code is responsible for freeing it
     static final class ManagedC4BlobStore extends C4BlobStore {
-        ManagedC4BlobStore(@NonNull String dirPath, long flags) throws LiteCoreException {
-            super(openStore(dirPath, flags));
+        ManagedC4BlobStore(@NonNull String dirPath) throws LiteCoreException {
+            super(openStore(dirPath, C4Constants.DatabaseFlags.CREATE));
         }
 
         @Override

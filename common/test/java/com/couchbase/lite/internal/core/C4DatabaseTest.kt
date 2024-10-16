@@ -36,14 +36,13 @@ import kotlin.experimental.and
 
 
 class C4DatabaseTest : C4BaseTest() {
-    private val NOT_CREATE_FLAG = C4Constants.DatabaseFlags.CREATE.inv()
     private val POSIX_EEXIST = 17
 
     private val mockDatabase = object : C4Database.NativeImpl {
         override fun nOpen(
             parentDir: String,
             name: String,
-            flags: Int,
+            flags: Long,
             algorithm: Int,
             encryptionKey: ByteArray?,
         ): Long = 0xeb6eb15aL
@@ -55,7 +54,7 @@ class C4DatabaseTest : C4BaseTest() {
             sourcePath: String?,
             parentDir: String?,
             name: String?,
-            flags: Int,
+            flags: Long,
             algorithm: Int,
             encryptionKey: ByteArray?,
         ) = Unit
@@ -83,19 +82,19 @@ class C4DatabaseTest : C4BaseTest() {
     // Test if java platform receives a peer value for c4Database, a java c4Database should exist
     @Test
     fun testOpenDb() {
-        C4Database.getDatabase(mockDatabase, dbParentDirPath, "test_DB", 0, C4Constants.EncryptionAlgorithm.NONE, null)
+        C4Database.getDatabase(mockDatabase, dbParentDirPath, "test_DB", 0L)
             .use { c4Database -> assertNotNull(c4Database) }
     }
 
     @Test
     fun testGetSharedFleeceEncoder() {
-        C4Database.getDatabase(mockDatabase, dbParentDirPath, "test_DB", 0, C4Constants.EncryptionAlgorithm.NONE, null)
+        C4Database.getDatabase(mockDatabase, dbParentDirPath, "test_DB", 0L)
             .use { c4Database -> assertNotNull(c4Database.sharedFleeceEncoder) }
     }
 
     @Test
     fun testGetFLSharedKeys() {
-        C4Database.getDatabase(mockDatabase, dbParentDirPath, "test_DB", 0, C4Constants.EncryptionAlgorithm.NONE, null)
+        C4Database.getDatabase(mockDatabase, dbParentDirPath, "test_DB", 0L)
             .use { c4Database -> assertNotNull(c4Database.flSharedKeys) }
     }
 
@@ -107,7 +106,7 @@ class C4DatabaseTest : C4BaseTest() {
     @Test
     fun testDatabaseErrorMessages() {
         try {
-            C4Database.getDatabase("", "", 0)
+            C4Database.getDatabase("", "", 0L)
             fail()
         } catch (e: LiteCoreException) {
             assertEquals(C4Constants.ErrorDomain.LITE_CORE, e.domain)
@@ -176,11 +175,7 @@ class C4DatabaseTest : C4BaseTest() {
     @Test
     fun testDatabaseReadOnlyUUIDs() {
         closeC4Database()
-        c4Database = C4Database.getDatabase(
-            dbParentDirPath,
-            dbName,
-            (C4Database.DB_FLAGS or C4Constants.DatabaseFlags.READ_ONLY) and NOT_CREATE_FLAG
-        )
+        c4Database = C4Database.getDatabase(dbParentDirPath, dbName, C4Constants.DatabaseFlags.READ_ONLY)
         assertNotNull(c4Database)
         assertNotNull(c4Database.publicUUID)
         assertNotNull(C4TestUtils.privateUUIDForDb(c4Database))
@@ -196,7 +191,7 @@ class C4DatabaseTest : C4BaseTest() {
 
             // Open nonexistent bundle with just the create flag.
             try {
-                bundle = C4Database.getDatabase(bundleDirPath, bundleName, C4Constants.DatabaseFlags.CREATE)
+                bundle = C4Database.getDatabase(bundleDirPath, bundleName)
                 assertNotNull(bundle)
             } finally {
                 if (bundle != null) {
@@ -207,7 +202,7 @@ class C4DatabaseTest : C4BaseTest() {
 
             // Reopen without 'create' flag:
             try {
-                bundle = C4Database.getDatabase(bundleDirPath, bundleName, C4Database.DB_FLAGS and NOT_CREATE_FLAG)
+                bundle = C4Database.getDatabase(bundleDirPath, bundleName, 0L)
                 assertNotNull(bundle)
             } finally {
                 bundle?.closeDb()
@@ -221,11 +216,7 @@ class C4DatabaseTest : C4BaseTest() {
     @Test
     fun testDatabaseOpenNonExistentBundleWithoutCreateFlagFails() {
         try {
-            C4Database.getDatabase(
-                getScratchDirectoryPath(getUniqueName("c4_test_2")),
-                getUniqueName("bundle"),
-                C4Database.DB_FLAGS and NOT_CREATE_FLAG
-            )
+            C4Database.getDatabase(getScratchDirectoryPath(getUniqueName("c4_test_2")), getUniqueName("bundle"), 0L)
             fail()
         } catch (e: LiteCoreException) {
             assertEquals(C4Constants.ErrorDomain.LITE_CORE, e.domain)
@@ -319,8 +310,7 @@ class C4DatabaseTest : C4BaseTest() {
             C4Database.copyDb(
                 c4Database.dbPath!!,
                 File(File(getScratchDirectoryPath(getUniqueName("a")), "aa"), "aaa").path,
-                getUniqueName("c4_copy_test_db"),
-                C4Database.DB_FLAGS
+                getUniqueName("c4_copy_test_db")
             )
             fail("Copy to non-existent directory should fail")
         } catch (ex: LiteCoreException) {
@@ -336,7 +326,6 @@ class C4DatabaseTest : C4BaseTest() {
                 File(c4Database.dbPath?.let { File(it).parentFile }, "x" + C4Database.DB_EXTENSION).path,
                 getScratchDirectoryPath(getUniqueName("c4_test_2")),
                 getUniqueName("c4_copy_test_db"),
-                C4Database.DB_FLAGS
             )
             fail("Copy from non-existent database should fail")
         } catch (ex: LiteCoreException) {
@@ -352,7 +341,7 @@ class C4DatabaseTest : C4BaseTest() {
     @Test
     fun testCreateScopeAndCollection() {
         val dbName = getUniqueName("c4_test_db")
-        val c4Db = C4Database.getDatabase(dbParentDirPath, dbName, C4Database.DB_FLAGS)
+        val c4Db = C4Database.getDatabase(dbParentDirPath, dbName)
 
         assertEquals(1, c4Db.scopeNames.size)
         assertEquals(setOf(Scope.DEFAULT_NAME), c4Db.scopeNames)
@@ -430,8 +419,8 @@ class C4DatabaseTest : C4BaseTest() {
 
         val dbName = getUniqueName("c4_copy_test_db")
         val dstParentDirPath = getScratchDirectoryPath(getUniqueName("c4_test_2"))
-        C4Database.copyDb(c4Database.dbPath!!, dstParentDirPath, dbName, C4Database.DB_FLAGS)
-        val copyDb = C4Database.getDatabase(dstParentDirPath, dbName, C4Database.DB_FLAGS)
+        C4Database.copyDb(c4Database.dbPath!!, dstParentDirPath, dbName)
+        val copyDb = C4Database.getDatabase(dstParentDirPath, dbName)
         assertNotNull(copyDb)
         assertEquals(2L, c4Collection.documentCount)
     }
@@ -442,22 +431,17 @@ class C4DatabaseTest : C4BaseTest() {
         createRev("doc002", REV_ID_1, fleeceBody)
         val srcDbPath = c4Database.dbPath
         val dstParentDirPath = getScratchDirectoryPath(getUniqueName("c4_test_2"))
-        var targetDb = C4Database.getDatabase(dstParentDirPath, dbName, C4Database.DB_FLAGS)
+        var targetDb = C4Database.getDatabase(dstParentDirPath, dbName)
         createRev(targetDb.defaultCollection, "doc001", REV_ID_1, fleeceBody)
         assertEquals(1L, targetDb.defaultCollection.documentCount)
         targetDb.close()
         try {
-            C4Database.copyDb(
-                srcDbPath!!,
-                dstParentDirPath,
-                dbName,
-                C4Database.DB_FLAGS
-            )
+            C4Database.copyDb(srcDbPath!!, dstParentDirPath, dbName)
         } catch (ex: LiteCoreException) {
             assertEquals(C4Constants.ErrorDomain.POSIX, ex.domain)
             assertEquals(POSIX_EEXIST, ex.code)
         }
-        targetDb = C4Database.getDatabase(dstParentDirPath, dbName, C4Database.DB_FLAGS)
+        targetDb = C4Database.getDatabase(dstParentDirPath, dbName)
         assertEquals(1L, targetDb.defaultCollection.documentCount)
         targetDb.close()
     }
@@ -605,7 +589,7 @@ class C4DatabaseTest : C4BaseTest() {
         }
         json.append("]}")
 
-       C4TestUtils.encodeJSONInDb(c4Database, json5(json.toString())).use { body ->
+        C4TestUtils.encodeJSONInDb(c4Database, json5(json.toString())).use { body ->
             // Don't try to autoclose this: See C4Document.close()
             assertNotNull(
                 C4TestUtils.create(
