@@ -120,12 +120,12 @@ fun Query.queryChangeFlow(executor: Executor? = null) = callbackFlow {
  * is provided, the listener will be called on the Flow's CoroutineDispatcher.
  *
  * @see com.couchbase.lite.Database.addChangeListener
- * @deprecated Use getCollection(String, String?).collectionChangeFlow(Executor?)
+ * @deprecated Use Database.getCollection(String, String?).collectionChangeFlow(Executor?)
  */
 @Suppress("DEPRECATION")
 @Deprecated(
-    "Use getCollection(String, String?).collectionChangeFlow(executor)",
-    replaceWith = ReplaceWith("getCollection(String, String?).collectionChangeFlow(executor)")
+    "Use Database.getCollection(String, String?).collectionChangeFlow(executor)",
+    replaceWith = ReplaceWith("Database.getCollection(String, String?).collectionChangeFlow(executor)")
 )
 fun Database.databaseChangeFlow(executor: Executor? = null) = callbackFlow {
     val token = this@databaseChangeFlow.addChangeListener(
@@ -143,12 +143,12 @@ fun Database.databaseChangeFlow(executor: Executor? = null) = callbackFlow {
  * is provided, the listener will be called on the Flow's CoroutineDispatcher.
  *
  * @see com.couchbase.lite.Database.addDocumentChangeListener
- * @deprecated Use getCollection(String, String?).documentChangeFlow(String, Executor?)
+ * @deprecated Use Database.getCollection(String, String?).documentChangeFlow(String, Executor?)
  */
 @Suppress("DEPRECATION")
 @Deprecated(
-    "Use getCollection(String, String?).documentChangeFlow(documentId, executor)",
-    replaceWith = ReplaceWith("getCollection(String, String?).documentChangeFlow(documentId, executor)")
+    "Use Database.getCollection(String, String?).documentChangeFlow(documentId, executor)",
+    replaceWith = ReplaceWith("Database.getCollection(String, String?).documentChangeFlow(documentId, executor)")
 )
 fun Database.documentChangeFlow(documentId: String, executor: Executor? = null) = callbackFlow {
     val token = this@documentChangeFlow.addDocumentChangeListener(

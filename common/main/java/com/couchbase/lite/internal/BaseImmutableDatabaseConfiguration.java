@@ -21,11 +21,10 @@ import androidx.annotation.Nullable;
 import com.couchbase.lite.DatabaseConfiguration;
 import com.couchbase.lite.Defaults;
 
-
+@SuppressWarnings({"LineLength", "PMD.CommentSize"})
 /**
- * A bit odd.  Why are these properties not simply properties on the AbstractDatabase object?
- * Because they are mandated by a spec:
- * https://docs.google.com/document/d/16XmIOw7aZ_NcFc6Dy6fc1jV7sc994r6iv5qm9_J7qKo/edit#heading=h.kt1n12mtpzx4
+ * These could just be properties on the AbstractDatabase object.  They are, however, mandated by a
+ * <a href="https://docs.google.com/document/d/16XmIOw7aZ_NcFc6Dy6fc1jV7sc994r6iv5qm9_J7qKo/edit#heading=h.kt1n12mtpzx4">spec</a>
  */
 public class BaseImmutableDatabaseConfiguration {
     //-------------------------------------------------------------------------
@@ -34,6 +33,7 @@ public class BaseImmutableDatabaseConfiguration {
     @NonNull
     private final String dbDir;
     private final boolean fullSync;
+    private final boolean mmapEnabled;
 
     //-------------------------------------------------------------------------
     // Constructors
@@ -42,6 +42,7 @@ public class BaseImmutableDatabaseConfiguration {
         final String dbDirectory = (config == null) ? null : config.getDirectory();
         this.dbDir = (dbDirectory != null) ? dbDirectory : CouchbaseLiteInternal.getDefaultDbDirPath();
         this.fullSync = (config == null) ? Defaults.Database.FULL_SYNC : config.isFullSync();
+        this.mmapEnabled = (config == null) ? Defaults.Database.MMAP_ENABLED : config.isMMapEnabled();
     }
 
     //-------------------------------------------------------------------------
@@ -51,4 +52,6 @@ public class BaseImmutableDatabaseConfiguration {
     public final String getDirectory() { return dbDir; }
 
     public final boolean isFullSync() { return fullSync; }
+
+    public final boolean isMMapEnabled() { return mmapEnabled; }
 }

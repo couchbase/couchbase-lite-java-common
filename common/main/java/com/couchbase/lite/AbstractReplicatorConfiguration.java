@@ -437,7 +437,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
      *
      * @param replicatorType The replicator type.
      * @return this.
-     * @deprecated Use setType(AbstractReplicator.ReplicatorType)
+     * @deprecated Use setType(com.couchbase.lite.ReplicatorType)
      */
     @SuppressWarnings({"DeprecatedIsStillUsed", "deprecation"})
     @Deprecated
@@ -467,7 +467,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
      *
      * @param pinnedCert the SSL certificate.
      * @return this.
-     * @deprecated Please use setPinnedServerX509Certificate(Certificate)
+     * @deprecated Use setPinnedServerX509Certificate(Certificate)
      */
     @Deprecated
     @NonNull
@@ -693,7 +693,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     /**
      * Old getter for Replicator type indicating the direction of the replicator.
      *
-     * @deprecated Use getType()
+     * @deprecated Use com.couchbase.lite.ReplicatorType ReplicatorConfiguration.getType()
      */
     @SuppressWarnings({"DeprecatedIsStillUsed", "deprecation"})
     @Deprecated

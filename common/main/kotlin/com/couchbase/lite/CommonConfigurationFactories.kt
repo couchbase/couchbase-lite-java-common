@@ -146,11 +146,11 @@ fun LogFileConfiguration?.newConfig(
  * @param expressions (required) the expressions to be matched.
  *
  * @see com.couchbase.lite.FullTextIndexConfiguration
- * @deprecated Use FullTextIndexConfiguration().newConfig(vararg expressions: String, language: String?, ignoreAccents: Boolean?)
+ * @deprecated Use FullTextIndexConfiguration?.newConfig(vararg expressions: String, language: String?, ignoreAccents: Boolean?)
  */
 @Deprecated(
-    "Use FullTextIndexConfiguration().newConfig(vararg expressions: String, language: String?, ignoreAccents: Boolean?)",
-    replaceWith = ReplaceWith("FullTextIndexConfiguration().newConfig(vararg expressions: String, language: String?, ignoreAccents: Boolean?)")
+    "Use FullTextIndexConfiguration?.newConfig(vararg expressions: String, language: String?, ignoreAccents: Boolean?)",
+    replaceWith = ReplaceWith("FullTextIndexConfiguration?.newConfig(vararg expressions: String, language: String?, ignoreAccents: Boolean?)")
 )
 fun FullTextIndexConfiguration?.create(
     vararg expressions: String = emptyArray(),
@@ -165,11 +165,11 @@ fun FullTextIndexConfiguration?.create(
  * @param expressions (required) the expressions to be matched.
  *
  * @see com.couchbase.lite.ValueIndexConfiguration
- * @deprecated Use ValueIndexConfiguration().newConfig(vararg expressions: String)
+ * @deprecated Use ValueIndexConfiguration?.newConfig(vararg expressions: String)
  */
 @Deprecated(
-    "Use ValueIndexConfiguration().newConfig(vararg expressions: String)",
-    replaceWith = ReplaceWith("ValueIndexConfiguration().newConfig(vararg expressions: String)")
+    "Use ValueIndexConfiguration?.newConfig(vararg expressions: String)",
+    replaceWith = ReplaceWith("ValueIndexConfiguration?.newConfig(vararg expressions: String)")
 )
 fun ValueIndexConfiguration?.create(vararg expressions: String = emptyArray()) = this.newConfig(*expressions)
 
@@ -183,11 +183,11 @@ fun ValueIndexConfiguration?.create(vararg expressions: String = emptyArray()) =
  * @param usePlainText whether or not to log in plaintext.
  *
  * @see com.couchbase.lite.LogFileConfiguration
- * @deprecated Use LogFileConfiguration().newConfig(String?, Long?, Int?, Boolean?)
+ * @deprecated Use LogFileConfiguration?.newConfig(String?, Long?, Int?, Boolean?)
  */
 @Deprecated(
-    "Use LogFileConfiguration().newConfig(String?, Long?, Int?, Boolean?)",
-    replaceWith = ReplaceWith("LogFileConfiguration().newConfig(String?, Long?, Int?, Boolean?)")
+    "Use LogFileConfiguration?.newConfig(String?, Long?, Int?, Boolean?)",
+    replaceWith = ReplaceWith("LogFileConfiguration?.newConfig(String?, Long?, Int?, Boolean?)")
 )
 fun LogFileConfiguration?.create(
     directory: String? = null,
