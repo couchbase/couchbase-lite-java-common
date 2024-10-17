@@ -175,9 +175,9 @@ JNICALL Java_com_couchbase_lite_internal_core_C4TestUtils_encodeJSON
 /*
  * Class:     com_couchbase_lite_internal_core_C4TestUtils
  * Method:    getFlags
- * Signature: (J)I
+ * Signature: (J)J
  */
-JNIEXPORT jint JNICALL
+JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_C4TestUtils_getFlags(
         JNIEnv *, jclass, jlong);
 

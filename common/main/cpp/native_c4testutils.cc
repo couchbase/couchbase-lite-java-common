@@ -308,9 +308,9 @@ Java_com_couchbase_lite_internal_core_C4TestUtils_encodeJSON(
 /*
  * Class:     com_couchbase_lite_internal_core_C4TestUtils
  * Method:    getFlags
- * Signature: (J)I
+ * Signature: (J)J
  */
-JNIEXPORT jint JNICALL
+JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_C4TestUtils_getFlags(
         JNIEnv *env,
         jclass ignore,
@@ -318,10 +318,10 @@ Java_com_couchbase_lite_internal_core_C4TestUtils_getFlags(
     const C4DatabaseConfig2 *config = c4db_getConfig2((C4Database *) db);
     if (config == nullptr) {
         throwError(env, {LiteCoreDomain, kC4ErrorNotOpen});
-        return 0;
+        return 0L;
     }
 
-    return (jint) config->flags;
+    return (jlong) config->flags;
 }
 
 // C4Document

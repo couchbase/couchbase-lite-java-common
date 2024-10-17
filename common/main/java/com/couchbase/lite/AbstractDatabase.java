@@ -602,12 +602,24 @@ abstract class AbstractDatabase extends BaseDatabase
         return (blob.updateSize() < 0) ? null : blob;
     }
 
+    /**
+     * Returns a copy of the database configuration.
+     *
+     * @return the READONLY copied config object
+     */
+    @NonNull
+    public DatabaseConfiguration getConfig() { return new DatabaseConfiguration(config); }
+
     // - Object methods:
 
     @NonNull
     @Override
     public String toString() {
-        return "Database{@" + ClassUtils.objId(this) + ": '" + name  + ((config.isFullSync() ? "!" : "") + "'}");
+        return "Database{@" + ClassUtils.objId(this)
+            + ": '" + name
+            + (config.isFullSync() ? "!" : "")
+            + (config.isMMapEnabled() ? "*" : "")
+            + "'}";
     }
 
     @Override
@@ -638,14 +650,6 @@ abstract class AbstractDatabase extends BaseDatabase
         }
         catch (CouchbaseLiteException e) { throw new CouchbaseLiteError("Failed getting default collection", e); }
     }
-
-    /**
-     * Returns a copy of the database configuration.
-     *
-     * @return the READONLY copied config object
-     */
-    @NonNull
-    public DatabaseConfiguration getConfig() { return new DatabaseConfiguration(config); }
 
     /**
      * Gets an existing Document with the given ID from the default collection.
@@ -1321,6 +1325,7 @@ abstract class AbstractDatabase extends BaseDatabase
                 parentDirPath,
                 name,
                 config.isFullSync(),
+                config.isMMapEnabled(),
                 getEncryptionAlgorithm(),
                 getEncryptionKey());
         }
