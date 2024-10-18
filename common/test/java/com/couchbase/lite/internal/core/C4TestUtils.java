@@ -30,6 +30,30 @@ import com.couchbase.lite.internal.fleece.FLSliceResult;
 
 // It is worth considering breaking this up.  You know, OOP and all...
 public class C4TestUtils {
+    public static class C4IndexOptions {
+        @Nullable
+        public final String language;
+        @Nullable
+        public final String stopWords;
+        @Nullable
+        public final String unnestPath;
+        public final boolean ignoreDiacritics;
+        public final boolean disableStemming;
+
+        C4IndexOptions(
+            @Nullable String language,
+            boolean ignoreDiacritics,
+            boolean disableStemming,
+            @Nullable String stopWords,
+            @Nullable String unnestPath) {
+            this.language = language;
+            this.ignoreDiacritics = ignoreDiacritics;
+            this.disableStemming = disableStemming;
+            this.stopWords = stopWords;
+            this.unnestPath = unnestPath;
+        }
+    }
+
     public static class C4DocEnumerator extends C4NativePeer {
         public C4DocEnumerator(long db, int flags) throws LiteCoreException { this(enumerateAllDocs(db, flags)); }
 
@@ -186,12 +210,26 @@ public class C4TestUtils {
 
     public static int getLogLevel(String domain) { return getLevel(domain); }
 
-    // C4Collection
+    // C4Index
 
     public static boolean isIndexTrained(C4Collection collection, @NonNull String name) throws LiteCoreException {
         return collection.withPeerOrThrow(peer -> isIndexTrained(peer, name));
     }
 
+    @NonNull
+    public static C4IndexOptions getIndexOptions(@NonNull C4Index idx) throws CouchbaseLiteException {
+        return idx.withPeerOrThrow(C4TestUtils::getIndexOptions);
+    }
+
+    // This method is called by reflection.  Don't change its signature.
+    public static C4IndexOptions createIndexOptions(
+        boolean ignoreDiacritics,
+        boolean disableStemming,
+        @Nullable String language,
+        @Nullable String stopWords,
+        @Nullable String unnestPath) {
+        return new C4IndexOptions(language, ignoreDiacritics, disableStemming, stopWords, unnestPath);
+    }
 
     //-------------------------------------------------------------------------
     // native methods
@@ -270,4 +308,6 @@ public class C4TestUtils {
     // C4Index
 
     private static native boolean isIndexTrained(long collection, @NonNull String name) throws LiteCoreException;
+
+    private static native C4IndexOptions getIndexOptions(long idx) throws CouchbaseLiteException;
 }

@@ -170,6 +170,14 @@ Java_com_couchbase_lite_internal_core_C4TestUtils_isIndexTrained(
         jlong,
         jstring);
 
+/*
+ * Class:     com_couchbase_lite_internal_core_C4TestUtils
+ * Method:    getIndexOptions
+ * Signature: (J)Lcom/couchbase/lite/internal/core/C4IndexOptions;
+ */
+JNIEXPORT jobject JNICALL
+Java_com_couchbase_lite_internal_core_C4TestUtils_getIndexOptions(JNIEnv *, jclass, jlong);
+
 #ifdef __cplusplus
 }
 #endif

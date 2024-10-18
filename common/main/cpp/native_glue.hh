@@ -59,9 +59,10 @@ namespace litecore {
 
         std::string JcharArrayToUTF8(JNIEnv *env, const jcharArray jcharArray);
 
-        std::string JcharsToUTF8(JNIEnv *env, const jchar *jchars, jsize len);
-
         jstring UTF8ToJstring(JNIEnv *env, const char *s, size_t size);
+        jstring UTF8ToJstring(JNIEnv *env, const char *s);
+
+        std::string JcharsToUTF8(const jchar *jchars, jsize len);
 
         // Creates a temporary slice value from a Java String object
         class jstringSlice {

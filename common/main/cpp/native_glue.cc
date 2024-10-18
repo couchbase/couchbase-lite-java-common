@@ -69,6 +69,10 @@ jstring litecore::jni::UTF8ToJstring(JNIEnv *env, const char *s, size_t size) {
     return jstr;
 }
 
+jstring litecore::jni::UTF8ToJstring(JNIEnv *env, const char *s) {
+    return (s == nullptr) ? nullptr : UTF8ToJstring(env, s, strlen(s));
+}
+
 // ??? Callers can't handle exceptions so we just ignore errors and return an empty string.
 std::string litecore::jni::JstringToUTF8(JNIEnv *env, jstring jstr) {
     jsize len = env->GetStringLength(jstr);
@@ -76,7 +80,7 @@ std::string litecore::jni::JstringToUTF8(JNIEnv *env, jstring jstr) {
         return std::string();
 
     const jchar *chars = env->GetStringChars(jstr, nullptr);
-    auto ret = litecore::jni::JcharsToUTF8(env, chars, len);
+    auto ret = litecore::jni::JcharsToUTF8(chars, len);
     env->ReleaseStringChars(jstr, chars);
     return ret;
 }
@@ -88,12 +92,12 @@ std::string litecore::jni::JcharArrayToUTF8(JNIEnv *env, jcharArray jcharArray) 
         return std::string();
 
     jchar *chars = env->GetCharArrayElements(jcharArray, nullptr);
-    auto ret = litecore::jni::JcharsToUTF8(env, chars, len);
+    auto ret = litecore::jni::JcharsToUTF8(chars, len);
     env->ReleaseCharArrayElements(jcharArray, chars, JNI_ABORT);
     return ret;
 }
 
-std::string litecore::jni::JcharsToUTF8(JNIEnv *env, const jchar *chars, jsize len) {
+std::string litecore::jni::JcharsToUTF8(const jchar *chars, jsize len) {
     std::string str;
 
     if (chars == nullptr) {
@@ -218,7 +222,10 @@ static bool initC4Glue(JNIEnv *env) {
         if (!cls_LiteCoreException)
             return false;
 
-        m_LiteCoreException_throw = env->GetStaticMethodID(cls_LiteCoreException, "throwException", "(IILjava/lang/String;)V");
+        m_LiteCoreException_throw = env->GetStaticMethodID(
+                cls_LiteCoreException,
+                "throwException",
+                "(IILjava/lang/String;)V");
         if (!m_LiteCoreException_throw)
             return false;
     }
@@ -293,7 +300,7 @@ namespace litecore {
 
         const char *jstringSlice::c_str() {
             return (const char *) _slice.buf;
-        };
+        }
 
         // ATTN: In critical, cannot call any other JNI methods.
         // http://docs.oracle.com/javase/6/docs/technotes/guides/jni/spec/functions.html
@@ -302,7 +309,8 @@ namespace litecore {
                 : jbyteArraySlice(env, false, jbytes, critical) {}
 
         jbyteArraySlice::jbyteArraySlice(JNIEnv *env, bool delRef, jbyteArray jbytes, bool critical)
-                : jbyteArraySlice(env, delRef, jbytes, (size_t) (!jbytes ? 0 : env->GetArrayLength(jbytes)), critical) {}
+                : jbyteArraySlice(env, delRef, jbytes, (size_t) (!jbytes ? 0 : env->GetArrayLength(jbytes)), critical) {
+        }
 
         jbyteArraySlice::jbyteArraySlice(JNIEnv *env, bool delRef, jbyteArray jbytes, size_t length, bool critical)
                 : _env(env),

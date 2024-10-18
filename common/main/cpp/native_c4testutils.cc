@@ -386,7 +386,7 @@ Java_com_couchbase_lite_internal_core_C4TestUtils_getLevel(JNIEnv *env, jclass i
     return (!logDomain) ? -1 : (jint) c4log_getLevel(logDomain);
 }
 
-// C4Collection
+// C4Index
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4TestUtils
@@ -409,5 +409,32 @@ Java_com_couchbase_lite_internal_core_C4TestUtils_isIndexTrained(
     }
 
     return ok ? JNI_TRUE : JNI_FALSE;
+}
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4TestUtils
+ * Method:    getIndexOptions
+ * Signature: (J)Lcom/couchbase/lite/internal/core/C4IndexOptions;
+ */
+JNIEXPORT jobject JNICALL
+Java_com_couchbase_lite_internal_core_C4TestUtils_getIndexOptions(JNIEnv *env, jclass klass, jlong idx) {
+    jmethodID ctor = env->GetStaticMethodID(
+            klass,
+            "createIndexOptions",
+            "(ZZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcom/couchbase/lite/internal/core/C4TestUtils$C4IndexOptions;");
+    if (!ctor)
+        return nullptr;
+
+    C4IndexOptions opts;
+    c4index_getOptions((C4Index *) idx, &opts);
+
+    return env->CallStaticObjectMethod(
+            klass,
+            ctor,
+            opts.ignoreDiacritics ? JNI_TRUE : JNI_FALSE,
+            opts.disableStemming ? JNI_TRUE : JNI_FALSE,
+            UTF8ToJstring(env, opts.language),
+            UTF8ToJstring(env, opts.stopWords),
+            UTF8ToJstring(env, opts.unnestPath));
 }
 }
