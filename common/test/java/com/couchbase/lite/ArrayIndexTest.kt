@@ -15,7 +15,9 @@
 //
 package com.couchbase.lite
 
+import com.couchbase.lite.internal.core.C4TestUtils
 import org.junit.Assert
+import org.junit.Ignore
 import org.junit.Test
 
 // Implements test spec version 1.0.2
@@ -50,15 +52,15 @@ class ArrayIndexTest : BaseDbTest() {
      * 1. Create a ArrayIndexConfiguration object.
      *     - path: "contacts"
      *     - expressions: []
-     * 2. Check that an invalid arument exception is thrown.
+     * 2. Check that an invalid argument exception is thrown.
      * 3. Create a ArrayIndexConfiguration object.
      *     - path: "contacts"
      *     - expressions: [""]
-     * 4. Check that an invalid arument exception is thrown.
+     * 4. Check that an invalid argument exception is thrown.
      * 5. Create a ArrayIndexConfiguration object. This case can be ignore if the platform doesn't allow null.
      *     - path: "contacts"
      *     - expressions: ["address.state", null, "address.city"]
-     * 6. Check that an invalid arument exception is thrown.
+     * 6. Check that an invalid argument exception is thrown.
      */
     @Test
     fun testArrayIndexConfigInvalidExpressions1() = assertThrows(IllegalArgumentException::class.java) {
@@ -96,6 +98,7 @@ class ArrayIndexTest : BaseDbTest() {
      *     5. Get info of the index named "contacts" using an internal API and check that the
      *        index has path and expressions as configured.
      */
+    @Ignore("Awaiting merge of Array Index feature")
     @Test
     fun testCreateArrayIndexWithPath() {
         val profilesCollection = testDatabase.createCollection("profiles")
@@ -108,7 +111,7 @@ class ArrayIndexTest : BaseDbTest() {
         Assert.assertEquals(1, idx.size)
         Assert.assertEquals("", idx[0])
 
-        // !!! check the path
+        Assert.assertEquals("contacts", profilesCollection.getPathForIndex("contacts"))
     }
 
     /**
@@ -127,6 +130,7 @@ class ArrayIndexTest : BaseDbTest() {
      *     5. Get info of the index named "contacts" using an internal API and check that the
      *        index has path and expressions as configured.
      */
+    @Ignore("Awaiting merge of Array Index feature")
     @Test
     fun testCreateArrayIndexWithPathAndExpressions() {
         val profilesCollection = testDatabase.createCollection("profiles")
@@ -136,7 +140,7 @@ class ArrayIndexTest : BaseDbTest() {
 
         profilesCollection.createIndex("contacts", ArrayIndexConfiguration("contacts", exprs))
 
-        // !!! check the path
+        Assert.assertEquals("contacts", profilesCollection.getPathForIndex("contacts"))
 
         val idx = profilesCollection.getIndexExpressions("contacts")
         Assert.assertNotNull(idx)
@@ -149,4 +153,8 @@ class ArrayIndexTest : BaseDbTest() {
         this.getIndexInfo()
             .firstOrNull { it[Collection.INDEX_KEY_NAME] == indexName }
             ?.let { (it[Collection.INDEX_KEY_EXPR] as? String)?.split(",") } ?: emptyList()
+
+    private fun Collection.getPathForIndex(indexName: String) =
+        C4TestUtils.getIndexOptions(assertNonNull(this.getC4Index(indexName))).unnestPath
 }
+
