@@ -462,14 +462,7 @@ public final class Collection extends BaseCollection
      */
     @Nullable
     public QueryIndex getIndex(@NonNull String name) throws CouchbaseLiteException {
-        final C4Index idx;
-        try {
-            synchronized (getDbLock()) {
-                db.assertOpenChecked();
-                idx = c4Collection.getIndex(name);
-            }
-        }
-        catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
+        final C4Index idx = getC4Index(name);
         return (idx == null) ? null : new QueryIndex(this, name, idx);
     }
 
@@ -824,6 +817,18 @@ public final class Collection extends BaseCollection
         }
 
         return info;
+    }
+
+    @VisibleForTesting
+    @Nullable
+    C4Index getC4Index(@NonNull String name) throws CouchbaseLiteException {
+        try {
+            synchronized (getDbLock()) {
+                db.assertOpenChecked();
+                return c4Collection.getIndex(name);
+            }
+        }
+        catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
     }
 
     //-------------------------------------------------------------------------
