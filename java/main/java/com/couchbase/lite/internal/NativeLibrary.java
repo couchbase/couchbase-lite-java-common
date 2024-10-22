@@ -127,9 +127,7 @@ final class NativeLibrary {
     @SuppressWarnings({
         "PMD.AvoidCatchingThrowable",
         "PMD.AvoidInstanceofChecksInCatchClause",
-        "PMD.PreserveStackTrace",
-        "PMD.SystemPrintln",
-        "RegexpSinglelineJava"})
+        "PMD.PreserveStackTrace"})
     private static void loadLibrary(
         @NonNull String libName,
         @NonNull String resDirPath,
@@ -138,7 +136,7 @@ final class NativeLibrary {
         @NonNull File scratchDir) {
         final String lib = System.mapLibraryName(libName);
 
-        String libPath;
+        final String libPath;
         File targetDir = null;
         try {
             targetDir = computeTargetDirectory(scratchDir, resDirPath, lib);
@@ -150,19 +148,7 @@ final class NativeLibrary {
             throw new CouchbaseLiteError("Failed extracting library resource: " + lib + " to " + targetDir, e);
         }
 
-        try {
-            if (isLinux(os) && LIB_LITE_CORE.equals(libName)) {
-                final File curDir = new File(".").getCanonicalFile();
-                libPath = new File(
-                    new File(
-                        curDir.getParentFile().getParentFile().getParentFile().getParentFile(),
-                        "common/lite-core/linux/x86_64/lib"),
-                    lib)
-                    .getCanonicalPath();
-            }
-            System.out.println("##### LOADING LIBRARY: " + libPath);
-            System.load(libPath);
-        }
+        try { System.load(libPath); }
         catch (Throwable e) {
             final Exception err = (e instanceof Exception) ? (Exception) e : new Exception(e);
             throw new CouchbaseLiteError(
