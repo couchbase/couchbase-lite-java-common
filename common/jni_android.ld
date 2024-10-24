@@ -93,6 +93,7 @@ CBL {
         Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getFlags;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getFromCollection;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getRevID;
+        Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getRevisionHistory;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getSelectedBody2;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getSelectedFlags;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getSelectedRevID;

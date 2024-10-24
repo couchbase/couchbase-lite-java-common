@@ -51,6 +51,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+
 // Tests for the Document Iterator tests are in IteratorTest
 @SuppressWarnings("ConstantConditions")
 public class DocumentTest extends BaseDbTest {
@@ -2302,7 +2303,7 @@ public class DocumentTest extends BaseDbTest {
             assertEquals(sDoc1a, anotherDoc1a);
         }
         finally {
-            if (dupDb != null) dupDb.close();
+            if (dupDb != null) { dupDb.close(); }
             eraseDb(otherDB);
         }
     }
@@ -2710,6 +2711,16 @@ public class DocumentTest extends BaseDbTest {
         assertThrows(
             IllegalArgumentException.class,
             () -> new MutableDocument("fromJSON", BaseDbTestKt.readJSONResource("array.json")));
+    }
+
+    // Unsupported revision history
+    @Test
+    public void testGetRevisionHistory() throws CouchbaseLiteException {
+        MutableDocument mdoc = new MutableDocument("doc1");
+        Collection coll = getTestCollection();
+        coll.save(mdoc);
+        Document doc = coll.getDocument(mdoc.getId());
+        assertTrue(doc.getRevisionHistory().startsWith("1-"));
     }
 
     // !!! Replace with BaseDbTest.makeDocument
