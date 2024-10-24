@@ -191,7 +191,7 @@ public final class C4Document extends C4Peer {
     public String getSelectedRevID() { return withPeerOrNull(impl::nGetSelectedRevID); }
 
     @Nullable
-    public String getRevisonIds(@NonNull C4Collection coll, long maxRevs, @Nullable List<String> backToRevs)
+    public String getRevisionHistory(@NonNull C4Collection coll, long maxRevs, @Nullable List<String> backToRevs)
         throws LiteCoreException {
         final String[] backToRevsArray = (backToRevs == null) ? null : backToRevs.toArray(new String[0]);
         return coll.withPeerOrNull(collPeer ->
