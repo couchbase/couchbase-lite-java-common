@@ -25,7 +25,6 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -50,6 +49,7 @@ import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
 
 // Tests for the Document Iterator tests are in IteratorTest
 @SuppressWarnings("ConstantConditions")
@@ -323,7 +323,7 @@ public class DocumentTest extends BaseDbTest {
     @Test
     public void testGetString() {
         for (int i = 1; i <= 2; i++) {
-            MutableDocument doc = new MutableDocument(docId(i));
+            MutableDocument doc = new MutableDocument();
             if (i % 2 == 1) { populateData(doc); }
             else { populateDataByTypedSetter(doc); }
             validateAndSaveDocInTestCollection(doc, d -> {
@@ -465,7 +465,7 @@ public class DocumentTest extends BaseDbTest {
     @Test
     public void testGetNumber() {
         for (int i = 1; i <= 2; i++) {
-            MutableDocument doc = new MutableDocument(docId(i));
+            MutableDocument doc = new MutableDocument();
             if (i % 2 == 1) { populateData(doc); }
             else { populateDataByTypedSetter(doc); }
             validateAndSaveDocInTestCollection(doc, d -> {
@@ -489,7 +489,7 @@ public class DocumentTest extends BaseDbTest {
     @Test
     public void testGetInteger() {
         for (int i = 1; i <= 2; i++) {
-            MutableDocument doc = new MutableDocument(docId(i));
+            MutableDocument doc = new MutableDocument();
             if (i % 2 == 1) { populateData(doc); }
             else { populateDataByTypedSetter(doc); }
             validateAndSaveDocInTestCollection(doc, d -> {
@@ -513,7 +513,7 @@ public class DocumentTest extends BaseDbTest {
     @Test
     public void testGetLong() {
         for (int i = 1; i <= 2; i++) {
-            MutableDocument doc = new MutableDocument(docId(i));
+            MutableDocument doc = new MutableDocument();
             if (i % 2 == 1) { populateData(doc); }
             else { populateDataByTypedSetter(doc); }
             validateAndSaveDocInTestCollection(doc, d -> {
@@ -537,7 +537,7 @@ public class DocumentTest extends BaseDbTest {
     @Test
     public void testGetFloat() {
         for (int i = 1; i <= 2; i++) {
-            MutableDocument doc = new MutableDocument(docId(i));
+            MutableDocument doc = new MutableDocument();
             if (i % 2 == 1) { populateData(doc); }
             else { populateDataByTypedSetter(doc); }
             validateAndSaveDocInTestCollection(doc, d -> {
@@ -561,7 +561,7 @@ public class DocumentTest extends BaseDbTest {
     @Test
     public void testGetDouble() {
         for (int i = 1; i <= 2; i++) {
-            MutableDocument doc = new MutableDocument(docId(i));
+            MutableDocument doc = new MutableDocument();
             if (i % 2 == 1) { populateData(doc); }
             else { populateDataByTypedSetter(doc); }
             validateAndSaveDocInTestCollection(doc, d -> {
@@ -752,7 +752,7 @@ public class DocumentTest extends BaseDbTest {
     @Test
     public void testGetBoolean() {
         for (int i = 1; i <= 2; i++) {
-            MutableDocument doc = new MutableDocument(docId(i));
+            MutableDocument doc = new MutableDocument();
             if (i % 2 == 1) { populateData(doc); }
             else { populateDataByTypedSetter(doc); }
             validateAndSaveDocInTestCollection(doc, d -> {
@@ -807,7 +807,7 @@ public class DocumentTest extends BaseDbTest {
     @Test
     public void testGetDate() {
         for (int i = 1; i <= 2; i++) {
-            MutableDocument doc = new MutableDocument(docId(i));
+            MutableDocument doc = new MutableDocument();
             if (i % 2 == 1) { populateData(doc); }
             else { populateDataByTypedSetter(doc); }
             validateAndSaveDocInTestCollection(doc, d -> {
@@ -898,7 +898,7 @@ public class DocumentTest extends BaseDbTest {
     @Test
     public void testGetBlob() {
         for (int i = 1; i <= 2; i++) {
-            MutableDocument doc = new MutableDocument(docId(i));
+            MutableDocument doc = new MutableDocument();
             if (i % 2 == 1) { populateData(doc); }
             else { populateDataByTypedSetter(doc); }
             validateAndSaveDocInTestCollection(doc, d -> {
@@ -926,7 +926,7 @@ public class DocumentTest extends BaseDbTest {
     public void testSetDictionary() {
         for (int i = 1; i <= 2; i++) {
             // -- setValue
-            MutableDocument mDoc = new MutableDocument(docId(i));
+            MutableDocument mDoc = new MutableDocument();
             MutableDictionary mDict = new MutableDictionary();
             mDict.setValue("street", "1 Main street");
             if (i % 2 == 1) { mDoc.setValue("dict", mDict); }
@@ -964,7 +964,7 @@ public class DocumentTest extends BaseDbTest {
     @Test
     public void testGetDictionary() {
         for (int i = 1; i <= 2; i++) {
-            MutableDocument doc = new MutableDocument(docId(i));
+            MutableDocument doc = new MutableDocument();
             if (i % 2 == 1) { populateData(doc); }
             else { populateDataByTypedSetter(doc); }
             validateAndSaveDocInTestCollection(doc, d -> {
@@ -993,7 +993,7 @@ public class DocumentTest extends BaseDbTest {
     @Test
     public void testSetArray() {
         for (int i = 1; i <= 2; i++) {
-            MutableDocument mDoc = new MutableDocument(docId(i));
+            MutableDocument mDoc = new MutableDocument();
             MutableArray array = new MutableArray();
             array.addValue("item1");
             array.addValue("item2");
@@ -1027,7 +1027,7 @@ public class DocumentTest extends BaseDbTest {
     @Test
     public void testGetArray() {
         for (int i = 1; i <= 2; i++) {
-            MutableDocument doc = new MutableDocument(docId(i));
+            MutableDocument doc = new MutableDocument();
             if (i % 2 == 1) { populateData(doc); }
             else { populateDataByTypedSetter(doc); }
             validateAndSaveDocInTestCollection(doc, d -> {
@@ -1457,7 +1457,7 @@ public class DocumentTest extends BaseDbTest {
     @Test
     public void testCount() {
         for (int i = 1; i <= 2; i++) {
-            MutableDocument doc = new MutableDocument(docId(i));
+            MutableDocument doc = new MutableDocument();
             if (i % 2 == 1) { populateData(doc); }
             else { populateDataByTypedSetter(doc); }
 
@@ -2302,7 +2302,7 @@ public class DocumentTest extends BaseDbTest {
             assertEquals(sDoc1a, anotherDoc1a);
         }
         finally {
-            if (dupDb != null) dupDb.close();
+            if (dupDb != null) { dupDb.close(); }
             eraseDb(otherDB);
         }
     }
@@ -2676,7 +2676,7 @@ public class DocumentTest extends BaseDbTest {
 
     // JSON 3.5.b-c
     @Test
-    public void testDocFromJSON() throws JSONException {
+    public void testDocFromJSON() throws JSONException, CouchbaseLiteException {
         Document dbDoc = saveDocInTestCollection(
             new MutableDocument("fromJSON", BaseDbTestKt.readJSONResource("document.json")));
         getTestDatabase().saveBlob(makeBlob()); // be sure the blob is there...
@@ -2710,6 +2710,16 @@ public class DocumentTest extends BaseDbTest {
         assertThrows(
             IllegalArgumentException.class,
             () -> new MutableDocument("fromJSON", BaseDbTestKt.readJSONResource("array.json")));
+    }
+
+    // Unsupported revision history
+    @Test
+    public void testGetRevisionHistory() throws CouchbaseLiteException {
+        MutableDocument mdoc = new MutableDocument("doc1");
+        Collection coll = getTestCollection();
+        coll.save(mdoc);
+        Document doc = coll.getDocument(mdoc.getId());
+        assertFalse(StringUtils.isEmpty(doc.getRevisionHistory()));
     }
 
     // !!! Replace with BaseDbTest.makeDocument
@@ -2769,10 +2779,6 @@ public class DocumentTest extends BaseDbTest {
         // Blob:
         doc.setValue("blob", new Blob("text/plain", BLOB_CONTENT.getBytes(StandardCharsets.UTF_8)));
     }
-
-    // !!! These smell bad...
-
-    private String docId(int i) { return String.format(Locale.ENGLISH, "doc-%03d", i); }
 
     // Kotlin shim functions
 

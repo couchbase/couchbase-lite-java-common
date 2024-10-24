@@ -185,9 +185,6 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getRevisionHistory(
     // if jBackToRevs is non-null, a Java String[], convert it to a C array of C4Slice:
     if (jBackToRevs != nullptr) {
         jsize n = env->GetArrayLength(jBackToRevs);
-        if (env->EnsureLocalCapacity(std::min(n + 1, MaxLocalRefsToUse)) < 0)
-            return nullptr;
-
         std::vector<C4Slice> b2r(n);
         std::vector<jstringSlice *> b2rAlloc;
         for (jsize i = 0; i < n; i++) {

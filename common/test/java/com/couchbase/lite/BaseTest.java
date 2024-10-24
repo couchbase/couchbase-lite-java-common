@@ -377,7 +377,7 @@ public abstract class BaseTest extends PlatformBaseTest {
     // type that can be used to represent them.
     // This doc is sufficiently complex to make simple
     // comparison interesting but uses only values/types
-    // that are seem to survive the Fleece round-trip, unchanged
+    // that survive the Fleece round-trip, unchanged
     private MutableDocument createTestDoc(int id, int top, String tag) {
         MutableDocument mDoc = new MutableDocument();
         mDoc.setValue("nullValue", null);
