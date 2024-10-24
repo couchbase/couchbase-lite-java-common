@@ -20,6 +20,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
+import java.util.List;
+
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.core.impl.NativeC4Document;
@@ -46,6 +48,9 @@ public final class C4Document extends C4Peer {
         int nGetSelectedFlags(long doc);
         @NonNull
         String nGetSelectedRevID(long doc);
+        @Nullable
+        String nGetRevisionHistory(long coll, long doc, long maxRevs, @Nullable String[] backToRevs)
+            throws LiteCoreException;
         long nGetTimestamp(long doc);
         long nGetSelectedSequence(long doc);
         // return pointer to FLValue
@@ -167,6 +172,14 @@ public final class C4Document extends C4Peer {
 
     @Nullable
     public String getSelectedRevID() { return withPeerOrNull(impl::nGetSelectedRevID); }
+
+    @Nullable
+    public String getRevisionHistory(@NonNull C4Collection coll, long maxRevs, @Nullable List<String> backToRevs)
+        throws LiteCoreException {
+        final String[] backToRevsArray = (backToRevs == null) ? null : backToRevs.toArray(new String[0]);
+        return coll.withPeerOrNull(collPeer ->
+            withPeerOrNull(peer -> impl.nGetRevisionHistory(collPeer, peer, maxRevs, backToRevsArray)));
+    }
 
     public long getSelectedSequence() { return withPeerOrDefault(0L, impl::nGetSelectedSequence); }
 

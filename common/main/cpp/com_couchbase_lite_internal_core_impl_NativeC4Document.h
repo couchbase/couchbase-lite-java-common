@@ -64,6 +64,15 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getSelectedR
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Document
+ * Method:    getRevisionHistory
+ * Signature: (JJJ[Ljava/lang/String;)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getRevisionHistory
+        (JNIEnv *, jclass, jlong, jlong, jlong maxRevs, jobjectArray);
+
+/*
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Document
  * Method:    getSelectedRevID
  * Signature: (J)J;
  */

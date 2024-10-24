@@ -18,6 +18,7 @@ package com.couchbase.lite;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 
 import java.util.Date;
 import java.util.Iterator;
@@ -27,6 +28,7 @@ import java.util.Objects;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import com.couchbase.lite.internal.core.C4Collection;
 import com.couchbase.lite.internal.core.C4Document;
 import com.couchbase.lite.internal.fleece.FLDict;
 import com.couchbase.lite.internal.fleece.FLEncoder;
@@ -34,6 +36,7 @@ import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.fleece.MRoot;
 import com.couchbase.lite.internal.logging.Log;
 import com.couchbase.lite.internal.utils.ClassUtils;
+import com.couchbase.lite.internal.utils.Internal;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
@@ -408,7 +411,6 @@ public class Document implements DictionaryInterface, Iterable<String> {
         return null;
     }
 
-
     /**
      * Tests whether a property exists or not.
      * This can be less expensive than getValue(String),
@@ -419,6 +421,20 @@ public class Document implements DictionaryInterface, Iterable<String> {
      */
     @Override
     public boolean contains(@NonNull String key) { return getContent().contains(key); }
+
+    @Internal("This method is not part of the public API")
+    @VisibleForTesting
+    @Nullable
+    /* <Unsupported API> Internal used for testing purpose. */
+    public String getRevisionHistory() throws CouchbaseLiteException {
+        synchronized (lock) {
+            if (c4Document == null) { return null; }
+            if (collection == null) { throw new CouchbaseLiteException("Document has no collection"); }
+            final C4Collection c4Coll = collection.getOpenC4Collection();
+            try { return c4Document.getRevisionHistory(c4Coll, Integer.MAX_VALUE, null); }
+            catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
+        }
+    }
 
     //---------------------------------------------
     // Iterator implementation
