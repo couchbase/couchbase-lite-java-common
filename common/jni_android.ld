@@ -14,6 +14,7 @@ CBL {
         Java_com_couchbase_lite_internal_core_C4TestUtils_getFlags;
         Java_com_couchbase_lite_internal_core_C4TestUtils_getFullTextMatch;
         Java_com_couchbase_lite_internal_core_C4TestUtils_getFullTextMatchCount;
+        Java_com_couchbase_lite_internal_core_C4TestUtils_getIndexOptions;
         Java_com_couchbase_lite_internal_core_C4TestUtils_getLevel;
         Java_com_couchbase_lite_internal_core_C4TestUtils_getPrivateUUID;
         Java_com_couchbase_lite_internal_core_C4TestUtils_isIndexTrained;
@@ -46,6 +47,7 @@ CBL {
         Java_com_couchbase_lite_internal_core_impl_NativeC4CollectionObserver_create;
         Java_com_couchbase_lite_internal_core_impl_NativeC4CollectionObserver_free;
         Java_com_couchbase_lite_internal_core_impl_NativeC4CollectionObserver_getChanges;
+        Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createArrayIndex;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createCollection;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createFullTextIndex;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createPredictiveIndex;

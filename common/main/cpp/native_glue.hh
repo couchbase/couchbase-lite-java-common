@@ -52,6 +52,9 @@ namespace litecore {
         bool initC4Listener(JNIEnv *);   // Implemented in native_c4listener.cc
 #endif
 
+        // lightweight logging: defined in native_c4.cc
+        void jniLog(const char *fmt, ...);
+
         int attachCurrentThread(JNIEnv **p_env);
 
         // Sets a Java exception based on the LiteCore error.
@@ -60,14 +63,12 @@ namespace litecore {
         // Sets a Java exception based on the LiteCore error.
         void throwError(JNIEnv *, C4Error, const char *msg);
 
-        jstring UTF8ToJstring(JNIEnv *env, const char *s, size_t size);
-
         std::string JstringToUTF8(JNIEnv *env, jstring jstr);
 
-        std::string JcharArrayToUTF8(JNIEnv *env, const jcharArray jcharArray);
+        jstring UTF8ToJstring(JNIEnv *env, const char *s, size_t size);
+        jstring UTF8ToJstring(JNIEnv *env, const char *s);
 
-        // lightweight logging: defined in native_c4.cc
-        void jniLog(const char *fmt, ...);
+        std::string JcharsToUTF8(const jchar *jchars, jsize len);
 
         // Creates a temporary slice value from a Java String object
         class jstringSlice {
