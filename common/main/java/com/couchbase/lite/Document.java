@@ -435,7 +435,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
     @Override
     public boolean contains(@NonNull String key) { return getContent().contains(key); }
 
-    @Internal
+    @Internal("This method is not part of the public API")
     @VisibleForTesting
     @Nullable
     /* <Unsupported API> Internal used for testing purpose. */

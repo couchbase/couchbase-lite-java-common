@@ -27,7 +27,6 @@ using namespace litecore;
 using namespace litecore::jni;
 using namespace std;
 
-
 // Java ArrayList class
 static jclass cls_ArrayList;                      // global class reference
 static jmethodID m_ArrayList_init;                // constructor
@@ -294,6 +293,10 @@ namespace litecore {
             }
 
             return str;
+        }
+
+        jstring UTF8ToJstring(JNIEnv *env, const char *s) {
+            return (s == nullptr) ? nullptr : UTF8ToJstring(env, s, strlen(s));
         }
 
         // ??? Callers can't handle exceptions so we just ignore errors and return an empty string.

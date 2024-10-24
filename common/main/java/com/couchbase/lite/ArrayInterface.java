@@ -27,7 +27,7 @@ import com.couchbase.lite.internal.utils.Internal;
 /**
  * Internal interface
  */
-@Internal
+@Internal("This interface  is not part of the public API")
 public interface ArrayInterface {
     int count();
 

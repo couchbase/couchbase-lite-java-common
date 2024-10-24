@@ -43,7 +43,7 @@ static void createIndex(
             &options,
             &error);
 
-    if (!ok && error.code != 0)
+    if (!ok && (error.code != 0))
         throwError(env, error);
 }
 
@@ -184,7 +184,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_setDocExpiration(
 
     C4Error error{};
     bool ok = c4coll_setDocExpiration((C4Collection *) coll, docId, timestamp, &error);
-    if (!ok && error.code != 0)
+    if (!ok && (error.code != 0))
         throwError(env, error);
 }
 
@@ -204,7 +204,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getDocExpiration(
     C4Error error{};
     C4Timestamp exp = c4coll_getDocExpiration((C4Collection *) coll, docID, &error);
     // -1 is C4Timestamp.Error
-    if (exp == -1 && error.code != 0) {
+    if ((exp == -1) && (error.code != 0)) {
         throwError(env, error);
         return 0;
     }
@@ -227,7 +227,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_purgeDoc(
 
     C4Error error{};
     bool ok = c4coll_purgeDoc((C4Collection *) coll, docId, &error);
-    if (!ok && error.code != 0)
+    if (!ok && (error.code != 0))
         throwError(env, error);
 }
 
@@ -243,7 +243,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getIndexesInfo(
         jlong coll) {
     C4Error error{};
     C4SliceResult data = c4coll_getIndexesInfo((C4Collection *) coll, &error);
-    if (!data && error.code != 0) {
+    if (!data && (error.code != 0)) {
         throwError(env, error);
         return 0;
     }
@@ -284,7 +284,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createArrayIndex(
     jstringSlice path(env, jpath);
 
     C4IndexOptions options = {};
-    //options.unnestPath = path.c_str();
+    options.unnestPath = path.c_str();
 
     createIndex(env, coll, kC4ArrayIndex, jName, kC4N1QLQuery, jqueryExpressions, options);
 }
@@ -414,7 +414,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_deleteIndex(
 
     C4Error error{};
     bool ok = c4coll_deleteIndex((C4Collection *) coll, name, &error);
-    if (!ok && error.code != 0)
+    if (!ok && (error.code != 0))
         throwError(env, error);
 }
 }

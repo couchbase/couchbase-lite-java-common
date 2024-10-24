@@ -338,7 +338,7 @@ abstract class BaseDbTest : BaseTest() {
             }
         } catch (e: java.lang.Exception) {
             throw java.lang.AssertionError(
-                "Failed reading JSON resource \${resName} into collection \${collection}",
+                "Failed reading JSON resource ${resName} into collection ${collection}",
                 e
             )
         }

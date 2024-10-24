@@ -16,6 +16,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -87,7 +88,14 @@ public final class Collection extends BaseCollection
     // A random but absurdly large number.
     static final int MAX_CONFLICT_RESOLUTION_RETRIES = 13;
 
-    private static final String INDEX_KEY_NAME = "name";
+    @VisibleForTesting
+    static final String INDEX_KEY_NAME = "name";
+    @VisibleForTesting
+    static final String INDEX_KEY_EXPR = "expr";
+    @VisibleForTesting
+    static final String INDEX_KEY_LANG = "lang";
+    @VisibleForTesting
+    static final String INDEX_KEY_TYPE = "type";
 
 
     //-------------------------------------------------------------------------
@@ -433,20 +441,13 @@ public final class Collection extends BaseCollection
      */
     @NonNull
     public Set<String> getIndexes() throws CouchbaseLiteException {
-        final FLValue flIndexInfo;
-        synchronized (getDbLock()) {
-            try { flIndexInfo = c4Collection.getIndexesInfo(); }
-            catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
-        }
-
         final Set<String> indexNames = new HashSet<>();
 
-        final Object indexesInfo = flIndexInfo.asObject();
-        if (!(indexesInfo instanceof List<?>)) { return indexNames; }
+        final List<Map<String, ?>> indexesInfo = getIndexInfo();
+        if (indexesInfo.isEmpty()) { return indexNames; }
 
-        for (Object idxInfo: (List<?>) indexesInfo) {
-            if (!(idxInfo instanceof Map<?, ?>)) { continue; }
-            final Object idxName = ((Map<?, ?>) idxInfo).get(INDEX_KEY_NAME);
+        for (Map<String, ?> idxInfo: indexesInfo) {
+            final Object idxName = idxInfo.get(INDEX_KEY_NAME);
             if (idxName instanceof String) { indexNames.add((String) idxName); }
         }
 
@@ -461,14 +462,7 @@ public final class Collection extends BaseCollection
      */
     @Nullable
     public QueryIndex getIndex(@NonNull String name) throws CouchbaseLiteException {
-        final C4Index idx;
-        try {
-            synchronized (getDbLock()) {
-                db.assertOpenChecked();
-                idx = c4Collection.getIndex(name);
-            }
-        }
-        catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
+        final C4Index idx = getC4Index(name);
         return (idx == null) ? null : new QueryIndex(this, name, idx);
     }
 
@@ -800,6 +794,41 @@ public final class Collection extends BaseCollection
         synchronized (getDbLock()) {
             return (collectionChangeNotifier == null) ? 0 : collectionChangeNotifier.getListenerCount();
         }
+    }
+
+    @VisibleForTesting
+    @SuppressWarnings("unchecked")
+    @NonNull
+    List<Map<String, ?>> getIndexInfo() throws CouchbaseLiteException {
+        final FLValue flIndexInfo;
+        synchronized (getDbLock()) {
+            try { flIndexInfo = c4Collection.getIndexesInfo(); }
+            catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
+        }
+
+        final List<Map<String, ?>> info = new ArrayList<>();
+
+        final Object indexesInfo = flIndexInfo.asObject();
+        if (!(indexesInfo instanceof List<?>)) { return info; }
+
+        for (Object idxInfo: (List<?>) indexesInfo) {
+            // I hope it is relatively safe to assume that the key is a string
+            if ((idxInfo instanceof Map<?, ?>)) { info.add((Map<String, ?>) idxInfo); }
+        }
+
+        return info;
+    }
+
+    @VisibleForTesting
+    @Nullable
+    C4Index getC4Index(@NonNull String name) throws CouchbaseLiteException {
+        try {
+            synchronized (getDbLock()) {
+                db.assertOpenChecked();
+                return c4Collection.getIndex(name);
+            }
+        }
+        catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
     }
 
     //-------------------------------------------------------------------------
