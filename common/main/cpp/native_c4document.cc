@@ -153,6 +153,55 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getSelectedRevID(JNI
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Document
+ * Method:    getRevisionHistory
+ * Signature: (JJJ[Ljava/lang/String;)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getRevisionHistory(
+        JNIEnv *env,
+        jclass ignore,
+        jlong jcoll,
+        jlong jdoc,
+        jlong maxRevs,
+        jobjectArray jBackToRevs) {
+    C4String *backToRevs = nullptr;
+    unsigned int nBackToRevs = 0;
+
+    // if jBackToRevs is non-null, a Java String[], convert it to a C array of C4Slice:
+    if (jBackToRevs != nullptr) {
+        jsize n = env->GetArrayLength(jBackToRevs);
+        std::vector<C4Slice> b2r(n);
+        std::vector<jstringSlice *> b2rAlloc;
+        for (jsize i = 0; i < n; i++) {
+            auto js = (jstring) env->GetObjectArrayElement(jBackToRevs, i);
+            auto *item = new jstringSlice(env, js);
+            b2rAlloc.push_back(item); // so its memory won't be freed at the end of the block
+            b2r[i] = *item;
+        }
+
+        backToRevs = b2r.data();
+        nBackToRevs = b2r.size();
+    }
+
+    auto *doc = (C4Document *) jdoc;
+
+    C4Error error{};
+    C4Document* allDoc = c4coll_getDoc((C4Collection*) jcoll, doc->docID, false, kDocGetAll, &error);
+    if ((allDoc == nullptr) && (error.code != 0)) {
+        throwError(env, error);
+        return 0;
+    }
+
+    FLSliceResult revHistory = c4doc_getRevisionHistory(allDoc, (unsigned int) maxRevs, backToRevs, nBackToRevs);
+
+    jstring res = toJString(env, revHistory);
+    FLSliceResult_Release(revHistory);
+
+    return res;
+}
+
+/*
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Document
  * Method:    getSelectedRevID
  * Signature: (J)J;
  */
