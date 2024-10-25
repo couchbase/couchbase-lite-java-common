@@ -423,7 +423,6 @@ public class Document implements DictionaryInterface, Iterable<String> {
         }
     }
 
-
     /**
      * Tests whether a property exists or not.
      * This can be less expensive than getValue(String),

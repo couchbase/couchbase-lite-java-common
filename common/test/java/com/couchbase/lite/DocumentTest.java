@@ -2712,6 +2712,16 @@ public class DocumentTest extends BaseDbTest {
             () -> new MutableDocument("fromJSON", BaseDbTestKt.readJSONResource("array.json")));
     }
 
+    // Unsupported revision history
+    @Test
+    public void testGetRevisionHistory() throws CouchbaseLiteException {
+        MutableDocument mdoc = new MutableDocument("doc1");
+        Collection coll = getTestCollection();
+        coll.save(mdoc);
+        Document doc = coll.getDocument(mdoc.getId());
+        assertTrue(doc.getRevisionHistory().startsWith("1-"));
+    }
+
     // !!! Replace with BaseDbTest.makeDocument
     private void populateData(MutableDocument doc) {
         doc.setValue("true", true);

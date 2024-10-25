@@ -55,16 +55,16 @@ public final class NativeC4Document implements C4Document.NativeImpl {
     @Override
     public int nGetSelectedFlags(long doc) { return getSelectedFlags(doc); }
 
+    @Override
+    @NonNull
+    public String nGetSelectedRevID(long doc) { return getSelectedRevID(doc); }
+
     @Nullable
     @Override
     public String nGetRevisionHistory(long coll, long doc, long maxRevs, @Nullable String[] backToRevs)
         throws LiteCoreException {
         return getRevisionHistory(coll, doc, maxRevs, backToRevs);
     }
-
-    @Override
-    @NonNull
-    public String nGetSelectedRevID(long doc) { return getSelectedRevID(doc); }
 
     @Override
     public long nGetTimestamp(long doc) { return getTimestamp(doc); }
