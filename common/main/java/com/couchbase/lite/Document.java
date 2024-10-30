@@ -412,21 +412,15 @@ public class Document implements DictionaryInterface, Iterable<String> {
 
     @NonNull
     @Override
-    public String toJSON() {
+    public String toJSON() throws CouchbaseLiteException {
         try {
             synchronized (lock) {
                 if (c4Document == null) { throw new CouchbaseLiteError("Document has not been saved to a database"); }
                 return c4Document.bodyAsJSON(true);
             }
         }
-        catch (LiteCoreException e) {
-            // !!! This should be a checked exception
-            throw new CouchbaseLiteError(
-                "Failed encoding document as JSON",
-                CouchbaseLiteException.convertException(e));
-        }
+        catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
     }
-
 
     /**
      * Tests whether a property exists or not.
@@ -448,7 +442,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
             if (c4Document == null) { return null; }
             if (collection == null) { throw new CouchbaseLiteException("Document has no collection"); }
             final C4Collection c4Coll = collection.getOpenC4Collection();
-            try { return c4Document.getRevisonIds(c4Coll, Integer.MAX_VALUE, null); }
+            try { return c4Document.getRevisionHistory(c4Coll, Integer.MAX_VALUE, null); }
             catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
         }
     }
