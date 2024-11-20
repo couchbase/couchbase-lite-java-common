@@ -19,7 +19,6 @@ import androidx.annotation.CallSuper;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.VisibleForTesting;
 
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicReference;
@@ -150,10 +149,21 @@ public abstract class C4Peer implements AutoCloseable {
         }
     }
 
-    @VisibleForTesting
-    static final Cleaner CLEANER = new Cleaner("c4peer");
-    @VisibleForTesting
-    static final CBLExecutor CORE_CLEANER = new CBLExecutor("CoreCleaner", 3, 3, new LinkedBlockingQueue<>());
+    private static final CBLExecutor CORE_CLEANER = new CBLExecutor("CoreCleaner", 3, 3, new LinkedBlockingQueue<>());
+
+    private static final AtomicReference<Cleaner> CLEANER = new AtomicReference<>();
+
+    // do this lazily so that it happens after initialization
+    // allowing us to log from the cleaner
+    @NonNull
+    private static Cleaner getCleaner() {
+        Cleaner cleaner = CLEANER.get();
+        if (cleaner != null) { return cleaner; }
+
+        cleaner = new Cleaner("c4peer");
+        CLEANER.compareAndSet(null, cleaner);
+        return CLEANER.get();
+    }
 
 
     @NonNull
@@ -185,7 +195,7 @@ public abstract class C4Peer implements AutoCloseable {
 
         // WARNING:
         // Anything to which the peerHolder holds a reference will be reachable until the cleaner is run
-        this.cleaner = CLEANER.register(this, peerHolder);
+        this.cleaner = getCleaner().register(this, peerHolder);
     }
 
     @NonNull

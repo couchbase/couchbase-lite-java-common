@@ -17,10 +17,8 @@ package com.couchbase.lite.internal.core;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.VisibleForTesting;
 
 import com.couchbase.lite.LiteCoreException;
-import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.core.impl.NativeC4Blob;
 
 
@@ -29,7 +27,7 @@ import com.couchbase.lite.internal.core.impl.NativeC4Blob;
  * <p>
  * A raw SHA-1 digest used as the unique identifier of a blob.
  */
-public final class C4BlobKey extends C4NativePeer {
+public final class C4BlobKey extends C4Peer {
     public interface NativeImpl {
         long nFromString(@Nullable String str) throws LiteCoreException;
         @Nullable
@@ -41,7 +39,7 @@ public final class C4BlobKey extends C4NativePeer {
     private static final NativeImpl NATIVE_IMPL = new NativeC4Blob();
 
     //-------------------------------------------------------------------------
-    // Factory method
+    // Factory methods
     //-------------------------------------------------------------------------
 
     @NonNull
@@ -51,6 +49,7 @@ public final class C4BlobKey extends C4NativePeer {
 
     @NonNull
     public static C4BlobKey create(long peer) { return new C4BlobKey(NATIVE_IMPL, peer); }
+
 
     //-------------------------------------------------------------------------
     // Fields
@@ -65,13 +64,12 @@ public final class C4BlobKey extends C4NativePeer {
     /**
      * Decodes a string of the form "sha1-"+base64 into a raw key.
      */
-    @VisibleForTesting
-    public C4BlobKey(@NonNull NativeImpl impl, @Nullable String str) throws LiteCoreException {
+    private C4BlobKey(@NonNull NativeImpl impl, @Nullable String str) throws LiteCoreException {
         this(impl, impl.nFromString(str));
     }
 
     private C4BlobKey(@NonNull NativeImpl impl, long peer) {
-        super(peer);
+        super(peer, impl::nFree);
         this.impl = impl;
     }
 
@@ -79,44 +77,10 @@ public final class C4BlobKey extends C4NativePeer {
     // public methods
     //-------------------------------------------------------------------------
 
-    @Override
-    public void close() { closePeer(null); }
-
     /**
      * Encodes a blob key to a string of the form "sha1-"+base64.
      */
     @NonNull
     @Override
     public String toString() { return withPeerOrDefault("unknown", impl::nToString); }
-
-    //-------------------------------------------------------------------------
-    // protected methods
-    //-------------------------------------------------------------------------
-
-    @SuppressWarnings("NoFinalizer")
-    @Override
-    protected void finalize() throws Throwable {
-        try { closePeer(LogDomain.DATABASE); }
-        finally { super.finalize(); }
-    }
-
-    //-------------------------------------------------------------------------
-    // package methods
-    //-------------------------------------------------------------------------
-
-    // ??? Exposes the peer handle
-    long getHandle() { return getPeer(); }
-
-    //-------------------------------------------------------------------------
-    // private methods
-    //-------------------------------------------------------------------------
-
-    private void closePeer(@Nullable LogDomain domain) {
-        releasePeer(
-            domain,
-            (peer) -> {
-                final NativeImpl nativeImpl = impl;
-                if (nativeImpl != null) { nativeImpl.nFree(peer); }
-            });
-    }
 }

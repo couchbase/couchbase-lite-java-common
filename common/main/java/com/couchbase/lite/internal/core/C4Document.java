@@ -281,7 +281,7 @@ public final class C4Document extends C4Peer {
     }
 
     // Although we inherit it from AutoClosable, actually closing the C4Document
-    // will cause crashes. Apparently, there may be multiple active references
+    // has caused crashes. Apparently, there may be multiple active references
     // to a single C4Document, making it very hard to figure out when they can be
     // closed, explicitly.  Just log the call but don't actually close it.
     @SuppressWarnings({"MissingSuperCall", "PMD.CallSuper"})

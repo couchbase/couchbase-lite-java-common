@@ -165,7 +165,7 @@ public abstract class C4Database extends C4Peer {
                 peer,
                 lock,
                 name,
-                releasePeer -> {
+                unused -> {
                     synchronized (lock) { impl.nFree(peer); }
                 });
         }
@@ -623,7 +623,7 @@ public abstract class C4Database extends C4Peer {
                 statusListener));
     }
 
-// - Queries
+    // - Queries
 
     @NonNull
     public C4Query createJsonQuery(@NonNull String expression) throws LiteCoreException {
@@ -635,9 +635,9 @@ public abstract class C4Database extends C4Peer {
         return C4Query.create(this, QueryLanguage.N1QL, expression);
     }
 
-//-------------------------------------------------------------------------
-// Private methods
-//-------------------------------------------------------------------------
+    //-------------------------------------------------------------------------
+    // Private methods
+    //-------------------------------------------------------------------------
 
     @Nullable
     private File getDbFile() {

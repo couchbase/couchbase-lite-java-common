@@ -82,6 +82,8 @@ import com.couchbase.lite.internal.utils.Fn;
  * <li> If a Cleanable takes a long time (or even deadlocks), the CleanerThread will be hung and
  * not able to clean up other resources.
  * </ul>
+ * NOTE: Be careful creating static instances of this class.  It tries to use the Logger, which may not
+ * yet have been initialized at the time the static instance is created.
  */
 class CleanerImpl {
     private static final LogDomain LOG = LogDomain.DATABASE;

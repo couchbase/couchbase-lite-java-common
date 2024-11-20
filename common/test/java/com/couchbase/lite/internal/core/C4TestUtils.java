@@ -156,23 +156,11 @@ public class C4TestUtils {
         private void closePeer(@Nullable LogDomain domain) { releasePeer(domain, C4TestUtils::free); }
     }
 
-    // managed: Java code is responsible for freeing it
+    // managed: Java code is responsible for deleting and freeing it
     static final class ManagedC4BlobStore extends C4BlobStore {
         ManagedC4BlobStore(@NonNull String dirPath, long flags) throws LiteCoreException {
-            super(openStore(dirPath, flags));
+            super( C4BlobStore.NATIVE_IMPL, openStore(dirPath, flags), C4TestUtils::deleteBlobStore);
         }
-
-        @Override
-        public void close() { closePeer(null); }
-
-        @SuppressWarnings("NoFinalizer")
-        @Override
-        protected void finalize() throws Throwable {
-            try { closePeer(LogDomain.DATABASE); }
-            finally { super.finalize(); }
-        }
-
-        private void closePeer(@Nullable LogDomain domain) { releasePeer(domain, C4TestUtils::freeStore); }
     }
 
     // C4DocEnumerator
@@ -192,10 +180,10 @@ public class C4TestUtils {
 
     // C4BlobStore
 
-    public static void delete(C4BlobStore store) {
-        try { store.releasePeer(null, C4TestUtils::deleteStore); }
+    public static void deleteBlobStore(long peer) {
+        try { deleteStore(peer); }
         catch (LiteCoreException e) {
-            try { store.close(); }
+            try { freeStore(peer); }
             catch (Exception ignore) { }
             throw new CouchbaseLiteError("Failed deleting blob store", e);
         }

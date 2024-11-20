@@ -132,7 +132,6 @@ public final class C4Collection extends C4Peer {
     }
 
     @VisibleForTesting
-    @GuardedBy("dbLock")
     @Nullable
     static C4Collection get(
         @NonNull NativeImpl impl,
@@ -156,11 +155,6 @@ public final class C4Collection extends C4Peer {
             c4db.withPeerOrThrow(impl::nGetDefaultCollection),
             c4db, Scope.DEFAULT_NAME,
             Collection.DEFAULT_NAME);
-    }
-
-    private static void release(@NonNull NativeImpl impl, long peer) {
-        if (impl == null) { return; }
-        synchronized (LockManager.INSTANCE.getLock(peer)) { impl.nFree(peer); }
     }
 
 
@@ -194,7 +188,7 @@ public final class C4Collection extends C4Peer {
         @NonNull C4Database db,
         @NonNull String scope,
         @NonNull String name) {
-        super(peer, releasePeer -> C4Collection.release(impl, releasePeer));
+        super(peer, impl::nFree);
         this.impl = impl;
         this.db = db;
         this.scope = scope;
@@ -366,8 +360,7 @@ public final class C4Collection extends C4Peer {
 
     @Nullable
     public C4Index getIndex(@NonNull String name) throws LiteCoreException {
-        final long idx;
-        idx = withPeerOrThrow(peer -> {
+        final long idx = withPeerOrThrow(peer -> {
             synchronized (dbLock) { return impl.nGetIndex(peer, name); }
         });
         return (idx == 0L) ? null : C4Index.create(idx);
