@@ -792,14 +792,14 @@ public abstract class AbstractReplicator extends BaseReplicator
         final ReplicatorStatus oldStatus = status;
         status = new ReplicatorStatus(c4Status);
 
-        final CouchbaseLiteException err = status.getError();
-        if (c4Status.getErrorCode() != 0) { lastError = err; }
+        final int errCode = c4Status.getErrorCode();
+        if (errCode != 0) { lastError = status.getError(); }
 
         Log.i(
             LOG_DOMAIN,
-            "%s: state changed %s => %s(%d/%d)",
-            err,
+            "%s: state changed(%d): %s => %s(%d/%d)",
             getId(),
+            errCode,
             oldStatus.getActivityLevel(),
             status.getActivityLevel(),
             c4Status.getProgressUnitsCompleted(),

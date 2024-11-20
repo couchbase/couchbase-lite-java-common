@@ -56,7 +56,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
  * This object must be careful never to forward a call to a native object once that object has been freed.
  * </ol>
  */
-public abstract class C4Replicator extends C4NativePeer {
+public abstract class C4Replicator extends C4Peer {
 
     //-------------------------------------------------------------------------
     // Constants
@@ -261,12 +261,9 @@ public abstract class C4Replicator extends C4NativePeer {
             @NonNull C4Socket c4Socket,
             @NonNull List<ReplicationCollection> colls,
             @NonNull StatusListener statusListener) {
-            super(impl, peer, token, colls, statusListener);
+            super(impl, peer, token, null, colls, statusListener);
             this.c4Socket = c4Socket;
         }
-
-        @Override
-        protected void releaseResources() { }
 
         @Override
         protected void documentsEnded(@NonNull List<C4DocumentEnded> docEnds, boolean pushing) {
@@ -304,7 +301,13 @@ public abstract class C4Replicator extends C4NativePeer {
             @NonNull AbstractReplicator replicator,
             @Nullable SocketFactory socketFactory,
             long socketFactoryToken) {
-            super(impl, peer, token, colls, statusListener);
+            super(
+                impl,
+                peer,
+                token,
+                () -> BaseSocketFactory.unbindSocketFactory(socketFactoryToken),
+                colls,
+                statusListener);
 
             this.docEndsListener = docEndsListener;
 
@@ -318,9 +321,6 @@ public abstract class C4Replicator extends C4NativePeer {
         protected void documentsEnded(@NonNull List<C4DocumentEnded> docEnds, boolean pushing) {
             docEndsListener.documentsEnded(docEnds, pushing);
         }
-
-        @Override
-        protected void releaseResources() { BaseSocketFactory.unbindSocketFactory(socketFactoryToken); }
 
         @NonNull
         @Override
@@ -638,10 +638,17 @@ public abstract class C4Replicator extends C4NativePeer {
         @NonNull NativeImpl impl,
         long peer,
         long token,
+        @Nullable Runnable preClose,
         @NonNull List<ReplicationCollection> colls,
         @NonNull StatusListener statusListener) {
-        super(peer);
-
+        super(
+            peer,
+            unused -> {
+                if (preClose != null) { preClose.run(); }
+                BOUND_REPLICATORS.unbind(token);
+                impl.nStop(peer);
+                impl.nFree(peer);
+            });
         this.impl = impl;
         this.token = Preconditions.assertNotZero(token, "token");
         this.colls = Preconditions.assertNotNull(colls, "collections");
@@ -652,20 +659,20 @@ public abstract class C4Replicator extends C4NativePeer {
     // Instance Methods
     //-------------------------------------------------------------------------
 
-    public void start(boolean restart) { withPeer(peer -> impl.nStart(peer, restart)); }
+    public void start(boolean restart) { voidWithPeerOrThrow(peer -> impl.nStart(peer, restart)); }
 
-    public void stop() { withPeer(impl::nStop); }
+    public void stop() { voidWithPeerOrThrow(impl::nStop); }
 
     @Override
     public final void close() {
         for (ReplicationCollection coll: colls) { coll.close(); }
-        closePeer(null);
+        super.close();
     }
 
     @NonNull
     public String getReplId() { return ID + token; }
 
-    public void setOptions(@Nullable byte[] options) { withPeer(peer -> impl.nSetOptions(peer, options)); }
+    public void setOptions(@Nullable byte[] options) { voidWithPeerOrThrow(peer -> impl.nSetOptions(peer, options)); }
 
     @Nullable
     public C4ReplicatorStatus getStatus() { return withPeerOrNull(impl::nGetStatus); }
@@ -684,43 +691,16 @@ public abstract class C4Replicator extends C4NativePeer {
     }
 
     public void setProgressLevel(int level) throws LiteCoreException {
-        withPeer(peer -> impl.nSetProgressLevel(peer, level));
+        voidWithPeerOrThrow(peer -> impl.nSetProgressLevel(peer, level));
     }
 
-    public void setHostReachable(boolean reachable) { withPeer(peer -> impl.nSetHostReachable(peer, reachable)); }
-
-    protected abstract void releaseResources();
+    public void setHostReachable(boolean reachable) {
+        voidWithPeerOrThrow(peer -> impl.nSetHostReachable(peer, reachable));
+    }
 
     protected abstract void documentsEnded(@NonNull List<C4DocumentEnded> docEnds, boolean pushing);
 
-    @SuppressWarnings("NoFinalizer")
-    @Override
-    protected void finalize() throws Throwable {
-        try { closePeer(LOG_DOMAIN); }
-        finally { super.finalize(); }
-    }
-
     void statusChanged(@NonNull C4Replicator replicator, @NonNull C4ReplicatorStatus status) {
         statusListener.statusChanged(replicator, status);
-    }
-
-    //-------------------------------------------------------------------------
-    // Private methods
-    //-------------------------------------------------------------------------
-
-    private void closePeer(@Nullable LogDomain domain) {
-        releasePeer(
-            domain,
-            peer -> {
-                releaseResources();
-                BOUND_REPLICATORS.unbind(token);
-
-                // It might be better to queue this stuff to be done on another thread...
-                final NativeImpl nativeImpl = impl;
-                if (nativeImpl != null) {
-                    nativeImpl.nStop(peer);
-                    nativeImpl.nFree(peer);
-                }
-            });
     }
 }

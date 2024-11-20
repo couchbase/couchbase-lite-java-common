@@ -60,10 +60,7 @@ public class C4BlobStoreTest extends C4BaseTest {
     public final void tearDownC4BlobStoreTest() {
         bogusKey.close();
 
-        final C4BlobStore store = blobStore;
         blobStore = null;
-
-        if (store != null) { C4TestUtils.delete(store); }
 
         if (blobDir != null) { FileUtils.eraseFileOrDir(blobDir); }
     }

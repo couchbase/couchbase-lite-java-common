@@ -31,7 +31,7 @@ import com.couchbase.lite.internal.logging.Log;
 
 
 public final class C4CollectionObserver
-    extends C4NativePeer
+    extends C4Peer
     implements ChangeNotifier.C4ChangeProducer<C4DocumentChange> {
     public interface NativeImpl {
         long nCreate(long token, long coll) throws LiteCoreException;
@@ -83,6 +83,11 @@ public final class C4CollectionObserver
         return observer;
     }
 
+    private static void release(@NonNull NativeImpl impl, long peer, long token) {
+        BOUND_OBSERVERS.unbind(token);
+        impl.nFree(peer);
+    }
+
 
     //-------------------------------------------------------------------------
     // Member Variables
@@ -100,7 +105,7 @@ public final class C4CollectionObserver
     //-------------------------------------------------------------------------
 
     private C4CollectionObserver(@NonNull NativeImpl impl, long token, long peer, @NonNull Runnable listener) {
-        super(peer);
+        super(peer, releasePeer -> release(impl, releasePeer, token));
         this.impl = impl;
         this.token = token;
         this.listener = listener;
@@ -113,29 +118,7 @@ public final class C4CollectionObserver
     @Override
     @Nullable
     public List<C4DocumentChange> getChanges(int maxChanges) {
-        return nullableWithPeerOrThrow(peer -> {
-            final C4DocumentChange[] changes = impl.nGetChanges(peer, maxChanges);
-            return (changes.length <= 0) ? null : Arrays.asList(changes);
-        });
-    }
-
-    @Override
-    public void close() { closePeer(null); }
-
-    @SuppressWarnings("NoFinalizer")
-    @Override
-    protected void finalize() throws Throwable {
-        try { closePeer(LogDomain.DATABASE); }
-        finally { super.finalize(); }
-    }
-
-    private void closePeer(@Nullable LogDomain domain) {
-        releasePeer(
-            domain,
-            (peer) -> {
-                BOUND_OBSERVERS.unbind(token);
-                final NativeImpl nativeImpl = impl;
-                if (nativeImpl != null) { nativeImpl.nFree(peer); }
-            });
+        final C4DocumentChange[] changes = withPeerOrThrow(peer -> impl.nGetChanges(peer, maxChanges));
+        return (changes.length <= 0) ? null : Arrays.asList(changes);
     }
 }

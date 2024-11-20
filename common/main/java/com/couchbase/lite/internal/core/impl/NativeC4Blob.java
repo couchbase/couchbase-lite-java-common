@@ -58,29 +58,29 @@ public final class NativeC4Blob implements C4BlobKey.NativeImpl, C4BlobStore.Nat
 
     //// BlobReadStream
 
-    @GuardedBy("streamLock")
+    @GuardedBy("readStreamLock")
     public int nRead(long peer, byte[] data, int offset, long len) throws LiteCoreException {
         return read(peer, data, offset, len);
     }
 
-    @GuardedBy("streamLock")
+    @GuardedBy("readStreamLock")
     public void nSeek(long peer, long pos) throws LiteCoreException { seek(peer, pos); }
 
+    @GuardedBy("readStreamLock")
     public void nCloseReadStream(long peer) { closeReadStream(peer); }
-
 
     //// BlobWriteStream
 
-    @GuardedBy("streamLock")
+    @GuardedBy("writeStreamLock")
     public void nWrite(long peer, byte[] data, int len) throws LiteCoreException { write(peer, data, len); }
 
-    @GuardedBy("streamLock")
+    @GuardedBy("writeStreamLock")
     public long nComputeBlobKey(long peer) throws LiteCoreException { return computeBlobKey(peer); }
 
-    @GuardedBy("streamLock")
+    @GuardedBy("writeStreamLock")
     public void nInstall(long peer) throws LiteCoreException { install(peer); }
 
-    @GuardedBy("streamLock")
+    @GuardedBy("writeStreamLock")
     public void nCloseWriteStream(long peer) { closeWriteStream(peer); }
 
 
@@ -92,7 +92,6 @@ public final class NativeC4Blob implements C4BlobKey.NativeImpl, C4BlobStore.Nat
     //-------------------------------------------------------------------------
 
     // BlobKey
-
     private static native long fromString(@Nullable String str) throws LiteCoreException;
 
     @Nullable
@@ -129,9 +128,9 @@ public final class NativeC4Blob implements C4BlobKey.NativeImpl, C4BlobStore.Nat
     private static native void seek(long peer, long position) throws LiteCoreException;
 
     @GuardedBy("readStreamLock")
-    private static native void closeWriteStream(long peer);
+    private static native void closeReadStream(long peer);
 
-    // BlobReadStream
+    // BlobWriteStream
 
     @GuardedBy("writeStreamLock")
     private static native void write(long peer, byte[] bytes, int len) throws LiteCoreException;
@@ -143,6 +142,6 @@ public final class NativeC4Blob implements C4BlobKey.NativeImpl, C4BlobStore.Nat
     private static native void install(long peer) throws LiteCoreException;
 
     @GuardedBy("writeStreamLock")
-    private static native void closeReadStream(long peer);
+    private static native void closeWriteStream(long peer);
 }
 
