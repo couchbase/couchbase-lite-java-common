@@ -31,7 +31,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
  * auth with the given username and password. This should only be used over an SSL/TLS connection,
  * as otherwise it's very easy for anyone sniffing network traffic to read the password.
  */
-public final class BasicAuthenticator extends BaseAuthenticator {
+public final class BasicAuthenticator extends BaseAuthenticator implements Authenticator {
 
     //---------------------------------------------
     // member variables
