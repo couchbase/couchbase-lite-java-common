@@ -30,7 +30,7 @@ import com.couchbase.lite.internal.utils.StringUtils;
  * SessionAuthenticator class is an authenticator that will authenticate by using the session ID of
  * the session created by a Sync Gateway
  */
-public final class SessionAuthenticator extends BaseAuthenticator {
+public final class SessionAuthenticator extends BaseAuthenticator implements Authenticator {
 
     private static final String DEFAULT_SYNC_GATEWAY_SESSION_ID_NAME = "SyncGatewaySession";
 
