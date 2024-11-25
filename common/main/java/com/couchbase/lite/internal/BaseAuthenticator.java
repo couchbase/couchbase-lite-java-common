@@ -17,9 +17,7 @@ package com.couchbase.lite.internal;
 
 import java.util.Map;
 
-import com.couchbase.lite.Authenticator;
 
-
-public abstract class BaseAuthenticator implements Authenticator {
+public abstract class BaseAuthenticator {
     protected abstract void authenticate(Map<String, Object> options);
 }
