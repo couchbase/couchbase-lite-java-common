@@ -98,7 +98,6 @@ class ArrayIndexTest : BaseDbTest() {
      *     5. Get info of the index named "contacts" using an internal API and check that the
      *        index has path and expressions as configured.
      */
-    @Ignore("Awaiting merge of Array Index feature")
     @Test
     fun testCreateArrayIndexWithPath() {
         val profilesCollection = testDatabase.createCollection("profiles")
@@ -130,7 +129,6 @@ class ArrayIndexTest : BaseDbTest() {
      *     5. Get info of the index named "contacts" using an internal API and check that the
      *        index has path and expressions as configured.
      */
-    @Ignore("Awaiting merge of Array Index feature")
     @Test
     fun testCreateArrayIndexWithPathAndExpressions() {
         val profilesCollection = testDatabase.createCollection("profiles")
