@@ -297,7 +297,7 @@ public class C4TestUtils {
         return idx.withPeerOrThrow(C4TestUtils::getIndexOptions);
     }
 
-    // This method is called by reflection.  Don't change its signature.
+    // This method is used by reflection.  Don't change its signature.
     public static C4IndexOptions createIndexOptions(
         boolean ignoreDiacritics,
         boolean disableStemming,
