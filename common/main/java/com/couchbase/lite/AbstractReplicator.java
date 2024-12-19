@@ -172,7 +172,7 @@ public abstract class AbstractReplicator extends BaseReplicator
      * Note: Replicators <b>cannot</b> be started from within a <code>Database.inBatch()</code> block.
      */
     public void start(boolean resetCheckpoint) {
-        Log.i(LOG_DOMAIN, "Replicator(%s) started: %s", getId(), this);
+        Log.i(LOG_DOMAIN, "Replicator(%s) starting: %s", getId(), this);
 
         getDatabase().addActiveReplicator(this);
 
@@ -194,6 +194,8 @@ public abstract class AbstractReplicator extends BaseReplicator
 
             dispatchStatusChange(c4Repl, status);
         }
+
+        Log.d(LOG_DOMAIN, "Replicator(%s) started: %s", getId(), this);
     }
 
     /**
@@ -434,6 +436,7 @@ public abstract class AbstractReplicator extends BaseReplicator
 
         // there is the potential for a race here...
         closeC4Replicator();
+        Log.i(LOG_DOMAIN, "Replicator(%s) closed: %s", getId(), this);
 
         if ((listeners == null) || listeners.isEmpty()) { return; }
 
