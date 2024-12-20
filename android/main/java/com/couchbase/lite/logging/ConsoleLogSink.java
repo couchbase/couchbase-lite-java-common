@@ -21,7 +21,7 @@ import androidx.annotation.NonNull;
 
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.LogLevel;
-import com.couchbase.lite.internal.logging.AbstractLogger;
+import com.couchbase.lite.internal.logging.AbstractLogSink;
 import com.couchbase.lite.internal.utils.Internal;
 
 
@@ -29,8 +29,8 @@ import com.couchbase.lite.internal.utils.Internal;
  * Do not subclass!
  * This class will be final in future version of Couchbase Lite
  */
-public class ConsoleLogger extends AbstractLogger {
-    public ConsoleLogger(@NonNull LogLevel level) { super(level); }
+public class ConsoleLogSink extends AbstractLogSink {
+    public ConsoleLogSink(@NonNull LogLevel level) { super(level); }
 
     @Internal
     @Override

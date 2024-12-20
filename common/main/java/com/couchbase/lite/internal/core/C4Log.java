@@ -26,7 +26,7 @@ import java.util.Map;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.LogLevel;
 import com.couchbase.lite.internal.core.impl.NativeC4Log;
-import com.couchbase.lite.internal.logging.LoggersImpl;
+import com.couchbase.lite.internal.logging.LogSinksImpl;
 
 
 public final class C4Log {
@@ -105,7 +105,7 @@ public final class C4Log {
 
     // This method is used by reflection.  Don't change its signature.
     public static void logCallback(@Nullable String c4Domain, int c4Level, @Nullable String message) {
-        LoggersImpl.logFromCore(getLogLevelForC4Level(c4Level), getLoggingDomainForC4Domain(c4Domain), message);
+        LogSinksImpl.logFromCore(getLogLevelForC4Level(c4Level), getLoggingDomainForC4Domain(c4Domain), message);
     }
 
     @NonNull

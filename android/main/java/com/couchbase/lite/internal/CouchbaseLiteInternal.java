@@ -41,7 +41,7 @@ import com.couchbase.lite.internal.connectivity.AndroidConnectivityManager;
 import com.couchbase.lite.internal.core.C4;
 import com.couchbase.lite.internal.exec.ExecutionService;
 import com.couchbase.lite.internal.logging.Log;
-import com.couchbase.lite.internal.logging.LoggersImpl;
+import com.couchbase.lite.internal.logging.LogSinksImpl;
 import com.couchbase.lite.internal.replicator.NetworkConnectivityManager;
 import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.Preconditions;
@@ -100,7 +100,7 @@ public final class CouchbaseLiteInternal {
 
         C4.debug(debugging);
 
-        LoggersImpl.initLogging();
+        LogSinksImpl.initLogging();
 
         setC4TmpDirPath(FileUtils.verifyDir(scratchDir));
     }

@@ -22,7 +22,8 @@ import java.util.Objects;
 
 import com.couchbase.lite.internal.logging.Log;
 import com.couchbase.lite.internal.utils.Preconditions;
-import com.couchbase.lite.logging.Loggers;
+import com.couchbase.lite.logging.FileLogSink;
+import com.couchbase.lite.logging.LogSinks;
 
 
 /**
@@ -36,14 +37,14 @@ import com.couchbase.lite.logging.Loggers;
 @SuppressWarnings("PMD.UnnecessaryFullyQualifiedName")
 @Deprecated
 public final class FileLogger implements Logger {
-    private static final class ShimLogger extends com.couchbase.lite.logging.FileLogger {
-        ShimLogger(boolean plainText, @NonNull com.couchbase.lite.logging.FileLogger.Builder builder) {
+    private static final class ShimLogger extends FileLogSink {
+        ShimLogger(boolean plainText, @NonNull FileLogSink.Builder builder) {
             super(plainText, builder);
         }
 
         @Override
         protected void writeLog(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
-            final com.couchbase.lite.logging.FileLogger curLogger = Loggers.get().getFileLogger();
+            final FileLogSink curLogger = LogSinks.get().getFile();
             if (this == curLogger) { super.writeLog(level, domain, message); }
         }
 
@@ -65,7 +66,7 @@ public final class FileLogger implements Logger {
     @Override
     @NonNull
     public LogLevel getLevel() {
-        final com.couchbase.lite.logging.FileLogger curLogger = Loggers.get().getFileLogger();
+        final FileLogSink curLogger = LogSinks.get().getFile();
         return (curLogger == null) ? LogLevel.NONE : curLogger.getLevel();
     }
 
@@ -96,7 +97,7 @@ public final class FileLogger implements Logger {
      */
     @Nullable
     public LogFileConfiguration getConfig() {
-        final com.couchbase.lite.logging.FileLogger fileLogger = Loggers.get().getFileLogger();
+        final FileLogSink fileLogger = LogSinks.get().getFile();
         return (fileLogger == null)
             ? null
             : new LogFileConfiguration(
@@ -129,11 +130,11 @@ public final class FileLogger implements Logger {
             ? null
             : new ShimLogger(
                 config.usesPlaintext(),
-                new com.couchbase.lite.logging.FileLogger.Builder(config.getDirectory())
+                new FileLogSink.Builder(config.getDirectory())
                     .setLevel(level)
                     .setMaxKeptFiles(config.getMaxRotateCount())
                     .setMaxFileSize(config.getMaxSize()));
-        Loggers.get().setFileLogger(newLogger);
+        LogSinks.get().setFile(newLogger);
         this.logger = newLogger;
     }
 }

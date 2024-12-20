@@ -20,26 +20,26 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
-import com.couchbase.lite.internal.logging.LoggersImpl;
+import com.couchbase.lite.internal.logging.LogSinksImpl;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
-public interface Loggers {
+public interface LogSinks {
     @NonNull
-    static Loggers get() {
+    static LogSinks get() {
         CouchbaseLiteInternal.requireInit("Logging not initialized");
-        return Preconditions.assertNotNull(LoggersImpl.getLoggers(), "loggers");
+        return Preconditions.assertNotNull(LogSinksImpl.getLoggers(), "loggers");
     }
 
     @Nullable
-    FileLogger getFileLogger();
-    void setFileLogger(@Nullable FileLogger newLogger);
+    FileLogSink getFile();
+    void setFile(@Nullable FileLogSink newLogger);
 
     @Nullable
-    ConsoleLogger getConsoleLogger();
-    void setConsoleLogger(@Nullable ConsoleLogger newLogger);
+    ConsoleLogSink getConsole();
+    void setConsole(@Nullable ConsoleLogSink newLogger);
 
     @Nullable
-    BaseLogger getCustomLogger();
-    void setCustomLogger(@Nullable BaseLogger newLogger);
+    BaseLogSink getCustom();
+    void setCustom(@Nullable BaseLogSink newLogger);
 }

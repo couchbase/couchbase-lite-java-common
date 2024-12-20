@@ -25,9 +25,9 @@ import java.util.Objects;
 import com.couchbase.lite.Defaults;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.LogLevel;
-import com.couchbase.lite.internal.logging.AbstractLogger;
+import com.couchbase.lite.internal.logging.AbstractLogSink;
 import com.couchbase.lite.internal.logging.Log;
-import com.couchbase.lite.internal.logging.LoggersImpl;
+import com.couchbase.lite.internal.logging.LogSinksImpl;
 import com.couchbase.lite.internal.utils.Internal;
 import com.couchbase.lite.internal.utils.Preconditions;
 
@@ -36,7 +36,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
  * Do not subclass!
  * This class will be final in future version of Couchbase Lite
  */
-public class FileLogger extends AbstractLogger {
+public class FileLogSink extends AbstractLogSink {
     public static final class Builder {
         @Nullable
         private final String directory;
@@ -65,7 +65,7 @@ public class FileLogger extends AbstractLogger {
             this.directory = logDirPath;
         }
 
-        public Builder(@NonNull FileLogger logger) {
+        public Builder(@NonNull FileLogSink logger) {
             this(logger.directory);
             this.level = logger.getLevel();
             this.maxKeptFiles = logger.maxKeptFiles;
@@ -98,7 +98,7 @@ public class FileLogger extends AbstractLogger {
         }
 
         @NonNull
-        public FileLogger build() { return new FileLogger(this); }
+        public FileLogSink build() { return new FileLogSink(this); }
 
         @NonNull
         @Override
@@ -115,10 +115,10 @@ public class FileLogger extends AbstractLogger {
     private final boolean plainText;
 
     @VisibleForTesting
-    public FileLogger(@NonNull Builder builder) { this(false, builder); }
+    public FileLogSink(@NonNull Builder builder) { this(false, builder); }
 
     @Internal
-    protected FileLogger(boolean plainText, @NonNull Builder builder) {
+    protected FileLogSink(boolean plainText, @NonNull Builder builder) {
         super(builder.level);
 
         this.plainText = plainText;
@@ -154,12 +154,12 @@ public class FileLogger extends AbstractLogger {
     @Override
     public final boolean equals(Object o) {
         if (this == o) { return true; }
-        if (!(o instanceof FileLogger)) { return false; }
-        final FileLogger other = (FileLogger) o;
+        if (!(o instanceof FileLogSink)) { return false; }
+        final FileLogSink other = (FileLogSink) o;
         return similar(other) && (getLevel() == other.getLevel());
     }
 
-    public final boolean similar(@Nullable FileLogger other) {
+    public final boolean similar(@Nullable FileLogSink other) {
         return (other != null)
             && (directory.equals(other.directory))
             && (maxKeptFiles == other.maxKeptFiles)
@@ -170,6 +170,6 @@ public class FileLogger extends AbstractLogger {
     @Internal
     @Override
     protected void writeLog(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
-        LoggersImpl.logToCore(level, domain, message);
+        LogSinksImpl.logToCore(level, domain, message);
     }
 }

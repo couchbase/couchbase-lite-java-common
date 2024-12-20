@@ -13,14 +13,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-package com.couchbase.lite.logging;
+package com.couchbase.lite.internal.logging;
 
 import androidx.annotation.NonNull;
 
+import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.LogLevel;
-import com.couchbase.lite.internal.logging.AbstractLogger;
 
 
-public abstract class BaseLogger extends AbstractLogger {
-    protected BaseLogger(@NonNull LogLevel level) { super(level); }
+public abstract class AbstractLogSink {
+    private final LogLevel logLevel;
+
+    // Base constructor.  A Logger has its filter set for life
+    protected AbstractLogSink(@NonNull LogLevel level) { this.logLevel = level; }
+
+    @NonNull
+    public final LogLevel getLevel() { return logLevel; }
+
+    protected abstract void writeLog(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message);
+
+    protected final void log(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
+        if (logLevel.compareTo(level) <= 0) { writeLog(level, domain, message); }
+    }
 }

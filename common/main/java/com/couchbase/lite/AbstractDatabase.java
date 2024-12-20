@@ -52,7 +52,7 @@ import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.listener.ChangeListenerToken;
 import com.couchbase.lite.internal.listener.Listenable;
 import com.couchbase.lite.internal.logging.Log;
-import com.couchbase.lite.internal.logging.LoggersImpl;
+import com.couchbase.lite.internal.logging.LogSinksImpl;
 import com.couchbase.lite.internal.replicator.ConflictResolutionException;
 import com.couchbase.lite.internal.sockets.MessageFraming;
 import com.couchbase.lite.internal.utils.ClassUtils;
@@ -284,7 +284,7 @@ abstract class AbstractDatabase extends BaseDatabase
         this.sharedKeys = c4db.getFLSharedKeys();
 
         // warn if logging has not been turned on
-        LoggersImpl.warnNoLogger();
+        LogSinksImpl.warnNoLogger();
     }
 
     //---------------------------------------------

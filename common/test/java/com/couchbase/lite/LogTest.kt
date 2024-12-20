@@ -22,10 +22,10 @@ import com.couchbase.lite.internal.core.C4Log
 import com.couchbase.lite.internal.core.C4TestUtils
 import com.couchbase.lite.internal.core.CBLVersion
 import com.couchbase.lite.internal.logging.Log
-import com.couchbase.lite.internal.logging.LoggersImpl
+import com.couchbase.lite.internal.logging.LogSinksImpl
 import com.couchbase.lite.internal.utils.Report
-import com.couchbase.lite.logging.BaseLogger
-import com.couchbase.lite.logging.Loggers
+import com.couchbase.lite.logging.BaseLogSink
+import com.couchbase.lite.logging.LogSinks
 import com.couchbase.lite.utils.KotlinHelpers
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -146,13 +146,13 @@ class LogTest : BaseDbTest() {
     }
 
     @After
-    fun tearDownLogTest() = LoggersImpl.initLogging()
+    fun tearDownLogTest() = LogSinksImpl.initLogging()
 
     @Test
     fun testC4LogLevel() {
         val mark = "$$$ ${UUID.randomUUID()}"
 
-        val c4Log = LoggersImpl.getLoggers()!!.c4Log
+        val c4Log = LogSinksImpl.getLoggers()!!.c4Log
         c4Log.initFileLogger(scratchDirPath, LogLevel.DEBUG, 10, 1024, true, "$$$ TEST")
 
         for (level in LogLevel.values()) {
@@ -192,7 +192,7 @@ class LogTest : BaseDbTest() {
 
     @Test
     fun testC4MaxFileSize() {
-        val c4Log = LoggersImpl.getLoggers()!!.c4Log
+        val c4Log = LogSinksImpl.getLoggers()!!.c4Log
         c4Log.initFileLogger(scratchDirPath, LogLevel.DEBUG, 10, 1024, true, "$$$$ TEST")
         c4Log.setLogLevel(LogDomain.DATABASE, LogLevel.DEBUG)
 
@@ -623,7 +623,7 @@ class LogTest : BaseDbTest() {
     @Ignore("Need a way to coax LiteCore into logging a non-ascii string")
     @Test
     fun testNonASCII() {
-        val customLogger = object : BaseLogger(LogLevel.DEBUG) {
+        val customLogger = object : BaseLogSink(LogLevel.DEBUG) {
             var text: String = ""
 
             override fun writeLog(level: LogLevel, domain: LogDomain, message: String) {
@@ -631,7 +631,7 @@ class LogTest : BaseDbTest() {
             }
         }
 
-        Loggers.get().customLogger = customLogger
+        LogSinks.get().custom = customLogger
 
         val hebrew = "מזג האוויר נחמד היום" // The weather is nice today.
 
@@ -664,7 +664,7 @@ class LogTest : BaseDbTest() {
         val testNativeC4Logger = TestC4Logger(c4Domain)
         val testC4Logger = C4Log(testNativeC4Logger)
 
-        LoggersImpl.getLoggers()!!.c4Log = testC4Logger
+        LogSinksImpl.getLoggers()!!.c4Log = testC4Logger
 
         testNativeC4Logger.reset()
         QueryBuilder.select(SelectResult.expression(Meta.id))

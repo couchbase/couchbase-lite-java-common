@@ -264,7 +264,7 @@ public final class Log {
         if (level == null) { level = LogLevel.INFO; }
 
         // only generate logs >= current priority.
-        final LoggersImpl loggers = LoggersImpl.getLoggers();
+        final LogSinksImpl loggers = LogSinksImpl.getLoggers();
         if ((loggers == null) || (loggers.getLogLevel().compareTo(level) > 0)) { return; }
 
         if (msg == null) { msg = ""; }

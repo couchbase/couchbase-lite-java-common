@@ -29,33 +29,33 @@ import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.core.C4Log;
 import com.couchbase.lite.internal.core.CBLVersion;
 import com.couchbase.lite.internal.exec.ExecutionService;
-import com.couchbase.lite.logging.BaseLogger;
-import com.couchbase.lite.logging.ConsoleLogger;
-import com.couchbase.lite.logging.FileLogger;
-import com.couchbase.lite.logging.Loggers;
+import com.couchbase.lite.logging.BaseLogSink;
+import com.couchbase.lite.logging.ConsoleLogSink;
+import com.couchbase.lite.logging.FileLogSink;
+import com.couchbase.lite.logging.LogSinks;
 
 
-public final class LoggersImpl implements Loggers {
+public final class LogSinksImpl implements LogSinks {
     private static final int LOG_QUEUE_MAX = 8;
 
     // the singleton implementation of Loggers
     @NonNull
-    private static final AtomicReference<LoggersImpl> LOGGERS = new AtomicReference<>();
+    private static final AtomicReference<LogSinksImpl> LOGGERS = new AtomicReference<>();
 
     @Nullable
-    public static LoggersImpl getLoggers() { return LOGGERS.get(); }
+    public static LogSinksImpl getLoggers() { return LOGGERS.get(); }
 
     // The center of log system initialization.
     public static void initLogging() {
         Log.init();
 
-        final LoggersImpl loggers = new LoggersImpl(C4Log.create());
+        final LogSinksImpl loggers = new LogSinksImpl(C4Log.create());
 
-        final ConsoleLogger consoleLogger
-            = new ConsoleLogger(CouchbaseLiteInternal.debugging() ? LogLevel.DEBUG : LogLevel.WARNING);
-        loggers.setConsoleLogger(consoleLogger);
+        final ConsoleLogSink consoleLogger
+            = new ConsoleLogSink(CouchbaseLiteInternal.debugging() ? LogLevel.DEBUG : LogLevel.WARNING);
+        loggers.setConsole(consoleLogger);
 
-        ((AbstractLogger) consoleLogger).writeLog(
+        ((AbstractLogSink) consoleLogger).writeLog(
             LogLevel.INFO,
             LogDomain.DATABASE,
             CouchbaseLiteInternal.PLATFORM + " Initialized: " + CBLVersion.getVersionInfo());
@@ -64,19 +64,19 @@ public final class LoggersImpl implements Loggers {
     }
 
     public static void logToCore(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
-        final LoggersImpl loggers = LOGGERS.get();
+        final LogSinksImpl loggers = LOGGERS.get();
         if (loggers == null) { return; }
         loggers.c4Log.logToCore(domain, level, message);
     }
 
     public static void logFromCore(@NonNull LogLevel level, @NonNull LogDomain domain, @Nullable String message) {
-        final LoggersImpl loggers = LOGGERS.get();
+        final LogSinksImpl loggers = LOGGERS.get();
         if (loggers == null) { return; }
         loggers.writeToLocalLoggers(level, domain, message);
     }
 
     public static void warnNoLogger() {
-        final LoggersImpl loggers = LOGGERS.get();
+        final LogSinksImpl loggers = LOGGERS.get();
         if (loggers == null) { return; }
         loggers.warnIfNoFileLogger();
     }
@@ -101,25 +101,25 @@ public final class LoggersImpl implements Loggers {
     private C4Log c4Log;
 
     @Nullable
-    private FileLogger fileLogger;
+    private FileLogSink fileLogger;
 
     @Nullable
-    private ConsoleLogger consoleLogger;
+    private ConsoleLogSink consoleLogger;
 
     @Nullable
-    private BaseLogger customLogger;
+    private BaseLogSink customLogger;
 
-    private LoggersImpl(@NonNull C4Log c4Log) {
+    private LogSinksImpl(@NonNull C4Log c4Log) {
         this.c4Log = c4Log;
         customLogQueue = CouchbaseLiteInternal.getExecutionService().getSerialExecutor();
     }
 
     @Override
     @Nullable
-    public FileLogger getFileLogger() { return fileLogger; }
+    public FileLogSink getFile() { return fileLogger; }
 
     @Override
-    public void setFileLogger(@Nullable FileLogger newLogger) {
+    public void setFile(@Nullable FileLogSink newLogger) {
         if (Objects.equals(fileLogger, newLogger)) { return; }
 
         final LogLevel newLevel;
@@ -149,20 +149,20 @@ public final class LoggersImpl implements Loggers {
 
     @Override
     @Nullable
-    public ConsoleLogger getConsoleLogger() { return consoleLogger; }
+    public ConsoleLogSink getConsole() { return consoleLogger; }
 
     @Override
-    public void setConsoleLogger(@Nullable ConsoleLogger newLogger) {
+    public void setConsole(@Nullable ConsoleLogSink newLogger) {
         consoleLogger = newLogger;
         setLogLevel();
     }
 
     @Override
     @Nullable
-    public BaseLogger getCustomLogger() { return customLogger; }
+    public BaseLogSink getCustom() { return customLogger; }
 
     @Override
-    public void setCustomLogger(@Nullable BaseLogger newLogger) {
+    public void setCustom(@Nullable BaseLogSink newLogger) {
         customLogger = newLogger;
         setLogLevel();
     }
@@ -182,12 +182,12 @@ public final class LoggersImpl implements Loggers {
     public void writeToLocalLoggers(@NonNull LogLevel level, @NonNull LogDomain domain, @Nullable String message) {
         final String msg = (message == null) ? "" : message;
 
-        final ConsoleLogger console = consoleLogger;
+        final ConsoleLogSink console = consoleLogger;
         try { log(console, level, domain, msg); }
         catch (Exception e) { System.err.println("Console logger failure" + Log.formatStackTrace(e)); }
 
         // A custom logger is client code: give it 1 second on a safe thread
-        final BaseLogger custom = customLogger;
+        final BaseLogSink custom = customLogger;
         if ((custom != null) && ((custom.getLevel().compareTo(level) <= 0))) {
             if (customLogQueue.getPending() > LOG_QUEUE_MAX) {
                 log(console, LogLevel.WARNING, LogDomain.DATABASE, "Log queue overflow: Logs dropped");
@@ -237,9 +237,9 @@ public final class LoggersImpl implements Loggers {
     }
 
     private void warnIfNoFileLogger() {
-        final FileLogger logger = fileLogger;
+        final FileLogSink logger = fileLogger;
         if ((logger != null) && (logger.getLevel() != LogLevel.NONE) && !warned.getAndSet(true)) { return; }
-        ((AbstractLogger) new ConsoleLogger(LogLevel.WARNING)).writeLog(
+        ((AbstractLogSink) new ConsoleLogSink(LogLevel.WARNING)).writeLog(
             LogLevel.WARNING,
             LogDomain.DATABASE,
             "Database.log.getFile().getConfig() is now null: logging is disabled.  "
@@ -247,7 +247,7 @@ public final class LoggersImpl implements Loggers {
     }
 
     private void log(
-        @Nullable AbstractLogger logger,
+        @Nullable AbstractLogSink logger,
         @NonNull LogLevel level,
         @NonNull LogDomain domain,
         @NonNull String message) {
