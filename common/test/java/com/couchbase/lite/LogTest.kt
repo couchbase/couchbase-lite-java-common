@@ -152,7 +152,7 @@ class LogTest : BaseDbTest() {
     fun testC4LogLevel() {
         val mark = "$$$ ${UUID.randomUUID()}"
 
-        val c4Log = LogSinksImpl.getLoggers()!!.c4Log
+        val c4Log = LogSinksImpl.getLogSinks()!!.c4Log
         c4Log.initFileLogger(scratchDirPath, LogLevel.DEBUG, 10, 1024, true, "$$$ TEST")
 
         for (level in LogLevel.values()) {
@@ -192,7 +192,7 @@ class LogTest : BaseDbTest() {
 
     @Test
     fun testC4MaxFileSize() {
-        val c4Log = LogSinksImpl.getLoggers()!!.c4Log
+        val c4Log = LogSinksImpl.getLogSinks()!!.c4Log
         c4Log.initFileLogger(scratchDirPath, LogLevel.DEBUG, 10, 1024, true, "$$$$ TEST")
         c4Log.setLogLevel(LogDomain.DATABASE, LogLevel.DEBUG)
 
@@ -664,7 +664,7 @@ class LogTest : BaseDbTest() {
         val testNativeC4Logger = TestC4Logger(c4Domain)
         val testC4Logger = C4Log(testNativeC4Logger)
 
-        LogSinksImpl.getLoggers()!!.c4Log = testC4Logger
+        LogSinksImpl.getLogSinks()!!.c4Log = testC4Logger
 
         testNativeC4Logger.reset()
         QueryBuilder.select(SelectResult.expression(Meta.id))

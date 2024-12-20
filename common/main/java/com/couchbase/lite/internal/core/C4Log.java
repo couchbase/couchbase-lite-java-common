@@ -19,9 +19,13 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.LogLevel;
@@ -45,18 +49,6 @@ public final class C4Log {
     }
 
     @NonNull
-    private static final Map<LogDomain, String> LOGGING_DOMAINS_TO_C4;
-    static {
-        final Map<LogDomain, String> m = new HashMap<>();
-        m.put(LogDomain.DATABASE, C4Constants.LogDomain.DATABASE);
-        m.put(LogDomain.NETWORK, C4Constants.LogDomain.WEB_SOCKET);
-        m.put(LogDomain.REPLICATOR, C4Constants.LogDomain.SYNC);
-        m.put(LogDomain.QUERY, C4Constants.LogDomain.QUERY);
-        m.put(LogDomain.LISTENER, C4Constants.LogDomain.LISTENER);
-        LOGGING_DOMAINS_TO_C4 = Collections.unmodifiableMap(m);
-    }
-
-    @NonNull
     private static final Map<Integer, LogLevel> LOG_LEVEL_FROM_C4;
     static {
         final Map<Integer, LogLevel> m = new HashMap<>();
@@ -69,7 +61,19 @@ public final class C4Log {
     }
 
     @NonNull
-    private static final Map<String, LogDomain> LOGGING_DOMAINS_FROM_C4;
+    private static final Map<LogLevel, Integer> LOG_LEVEL_TO_C4;
+    static {
+        final Map<LogLevel, Integer> m = new HashMap<>();
+        m.put(LogLevel.DEBUG, C4Constants.LogLevel.DEBUG);
+        m.put(LogLevel.VERBOSE, C4Constants.LogLevel.VERBOSE);
+        m.put(LogLevel.INFO, C4Constants.LogLevel.INFO);
+        m.put(LogLevel.WARNING, C4Constants.LogLevel.WARNING);
+        m.put(LogLevel.ERROR, C4Constants.LogLevel.ERROR);
+        LOG_LEVEL_TO_C4 = Collections.unmodifiableMap(m);
+    }
+
+    @NonNull
+    private static final Map<String, LogDomain> LOGGING_DOMAIN_FROM_C4;
     static {
         final Map<String, LogDomain> m = new HashMap<>();
         m.put(C4Constants.LogDomain.DEFAULT, LogDomain.DATABASE);
@@ -88,21 +92,41 @@ public final class C4Log {
         m.put(C4Constants.LogDomain.TLS, LogDomain.NETWORK);
         m.put(C4Constants.LogDomain.WEB_SOCKET, LogDomain.NETWORK);
         m.put(C4Constants.LogDomain.ZIP, LogDomain.NETWORK);
-        LOGGING_DOMAINS_FROM_C4 = Collections.unmodifiableMap(m);
+        LOGGING_DOMAIN_FROM_C4 = Collections.unmodifiableMap(m);
     }
 
     @NonNull
-    private static final Map<LogLevel, Integer> LOG_LEVEL_TO_C4;
+    private static final Map<LogDomain, List<String>> LOGGING_DOMAIN_TO_C4;
     static {
-        final Map<LogLevel, Integer> m = new HashMap<>();
-        m.put(LogLevel.DEBUG, C4Constants.LogLevel.DEBUG);
-        m.put(LogLevel.VERBOSE, C4Constants.LogLevel.VERBOSE);
-        m.put(LogLevel.INFO, C4Constants.LogLevel.INFO);
-        m.put(LogLevel.WARNING, C4Constants.LogLevel.WARNING);
-        m.put(LogLevel.ERROR, C4Constants.LogLevel.ERROR);
-        LOG_LEVEL_TO_C4 = Collections.unmodifiableMap(m);
+        final Map<LogDomain, List<String>> m = new HashMap<>();
+        for (Map.Entry<String, LogDomain> entry: LOGGING_DOMAIN_FROM_C4.entrySet()) {
+            final LogDomain domain = entry.getValue();
+
+            List<String> domains = m.get(domain);
+            if (domains == null) {
+                domains = new ArrayList<>();
+                m.put(domain, domains);
+            }
+
+            domains.add(entry.getKey());
+        }
+        for (Map.Entry<LogDomain, List<String>> entry: m.entrySet()) {
+            m.put(entry.getKey(), Collections.unmodifiableList(entry.getValue()));
+        }
+        LOGGING_DOMAIN_TO_C4 = Collections.unmodifiableMap(m);
     }
 
+    @NonNull
+    private static final Map<LogDomain, String> LOGGING_DOMAIN_TO_CANONICAL_C4;
+    static {
+        final Map<LogDomain, String> m = new HashMap<>();
+        m.put(LogDomain.DATABASE, C4Constants.LogDomain.DATABASE);
+        m.put(LogDomain.NETWORK, C4Constants.LogDomain.WEB_SOCKET);
+        m.put(LogDomain.REPLICATOR, C4Constants.LogDomain.SYNC);
+        m.put(LogDomain.QUERY, C4Constants.LogDomain.QUERY);
+        m.put(LogDomain.LISTENER, C4Constants.LogDomain.LISTENER);
+        LOGGING_DOMAIN_TO_CANONICAL_C4 = Collections.unmodifiableMap(m);
+    }
     // This method is used by reflection.  Don't change its signature.
     public static void logCallback(@Nullable String c4Domain, int c4Level, @Nullable String message) {
         LogSinksImpl.logFromCore(getLogLevelForC4Level(c4Level), getLoggingDomainForC4Domain(c4Domain), message);
@@ -119,7 +143,7 @@ public final class C4Log {
 
     @NonNull
     private static LogDomain getLoggingDomainForC4Domain(@Nullable String c4Domain) {
-        final LogDomain domain = LOGGING_DOMAINS_FROM_C4.get(c4Domain);
+        final LogDomain domain = LOGGING_DOMAIN_FROM_C4.get(c4Domain);
         return (domain != null) ? domain : LogDomain.DATABASE;
     }
 
@@ -131,7 +155,7 @@ public final class C4Log {
     public C4Log(@NonNull NativeImpl impl) { this.impl = impl; }
 
     public void logToCore(@NonNull LogDomain domain, @NonNull LogLevel level, @NonNull String message) {
-        impl.nLog(getC4DomainForLoggingDomain(domain), getC4LevelForLogLevel(level), message);
+        impl.nLog(getCanonicalC4DomainForLoggingDomain(domain), getC4LevelForLogLevel(level), message);
     }
 
     public void initFileLogger(
@@ -152,24 +176,43 @@ public final class C4Log {
         impl.nSetCallbackLevel(getC4LevelForLogLevel(newLevel));
     }
 
-    public void setLogLevel(@NonNull LogLevel newLevel) {
+    // This method modifies the list passed as oldDomains!
+    // ??? the loops, here,  might be pushed into the JNI
+    // when the legacy API is removed.
+    public void setLogFilter(
+        @NonNull LogLevel newLevel,
+        @NonNull Set<LogDomain> oldDomains,
+        @NonNull Set<LogDomain> newDomains) {
+        // turn off logging on domains that are no longer enabled
+        oldDomains.removeAll(newDomains);
+        for (LogDomain domain: oldDomains) { setLogLevel(domain, LogLevel.NONE); }
+
+        // set the new log level for the domains that are logging
         final int level = getC4LevelForLogLevel(newLevel);
-        // ??? this loop might be pushed into the JNI
-        // when the legacy API is removed.
-        for (String domain: LOGGING_DOMAINS_FROM_C4.keySet()) { setLogLevel(domain, level); }
+        for (String c4Domain: getC4DomainsForLoggingDomains(newDomains)) { setLogLevel(c4Domain, level); }
     }
 
     @VisibleForTesting
     public void setLogLevel(@NonNull LogDomain domain, @NonNull LogLevel level) {
-        setLogLevel(getC4DomainForLoggingDomain(domain), getC4LevelForLogLevel(level));
+        setLogLevel(getCanonicalC4DomainForLoggingDomain(domain), getC4LevelForLogLevel(level));
     }
 
     @VisibleForTesting
     public void setLogLevel(@NonNull String domain, int level) { impl.nSetLevel(domain, level); }
 
     @NonNull
-    private String getC4DomainForLoggingDomain(@NonNull LogDomain domain) {
-        final String c4Domain = LOGGING_DOMAINS_TO_C4.get(domain);
+    private Set<String> getC4DomainsForLoggingDomains(@NonNull Set<LogDomain> domains) {
+        final Set<String> newC4Domains = new HashSet<>();
+        for (LogDomain domain: domains) {
+            final List<String> c4Domains = LOGGING_DOMAIN_TO_C4.get(domain);
+            if (c4Domains != null) { newC4Domains.addAll(c4Domains); }
+        }
+        return newC4Domains;
+    }
+
+    @NonNull
+    private String getCanonicalC4DomainForLoggingDomain(@NonNull LogDomain domain) {
+        final String c4Domain = LOGGING_DOMAIN_TO_CANONICAL_C4.get(domain);
         return (c4Domain != null) ? c4Domain : C4Constants.LogDomain.DATABASE;
     }
 

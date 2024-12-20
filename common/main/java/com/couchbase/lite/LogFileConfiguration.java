@@ -25,7 +25,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
  * To change the configuration of a logger, copy its configuration, mutate the
  * copy and then use it to replace the loggers current configuration.
  *
- * @deprecated Use FileLogger.Builder
+ * @deprecated Use FileLogSink.Builder
  */
 @Deprecated
 public final class LogFileConfiguration {

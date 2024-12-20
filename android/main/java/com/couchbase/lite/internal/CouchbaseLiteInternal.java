@@ -74,10 +74,10 @@ public final class CouchbaseLiteInternal {
     @NonNull
     static final Object LOCK = new Object();
 
+    private static volatile boolean debugging;
+
     @NonNull
     private static volatile File defaultDbDir;
-
-    private static volatile boolean debugging;
 
     /**
      * Initialize CouchbaseLite library. This method MUST be called before using CouchbaseLite.

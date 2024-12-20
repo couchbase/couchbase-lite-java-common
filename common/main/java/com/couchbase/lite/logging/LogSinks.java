@@ -28,7 +28,7 @@ public interface LogSinks {
     @NonNull
     static LogSinks get() {
         CouchbaseLiteInternal.requireInit("Logging not initialized");
-        return Preconditions.assertNotNull(LogSinksImpl.getLoggers(), "loggers");
+        return Preconditions.assertNotNull(LogSinksImpl.getLogSinks(), "loggers");
     }
 
     @Nullable

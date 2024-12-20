@@ -18,6 +18,8 @@ package com.couchbase.lite;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import java.util.Set;
+
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.logging.BaseLogSink;
 import com.couchbase.lite.logging.LogSinks;
@@ -32,7 +34,7 @@ import com.couchbase.lite.logging.LogSinks;
 @Deprecated
 public final class Log {
     private final class ShimLogger extends BaseLogSink {
-        ShimLogger(@NonNull LogLevel level) { super(level); }
+        ShimLogger(@NonNull LogLevel level, @NonNull Set<LogDomain> domains) { super(level, domains); }
 
         @Override
         protected void writeLog(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
@@ -47,7 +49,7 @@ public final class Log {
             // if the custom logger has changed its level since the last log, install a new one.
             // NOTE: this may call back into lite core!
             // If it was called on a LiteCore thread it may deadlock
-            if (getLevel() != logger.getLevel()) { installLogger(logger); }
+            if (getLevel() != logger.getLevel()) { installCustomLogger(logger); }
         }
     }
 
@@ -112,12 +114,12 @@ public final class Log {
     @Deprecated
     public void setCustom(@Nullable Logger customLogger) {
         this.customLogger = customLogger;
-        installLogger(customLogger);
+        installCustomLogger(customLogger);
     }
 
-    private void installLogger(@Nullable Logger logger) {
+    private void installCustomLogger(@Nullable Logger logger) {
         LogSinks.get().setCustom((logger == null)
             ? null
-            : new ShimLogger(logger.getLevel()));
+            : new ShimLogger(logger.getLevel(), LogDomain.ALL));
     }
 }

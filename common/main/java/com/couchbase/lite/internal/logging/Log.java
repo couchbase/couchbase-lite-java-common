@@ -264,17 +264,20 @@ public final class Log {
         if (level == null) { level = LogLevel.INFO; }
 
         // only generate logs >= current priority.
-        final LogSinksImpl loggers = LogSinksImpl.getLoggers();
-        if ((loggers == null) || (loggers.getLogLevel().compareTo(level) > 0)) { return; }
+        final LogSinksImpl logSinks = LogSinksImpl.getLogSinks();
+        if (!logSinks.shouldLog(level, domain)) { return; }
 
-        if (msg == null) { msg = ""; }
-        String message = lookupStandardMessage(msg);
+        String message;
+        if (msg == null) { message = ""; }
+        else {
+            message = lookupStandardMessage(msg);
 
-        if ((args != null) && (args.length > 0)) { message = formatMessage(message, args); }
+            if ((args != null) && (args.length > 0)) { message = formatMessage(message, args); }
+        }
 
         if (err != null) { message += formatStackTrace(err); }
 
-        loggers.writeToLoggers(level, (domain != null) ? domain : LogDomain.DATABASE, LOG_HEADER + message);
+        logSinks.writeToLoggers(level, (domain != null) ? domain : LogDomain.DATABASE, LOG_HEADER + message);
     }
 
     @NonNull

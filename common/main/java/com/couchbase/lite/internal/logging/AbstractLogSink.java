@@ -16,23 +16,63 @@
 package com.couchbase.lite.internal.logging;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.LogLevel;
+import com.couchbase.lite.internal.utils.Preconditions;
 
 
 public abstract class AbstractLogSink {
-    private final LogLevel logLevel;
-
-    // Base constructor.  A Logger has its filter set for life
-    protected AbstractLogSink(@NonNull LogLevel level) { this.logLevel = level; }
+    @NonNull
+    protected static Set<LogDomain> aggregateDomains(@NonNull LogDomain domain1, @Nullable LogDomain... domains) {
+        final Set<LogDomain> set = new HashSet<>();
+        set.add(domain1);
+        if (domains != null) { set.addAll(Arrays.asList(domains)); }
+        return set;
+    }
 
     @NonNull
-    public final LogLevel getLevel() { return logLevel; }
+    protected static String listDomains(@NonNull Set<LogDomain> domains) {
+        final StringBuilder domainStr = new StringBuilder("[");
+        boolean first = true;
+        for (LogDomain domain: domains) {
+            if (!first) { domainStr.append(", "); }
+            domainStr.append(domain);
+            first = false;
+        }
+        return domainStr.append("]").toString();
+    }
+
+
+    private final LogLevel level;
+    private final Set<LogDomain> domains;
+
+    // Base constructor.  A Logger has its filter set for life
+    protected AbstractLogSink(@NonNull LogLevel level, @NonNull Set<LogDomain> domains) {
+        this.level = Preconditions.assertNotNull(level, "level");
+        this.domains = Preconditions.assertNotNull(domains, "domains");
+    }
+
+    @NonNull
+    public final LogLevel getLevel() { return level; }
+
+    @NonNull
+    public final Set<LogDomain> getDomains() { return new HashSet<>(domains); }
 
     protected abstract void writeLog(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message);
 
     protected final void log(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
-        if (logLevel.compareTo(level) <= 0) { writeLog(level, domain, message); }
+        if ((this.level.compareTo(level) <= 0) && domains.contains(domain)) { writeLog(level, domain, message); }
+    }
+
+    protected final boolean similarLevels(@NonNull AbstractLogSink other) { return level == other.level; }
+
+    protected final boolean similarDomains(@NonNull AbstractLogSink other) {
+        return (domains.size() == other.domains.size()) && domains.containsAll(other.domains);
     }
 }

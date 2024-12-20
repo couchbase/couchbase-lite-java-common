@@ -19,7 +19,9 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -29,6 +31,7 @@ import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.core.C4Log;
 import com.couchbase.lite.internal.core.CBLVersion;
 import com.couchbase.lite.internal.exec.ExecutionService;
+import com.couchbase.lite.internal.utils.Preconditions;
 import com.couchbase.lite.logging.BaseLogSink;
 import com.couchbase.lite.logging.ConsoleLogSink;
 import com.couchbase.lite.logging.FileLogSink;
@@ -40,43 +43,43 @@ public final class LogSinksImpl implements LogSinks {
 
     // the singleton implementation of Loggers
     @NonNull
-    private static final AtomicReference<LogSinksImpl> LOGGERS = new AtomicReference<>();
+    private static final AtomicReference<LogSinksImpl> LOG_SINKS = new AtomicReference<>();
 
-    @Nullable
-    public static LogSinksImpl getLoggers() { return LOGGERS.get(); }
+    @NonNull
+    public static LogSinksImpl getLogSinks() { return Preconditions.assertNotNull(LOG_SINKS.get(), "log sink impl"); }
 
     // The center of log system initialization.
     public static void initLogging() {
         Log.init();
 
-        final LogSinksImpl loggers = new LogSinksImpl(C4Log.create());
+        final LogSinksImpl logSinks = new LogSinksImpl(C4Log.create());
 
         final ConsoleLogSink consoleLogger
-            = new ConsoleLogSink(CouchbaseLiteInternal.debugging() ? LogLevel.DEBUG : LogLevel.WARNING);
-        loggers.setConsole(consoleLogger);
+            = new ConsoleLogSink(CouchbaseLiteInternal.debugging() ? LogLevel.DEBUG : LogLevel.WARNING, LogDomain.ALL);
+        logSinks.setConsole(consoleLogger);
 
         ((AbstractLogSink) consoleLogger).writeLog(
             LogLevel.INFO,
             LogDomain.DATABASE,
             CouchbaseLiteInternal.PLATFORM + " Initialized: " + CBLVersion.getVersionInfo());
 
-        LOGGERS.set(loggers);
+        LOG_SINKS.set(logSinks);
     }
 
     public static void logToCore(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
-        final LogSinksImpl loggers = LOGGERS.get();
+        final LogSinksImpl loggers = LOG_SINKS.get();
         if (loggers == null) { return; }
         loggers.c4Log.logToCore(domain, level, message);
     }
 
     public static void logFromCore(@NonNull LogLevel level, @NonNull LogDomain domain, @Nullable String message) {
-        final LogSinksImpl loggers = LOGGERS.get();
+        final LogSinksImpl loggers = LOG_SINKS.get();
         if (loggers == null) { return; }
         loggers.writeToLocalLoggers(level, domain, message);
     }
 
     public static void warnNoLogger() {
-        final LogSinksImpl loggers = LOGGERS.get();
+        final LogSinksImpl loggers = LOG_SINKS.get();
         if (loggers == null) { return; }
         loggers.warnIfNoFileLogger();
     }
@@ -89,6 +92,10 @@ public final class LogSinksImpl implements LogSinks {
     // The current level at which LiteCore propagates logs to us.
     @NonNull
     private final AtomicReference<LogLevel> callbackLevel = new AtomicReference<>(LogLevel.NONE);
+
+    // The domain filter: a Set of LogDomains that are enabled.
+    @NonNull
+    private final AtomicReference<Set<LogDomain>> logDomains = new AtomicReference<>(new HashSet<>());
 
     // If true, the client has been warned that logging is off.
     @NonNull
@@ -142,7 +149,7 @@ public final class LogSinksImpl implements LogSinks {
         }
 
         fileLogger = newLogger;
-        setLogLevel();
+        setLogFilter();
 
         warnIfNoFileLogger();
     }
@@ -154,7 +161,7 @@ public final class LogSinksImpl implements LogSinks {
     @Override
     public void setConsole(@Nullable ConsoleLogSink newLogger) {
         consoleLogger = newLogger;
-        setLogLevel();
+        setLogFilter();
     }
 
     @Override
@@ -164,7 +171,7 @@ public final class LogSinksImpl implements LogSinks {
     @Override
     public void setCustom(@Nullable BaseLogSink newLogger) {
         customLogger = newLogger;
-        setLogLevel();
+        setLogFilter();
     }
 
     @SuppressWarnings("PMD.GuardLogStatement")
@@ -203,8 +210,9 @@ public final class LogSinksImpl implements LogSinks {
         }
     }
 
-    @NonNull
-    public LogLevel getLogLevel() { return logLevel.get(); }
+    public boolean shouldLog(@NonNull LogLevel level, @NonNull LogDomain domain) {
+        return logLevel.get().compareTo(level) <= 0;
+    }
 
     @VisibleForTesting
     @NonNull
@@ -213,33 +221,47 @@ public final class LogSinksImpl implements LogSinks {
     @VisibleForTesting
     public void setC4Log(@NonNull C4Log c4Log) { this.c4Log = c4Log; }
 
-    private void setLogLevel() {
-        LogLevel l;
+    private void setLogFilter() {
+        final Set<LogDomain> newDomains = new HashSet<>();
         LogLevel callbackLevel = LogLevel.NONE;
+
+        LogLevel l;
+
         if (consoleLogger != null) {
             l = consoleLogger.getLevel();
             if (l.compareTo(callbackLevel) < 0) { callbackLevel = l; }
+            newDomains.addAll(consoleLogger.getDomains());
         }
+
         if (customLogger != null) {
             l = customLogger.getLevel();
             if (l.compareTo(callbackLevel) < 0) { callbackLevel = l; }
+            newDomains.addAll(consoleLogger.getDomains());
         }
 
-        LogLevel level = LogLevel.NONE;
-        if (fileLogger != null) { level = fileLogger.getLevel(); }
-        if (callbackLevel.compareTo(level) < 0) { level = callbackLevel; }
+        // ignore the file logger's domains
+        LogLevel logLevel = LogLevel.NONE;
+        if (fileLogger != null) { logLevel = fileLogger.getLevel(); }
 
+        // logLevel is the min of the Console, Custom, and File levels:
+        // log sources must log at this level to be sure the File logger
+        // gets what it needs
+        if (callbackLevel.compareTo(logLevel) < 0) { logLevel = callbackLevel; }
+
+        // .. the callback level, though, is is just the min of the Console
+        // and Custom levels, because that's all the platform needs.
         l = this.callbackLevel.getAndSet(callbackLevel);
         if (l != callbackLevel) { c4Log.setCallbackLevel(callbackLevel); }
 
-        l = logLevel.getAndSet(level);
-        if (l != level) { c4Log.setLogLevel(level); }
+        l = this.logLevel.getAndSet(logLevel);
+        final Set<LogDomain> oldDomains = this.logDomains.getAndSet(newDomains);
+        if (l != logLevel) { c4Log.setLogFilter(logLevel, oldDomains, newDomains); }
     }
 
     private void warnIfNoFileLogger() {
         final FileLogSink logger = fileLogger;
         if ((logger != null) && (logger.getLevel() != LogLevel.NONE) && !warned.getAndSet(true)) { return; }
-        ((AbstractLogSink) new ConsoleLogSink(LogLevel.WARNING)).writeLog(
+        ((AbstractLogSink) new ConsoleLogSink(LogLevel.WARNING, LogDomain.DATABASE)).writeLog(
             LogLevel.WARNING,
             LogDomain.DATABASE,
             "Database.log.getFile().getConfig() is now null: logging is disabled.  "

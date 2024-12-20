@@ -134,7 +134,7 @@ abstract class AbstractDatabase extends BaseDatabase
      * Gets the logging controller for the Couchbase Lite library to configure the
      * logging settings and add custom logging.
      *
-     * @deprecated Use Loggers.get()
+     * @deprecated Use LogSinks.get()
      */
     // Public API.  Do not fix the name.
     @Deprecated

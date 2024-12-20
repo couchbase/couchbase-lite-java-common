@@ -18,6 +18,11 @@ package com.couchbase.lite.logging;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.LogLevel;
@@ -26,11 +31,19 @@ import com.couchbase.lite.internal.utils.Internal;
 
 
 /**
+ * A log sink that writes log messages the Android system message buffer.
+ *
  * Do not subclass!
  * This class will be final in future version of Couchbase Lite
  */
 public class ConsoleLogSink extends AbstractLogSink {
-    public ConsoleLogSink(@NonNull LogLevel level) { super(level); }
+    public ConsoleLogSink(@NonNull LogLevel level, @NonNull LogDomain domain1, @Nullable LogDomain... domains) {
+        this(level, aggregateDomains(domain1, domains));
+    }
+
+    public ConsoleLogSink(@NonNull LogLevel level, @NonNull Set<LogDomain> domains) {
+        super(level, Collections.unmodifiableSet(new HashSet<>(domains)));
+    }
 
     @Internal
     @Override

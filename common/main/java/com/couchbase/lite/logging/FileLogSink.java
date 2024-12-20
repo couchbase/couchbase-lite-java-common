@@ -20,6 +20,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
 import java.io.File;
+import java.util.Collections;
 import java.util.Objects;
 
 import com.couchbase.lite.Defaults;
@@ -33,6 +34,8 @@ import com.couchbase.lite.internal.utils.Preconditions;
 
 
 /**
+ * A log sink that writes log messages the LiteCore logfile.
+ * <p>
  * Do not subclass!
  * This class will be final in future version of Couchbase Lite
  */
@@ -44,6 +47,8 @@ public class FileLogSink extends AbstractLogSink {
         private LogLevel level = LogLevel.WARNING;
         private int maxKeptFiles = Defaults.LogFile.MAX_ROTATE_COUNT;
         private long maxFileSize = Defaults.LogFile.MAX_SIZE;
+        private boolean plainText;
+
 
         public Builder(@NonNull String directory) {
             final String logDirPath = Preconditions.assertNotEmpty(directory, "directory");
@@ -65,11 +70,12 @@ public class FileLogSink extends AbstractLogSink {
             this.directory = logDirPath;
         }
 
-        public Builder(@NonNull FileLogSink logger) {
-            this(logger.directory);
-            this.level = logger.getLevel();
-            this.maxKeptFiles = logger.maxKeptFiles;
-            this.maxFileSize = logger.maxFileSize;
+        public Builder(@NonNull FileLogSink sink) {
+            this(sink.directory);
+            this.level = sink.getLevel();
+            this.maxKeptFiles = sink.maxKeptFiles;
+            this.maxFileSize = sink.maxFileSize;
+            this.plainText = sink.plainText;
         }
 
         @NonNull
@@ -97,6 +103,14 @@ public class FileLogSink extends AbstractLogSink {
             return this;
         }
 
+        public boolean isPlaintext() { return plainText; }
+
+        @NonNull
+        public Builder setPlaintext(boolean plainText) {
+            this.plainText = plainText;
+            return this;
+        }
+
         @NonNull
         public FileLogSink build() { return new FileLogSink(this); }
 
@@ -119,15 +133,15 @@ public class FileLogSink extends AbstractLogSink {
 
     @Internal
     protected FileLogSink(boolean plainText, @NonNull Builder builder) {
-        super(builder.level);
-
-        this.plainText = plainText;
-        this.maxKeptFiles = builder.maxKeptFiles;
-        this.maxFileSize = builder.maxFileSize;
+        super(builder.level, Collections.emptySet());
 
         final String dir = builder.directory;
         if (dir == null) { throw new IllegalStateException("A file logger must specify a log file directory path"); }
         this.directory = dir;
+
+        this.maxKeptFiles = builder.maxKeptFiles;
+        this.maxFileSize = builder.maxFileSize;
+        this.plainText = builder.plainText;
     }
 
     @NonNull
