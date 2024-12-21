@@ -38,9 +38,7 @@ import com.couchbase.lite.logging.LogSinks;
 @Deprecated
 public final class FileLogger implements Logger {
     private static final class ShimLogger extends FileLogSink {
-        ShimLogger(boolean plainText, @NonNull FileLogSink.Builder builder) {
-            super(plainText, builder);
-        }
+        ShimLogger(@NonNull FileLogSink.Builder builder) { super(builder); }
 
         @Override
         protected void writeLog(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
@@ -129,11 +127,11 @@ public final class FileLogger implements Logger {
         final ShimLogger newLogger = (config == null)
             ? null
             : new ShimLogger(
-                config.usesPlaintext(),
                 new FileLogSink.Builder(config.getDirectory())
                     .setLevel(level)
                     .setMaxKeptFiles(config.getMaxRotateCount())
-                    .setMaxFileSize(config.getMaxSize()));
+                    .setMaxFileSize(config.getMaxSize())
+                    .setPlainText(config.usesPlaintext()));
         LogSinks.get().setFile(newLogger);
         this.logger = newLogger;
     }

@@ -18,11 +18,9 @@ package com.couchbase.lite.internal.utils;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import java.io.PrintStream;
 import java.util.Locale;
 
 import com.couchbase.lite.LogLevel;
-import com.couchbase.lite.logging.ConsoleLogger;
 
 
 /**
@@ -34,7 +32,7 @@ public final class Report {
     private static final String DOMAIN = "TEST";
 
     public static void log(@NonNull String message) {
-        Report.log(LogLevel.INFO, message, (Throwable) null);
+        Report.log(LogLevel.INFO, message, null);
     }
 
     public static void log(@Nullable Throwable err, @NonNull String message) {
@@ -54,8 +52,6 @@ public final class Report {
     }
 
     private static void log(@NonNull LogLevel level, @NonNull String message, @Nullable Throwable err) {
-        final PrintStream logStream = ConsoleLogger.getLogStream(level);
-        logStream.println(ConsoleLogger.formatLog(level, DOMAIN, message));
-        if (err != null) { err.printStackTrace(logStream); }
+        SystemStream.print(level, DOMAIN, message, err);
     }
 }

@@ -23,7 +23,8 @@ import java.util.Arrays;
 import java.util.EnumSet;
 
 import com.couchbase.lite.internal.utils.Preconditions;
-import com.couchbase.lite.logging.Loggers;
+import com.couchbase.lite.logging.ConsoleLogSink;
+import com.couchbase.lite.logging.LogSinks;
 
 
 /**
@@ -37,22 +38,16 @@ import com.couchbase.lite.logging.Loggers;
 @Deprecated
 public class ConsoleLogger implements Logger {
     @VisibleForTesting
-    static class ShimLogger extends com.couchbase.lite.logging.ConsoleLogger {
-        @NonNull
-        private EnumSet<LogDomain> logDomains;
-
-        ShimLogger(@NonNull LogLevel level, @NonNull EnumSet<LogDomain> logDomains) {
-            super(level);
-            this.logDomains = logDomains;
-        }
+    static class ShimLogger extends ConsoleLogSink {
+        ShimLogger(@NonNull LogLevel level, @NonNull EnumSet<LogDomain> logDomains) { super(level, logDomains); }
 
         protected void writeLog(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
-            if (logDomains.contains(domain)) { doWriteLog(level, domain, message); }
+            doWriteLog(level, domain, message);
         }
 
         @VisibleForTesting
         protected void doWriteLog(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
-            final com.couchbase.lite.logging.ConsoleLogger curLogger = Loggers.get().getConsoleLogger();
+            final ConsoleLogSink curLogger = LogSinks.get().getConsole();
             if (this == curLogger) { super.writeLog(level, domain, message); }
         }
 
@@ -74,7 +69,7 @@ public class ConsoleLogger implements Logger {
      */
     @NonNull
     public LogLevel getLevel() {
-        final com.couchbase.lite.logging.ConsoleLogger curLogger = Loggers.get().getConsoleLogger();
+        final ConsoleLogSink curLogger = LogSinks.get().getConsole();
         return (curLogger == null) ? LogLevel.NONE : curLogger.getLevel();
     }
 
@@ -91,7 +86,7 @@ public class ConsoleLogger implements Logger {
         if (curLevel == level) { return; }
 
         logger = shimFactory(level, getDomains());
-        Loggers.get().setConsoleLogger(logger);
+        LogSinks.get().setConsole(logger);
     }
 
     /**
@@ -101,8 +96,10 @@ public class ConsoleLogger implements Logger {
      */
     @NonNull
     public EnumSet<LogDomain> getDomains() {
-        final com.couchbase.lite.logging.ConsoleLogger curLogger = Loggers.get().getConsoleLogger();
-        return ((logger == null) || (logger != curLogger)) ? LogDomain.ALL_DOMAINS : EnumSet.copyOf(logger.logDomains);
+        final ConsoleLogSink curLogger = LogSinks.get().getConsole();
+        return ((logger == null) || (logger != curLogger) || logger.getDomains().isEmpty())
+            ? EnumSet.noneOf(LogDomain.class)
+            : EnumSet.copyOf(curLogger.getDomains());
     }
 
     /**
@@ -111,22 +108,16 @@ public class ConsoleLogger implements Logger {
      * @param domains The domains to make active
      */
     public void setDomains(@NonNull EnumSet<LogDomain> domains) {
-        final EnumSet<LogDomain> logDomains = Preconditions.assertNotNull(domains, "domains");
+        final LogSinks loggers = LogSinks.get();
 
-        final Loggers loggers = Loggers.get();
-        final com.couchbase.lite.logging.ConsoleLogger curLogger = loggers.getConsoleLogger();
-        if ((logger != null) && (logger == curLogger)) {
-            // trivial optimization: if the domain filter hasn't changed, we're done
-            if (domains.equals(logger.logDomains)) { return; }
-
-            // otherwise, just set the new domains
-            logger.logDomains = logDomains;
-            return;
-        }
+        // trivial optimization: if the domain filter hasn't changed, we're done
+        final ConsoleLogSink curLogger = loggers.getConsole();
+        if ((logger != null) && (logger == curLogger) && domains.equals(logger.getDomains())) { return; }
 
         // otherwise, install a new shim
+        final EnumSet<LogDomain> logDomains = Preconditions.assertNotNull(domains, "domains");
         logger = shimFactory(getLevel(), logDomains);
-        loggers.setConsoleLogger(logger);
+        loggers.setConsole(logger);
     }
 
     /**

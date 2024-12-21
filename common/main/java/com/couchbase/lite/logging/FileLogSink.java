@@ -20,7 +20,6 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
 import java.io.File;
-import java.util.Collections;
 import java.util.Objects;
 
 import com.couchbase.lite.Defaults;
@@ -103,10 +102,10 @@ public class FileLogSink extends AbstractLogSink {
             return this;
         }
 
-        public boolean isPlaintext() { return plainText; }
+        public boolean isPlainText() { return plainText; }
 
         @NonNull
-        public Builder setPlaintext(boolean plainText) {
+        public Builder setPlainText(boolean plainText) {
             this.plainText = plainText;
             return this;
         }
@@ -129,11 +128,8 @@ public class FileLogSink extends AbstractLogSink {
     private final boolean plainText;
 
     @VisibleForTesting
-    public FileLogSink(@NonNull Builder builder) { this(false, builder); }
-
-    @Internal
-    protected FileLogSink(boolean plainText, @NonNull Builder builder) {
-        super(builder.level, Collections.emptySet());
+    public FileLogSink(@NonNull Builder builder) {
+        super(builder.level, LogDomain.ALL);
 
         final String dir = builder.directory;
         if (dir == null) { throw new IllegalStateException("A file logger must specify a log file directory path"); }

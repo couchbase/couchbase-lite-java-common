@@ -23,7 +23,6 @@ import com.couchbase.lite.internal.core.C4TestUtils
 import com.couchbase.lite.internal.core.CBLVersion
 import com.couchbase.lite.internal.logging.Log
 import com.couchbase.lite.internal.logging.LogSinksImpl
-import com.couchbase.lite.internal.utils.Report
 import com.couchbase.lite.logging.BaseLogSink
 import com.couchbase.lite.logging.LogSinks
 import com.couchbase.lite.utils.KotlinHelpers
@@ -152,7 +151,7 @@ class LogTest : BaseDbTest() {
     fun testC4LogLevel() {
         val mark = "$$$ ${UUID.randomUUID()}"
 
-        val c4Log = LogSinksImpl.getLogSinks()!!.c4Log
+        val c4Log = LogSinksImpl.getLogSinks().c4Log
         c4Log.initFileLogger(scratchDirPath, LogLevel.DEBUG, 10, 1024, true, "$$$ TEST")
 
         for (level in LogLevel.values()) {
@@ -192,7 +191,7 @@ class LogTest : BaseDbTest() {
 
     @Test
     fun testC4MaxFileSize() {
-        val c4Log = LogSinksImpl.getLogSinks()!!.c4Log
+        val c4Log = LogSinksImpl.getLogSinks().c4Log
         c4Log.initFileLogger(scratchDirPath, LogLevel.DEBUG, 10, 1024, true, "$$$$ TEST")
         c4Log.setLogLevel(LogDomain.DATABASE, LogLevel.DEBUG)
 
@@ -219,6 +218,7 @@ class LogTest : BaseDbTest() {
             if (level == LogLevel.NONE) {
                 continue
             }
+
             consoleLogger.level = level
             consoleLogger.log(LogLevel.DEBUG, LogDomain.DATABASE, "D")
             consoleLogger.log(LogLevel.VERBOSE, LogDomain.DATABASE, "V")
@@ -234,6 +234,7 @@ class LogTest : BaseDbTest() {
             if (level == LogLevel.NONE) {
                 continue
             }
+
             consoleLogger.level = level
             consoleLogger.log(LogLevel.DEBUG, LogDomain.DATABASE, "D")
             consoleLogger.log(LogLevel.VERBOSE, LogDomain.DATABASE, "V")
@@ -260,6 +261,7 @@ class LogTest : BaseDbTest() {
             if (level == LogLevel.NONE) {
                 continue
             }
+
             consoleLogger.level = level
             consoleLogger.log(LogLevel.DEBUG, LogDomain.DATABASE, "D")
             consoleLogger.log(LogLevel.VERBOSE, LogDomain.DATABASE, "V")
@@ -623,7 +625,9 @@ class LogTest : BaseDbTest() {
     @Ignore("Need a way to coax LiteCore into logging a non-ascii string")
     @Test
     fun testNonASCII() {
-        val customLogger = object : BaseLogSink(LogLevel.DEBUG) {
+        val hebrew = "מזג האוויר נחמד היום" // The weather is nice today.
+
+        val customLogger = object : BaseLogSink(LogLevel.DEBUG, LogDomain.ALL) {
             var text: String = ""
 
             override fun writeLog(level: LogLevel, domain: LogDomain, message: String) {
@@ -633,15 +637,14 @@ class LogTest : BaseDbTest() {
 
         LogSinks.get().custom = customLogger
 
-        val hebrew = "מזג האוויר נחמד היום" // The weather is nice today.
 
         val doc = MutableDocument()
         doc.setString("hebrew", hebrew)
-        saveDocInCollection(doc)
+        testCollection.save(doc)
 
-        // This used to cause LiteCOre to log the query. It doesn't anymore.
-        QueryBuilder.select(SelectResult.all()).from(DataSource.collection(testCollection)).execute().use { rs ->
-            assertEquals(rs.allResults().size.toLong(), 1)
+        // This used to cause LiteCore to log the content of the document.  It doesn't anymore.
+        QueryBuilder.select(SelectResult.all()).from(DataSource.collection(testCollection)).execute().use {
+            assertEquals(1, it.allResults().size)
         }
 
         assertTrue(customLogger.text.contains("[{\"hebrew\":\"$hebrew\"}]"))
@@ -651,20 +654,12 @@ class LogTest : BaseDbTest() {
     // !!! I don't think this test is actually testing anything.
     @Test
     fun testInternalLogging() {
-        val testDb = createDb("base_db")
-        Report.log("Created base test DB: $testDb")
-        assertNotNull(testDb)
-        assertTrue(testDb.isOpen)
-
-        val testCollection = testDb.createCollection(getUniqueName("test_collection"), getUniqueName("test_scope"))
-        Report.log("Created base test Collection: $testCollection")
-        assertNotNull(testCollection)
-
         val c4Domain = "foo"
+
         val testNativeC4Logger = TestC4Logger(c4Domain)
         val testC4Logger = C4Log(testNativeC4Logger)
 
-        LogSinksImpl.getLogSinks()!!.c4Log = testC4Logger
+        LogSinksImpl.getLogSinks().c4Log = testC4Logger
 
         testNativeC4Logger.reset()
         QueryBuilder.select(SelectResult.expression(Meta.id))

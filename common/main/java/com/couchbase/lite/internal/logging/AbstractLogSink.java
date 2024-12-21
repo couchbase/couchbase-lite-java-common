@@ -45,7 +45,7 @@ public abstract class AbstractLogSink {
             domainStr.append(domain);
             first = false;
         }
-        return domainStr.append("]").toString();
+        return domainStr.append(']').toString();
     }
 
 

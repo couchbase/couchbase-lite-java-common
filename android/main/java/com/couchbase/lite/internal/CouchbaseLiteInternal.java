@@ -30,6 +30,7 @@ import java.util.Scanner;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -76,6 +77,8 @@ public final class CouchbaseLiteInternal {
 
     private static volatile boolean debugging;
 
+    @SuppressWarnings("NotNullFieldNotInitialized")
+    @SuppressFBWarnings("NP_NONNULL_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR")
     @NonNull
     private static volatile File defaultDbDir;
 
@@ -148,7 +151,10 @@ public final class CouchbaseLiteInternal {
     }
 
     @NonNull
-    public static String getDefaultDbDirPath() { return defaultDbDir.getAbsolutePath(); }
+    public static String getDefaultDbDirPath() {
+        requireInit("Can't create Default DB path");
+        return defaultDbDir.getAbsolutePath();
+    }
 
     @NonNull
     public static Map<String, String> loadErrorMessages() {
