@@ -51,6 +51,8 @@ public final class Log {
             // If it was called on a LiteCore thread it may deadlock
             if (getLevel() != logger.getLevel()) { installCustomLogger(logger); }
         }
+
+        boolean isLegacy() { return true; }
     }
 
 

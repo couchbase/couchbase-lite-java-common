@@ -128,6 +128,7 @@ public final class LogSinksImpl implements LogSinks {
     @Override
     public void setFile(@Nullable FileLogSink newLogger) {
         if (Objects.equals(fileLogger, newLogger)) { return; }
+        forbidNewAndLegacyLogging(newLogger, fileLogger);
 
         final LogLevel newLevel;
         if (newLogger == null) {
@@ -160,6 +161,7 @@ public final class LogSinksImpl implements LogSinks {
 
     @Override
     public void setConsole(@Nullable ConsoleLogSink newLogger) {
+        forbidNewAndLegacyLogging(newLogger, consoleLogger);
         consoleLogger = newLogger;
         setLogFilter();
     }
@@ -170,6 +172,7 @@ public final class LogSinksImpl implements LogSinks {
 
     @Override
     public void setCustom(@Nullable BaseLogSink newLogger) {
+        forbidNewAndLegacyLogging(newLogger, customLogger);
         customLogger = newLogger;
         setLogFilter();
     }
@@ -220,6 +223,14 @@ public final class LogSinksImpl implements LogSinks {
 
     @VisibleForTesting
     public void setC4Log(@NonNull C4Log c4Log) { this.c4Log = c4Log; }
+
+    private void forbidNewAndLegacyLogging(@Nullable AbstractLogSink newLogger, @Nullable AbstractLogSink oldLogger) {
+        if ((newLogger == null) || (oldLogger == null)) { return; }
+
+        if (newLogger.isLegacy() != oldLogger.isLegacy()) {
+            throw new IllegalStateException("Cannot mix new and legacy loggers");
+        }
+    }
 
     private void setLogFilter() {
         final Set<LogDomain> newDomains = new HashSet<>();

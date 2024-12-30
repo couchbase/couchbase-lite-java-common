@@ -17,7 +17,6 @@ package com.couchbase.lite.logging;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.VisibleForTesting;
 
 import java.io.File;
 import java.util.Objects;
@@ -127,7 +126,7 @@ public class FileLogSink extends AbstractLogSink {
     private final long maxFileSize;
     private final boolean plainText;
 
-    @VisibleForTesting
+    @Internal("This method is not part of the public API")
     public FileLogSink(@NonNull Builder builder) {
         super(builder.level, LogDomain.ALL);
 
@@ -147,7 +146,6 @@ public class FileLogSink extends AbstractLogSink {
 
     public final long getMaxFileSize() { return maxFileSize; }
 
-    @Deprecated
     public final boolean isPlainText() { return plainText; }
 
     @NonNull

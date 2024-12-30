@@ -54,6 +54,8 @@ public class ConsoleLogger implements Logger {
         void doLog(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
             super.log(level, domain, message);
         }
+
+        boolean isLegacy() { return true; }
     }
 
 

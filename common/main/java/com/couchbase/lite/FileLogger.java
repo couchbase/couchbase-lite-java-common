@@ -49,6 +49,8 @@ public final class FileLogger implements Logger {
         void doLog(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
             super.log(level, domain, message);
         }
+
+        boolean isLegacy() { return true; }
     }
 
     @Nullable
