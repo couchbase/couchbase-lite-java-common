@@ -116,6 +116,8 @@ public final class LogSinksImpl implements LogSinks {
     @Nullable
     private BaseLogSink customLogger;
 
+    private Boolean isLegacy = null;
+
     private LogSinksImpl(@NonNull C4Log c4Log) {
         this.c4Log = c4Log;
         customLogQueue = CouchbaseLiteInternal.getExecutionService().getSerialExecutor();
@@ -128,7 +130,7 @@ public final class LogSinksImpl implements LogSinks {
     @Override
     public void setFile(@Nullable FileLogSink newLogger) {
         if (Objects.equals(fileLogger, newLogger)) { return; }
-        forbidNewAndLegacyLogging(newLogger, fileLogger);
+        forbidNewAndLegacyLogging(newLogger);
 
         final LogLevel newLevel;
         if (newLogger == null) {
@@ -161,7 +163,7 @@ public final class LogSinksImpl implements LogSinks {
 
     @Override
     public void setConsole(@Nullable ConsoleLogSink newLogger) {
-        forbidNewAndLegacyLogging(newLogger, consoleLogger);
+        forbidNewAndLegacyLogging(newLogger);
         consoleLogger = newLogger;
         setLogFilter();
     }
@@ -172,7 +174,7 @@ public final class LogSinksImpl implements LogSinks {
 
     @Override
     public void setCustom(@Nullable BaseLogSink newLogger) {
-        forbidNewAndLegacyLogging(newLogger, customLogger);
+        forbidNewAndLegacyLogging(newLogger);
         customLogger = newLogger;
         setLogFilter();
     }
@@ -214,7 +216,7 @@ public final class LogSinksImpl implements LogSinks {
     }
 
     public boolean shouldLog(@NonNull LogLevel level, @NonNull LogDomain domain) {
-        return logLevel.get().compareTo(level) <= 0;
+        return (logLevel.get().compareTo(level) <= 0) && logDomains.get().contains(domain);
     }
 
     @VisibleForTesting
@@ -224,12 +226,13 @@ public final class LogSinksImpl implements LogSinks {
     @VisibleForTesting
     public void setC4Log(@NonNull C4Log c4Log) { this.c4Log = c4Log; }
 
-    private void forbidNewAndLegacyLogging(@Nullable AbstractLogSink newLogger, @Nullable AbstractLogSink oldLogger) {
-        if ((newLogger == null) || (oldLogger == null)) { return; }
+    private void forbidNewAndLegacyLogging(@Nullable AbstractLogSink newLogger) {
+        if (newLogger == null) { return; }
 
-        if (newLogger.isLegacy() != oldLogger.isLegacy()) {
-            throw new IllegalStateException("Cannot mix new and legacy loggers");
-        }
+        Boolean isLegacy = this.isLegacy;
+        this.isLegacy = newLogger.isLegacy();
+
+        if (isLegacy != this.isLegacy) { throw new IllegalStateException("Cannot mix new and legacy loggers"); }
     }
 
     private void setLogFilter() {

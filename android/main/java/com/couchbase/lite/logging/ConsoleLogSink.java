@@ -27,12 +27,11 @@ import java.util.Set;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.LogLevel;
 import com.couchbase.lite.internal.logging.AbstractLogSink;
-import com.couchbase.lite.internal.utils.Internal;
 
 
 /**
  * A log sink that writes log messages the Android system message buffer.
- *
+ * <p>
  * Do not subclass!
  * This class will be final in future version of Couchbase Lite
  */
@@ -45,7 +44,6 @@ public class ConsoleLogSink extends AbstractLogSink {
         super(level, Collections.unmodifiableSet(new HashSet<>(domains)));
     }
 
-    @Internal
     @Override
     protected void writeLog(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
         final String tag = "CouchbaseLite/" + domain;

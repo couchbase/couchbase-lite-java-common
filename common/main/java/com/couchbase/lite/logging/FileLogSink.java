@@ -61,9 +61,7 @@ public class FileLogSink extends AbstractLogSink {
                     Log.w(LogDomain.DATABASE, "Cannot create log directory: " + logDir.getAbsolutePath());
                 }
             }
-            if (!logDir.canWrite()) {
-                Log.w(LogDomain.DATABASE, logDir.getAbsolutePath() + " is not writable");
-            }
+            if (!logDir.canWrite()) { Log.w(LogDomain.DATABASE, logDir.getAbsolutePath() + " is not writable"); }
 
             this.directory = logDirPath;
         }
@@ -175,7 +173,6 @@ public class FileLogSink extends AbstractLogSink {
             && (plainText == other.plainText);
     }
 
-    @Internal
     @Override
     protected void writeLog(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
         LogSinksImpl.logToCore(level, domain, message);

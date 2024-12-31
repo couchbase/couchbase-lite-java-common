@@ -17,6 +17,8 @@ package com.couchbase.lite
 
 import com.couchbase.lite.internal.getCollectionConfigs
 import com.couchbase.lite.internal.logging.Log
+import com.couchbase.lite.logging.FileLogSink
+import com.couchbase.lite.logging.LogSinks
 
 
 /**
@@ -103,6 +105,71 @@ fun ValueIndexConfiguration?.newConfig(vararg expressions: String = emptyArray()
 )
 
 /**
+ * Configuration factory for new ArrayIndexConfigurations
+ *
+ * Usage:
+ *     val arrayIndexConfig = arrayIndexConfigurationFactory.newConfig(...)
+ */
+val arrayIndexConfigurationFactory: ArrayIndexConfiguration? = null
+
+/**
+ * Create a ArrayIndexConfiguration, overriding the receiver's
+ * values with the passed parameters:
+ *
+ * @param path (required) the expressions to be matched.
+ * @param expressions expressions.
+ *
+ * @see com.couchbase.lite.ArrayIndexConfiguration
+ */
+fun ArrayIndexConfiguration?.newConfig(path: String?, vararg expressions: String?): ArrayIndexConfiguration {
+    val newExpressions = expressions.toMutableList()
+    return ArrayIndexConfiguration(
+        path ?: this?.path ?: throw IllegalArgumentException("An ArrayIndexConfiguration must specify a path"),
+        newExpressions.ifEmpty { this?.expressions }
+    )
+}
+
+/**
+ * Factory for new FileLogSinks
+ *
+ * Usage:
+ *      val logFileConfig = LogFileConfigurationFactory.install(...)
+ */
+val fileLogSinkFactory: FileLogSink? = null
+
+/**
+ * Install a new file logger
+ *
+ * @param directory (required) the directory in which the logs files are stored.
+ * @param level (required) the minimum level for log messages pushed to the file log.
+ * @param maxSize the max size of the log file in bytes.
+ * @param maxRotateCount the number of rotated logs that are saved.
+ * @param isPlainText whether or not to log in plaintext.
+ *
+ * @see com.couchbase.lite.logging.FileLogSink
+ */
+
+fun FileLogSink?.install(
+    directory: String? = null,
+    level: LogLevel? = null,
+    maxSize: Long? = null,
+    maxRotateCount: Int? = null,
+    isPlainText: Boolean? = null
+) {
+    val builder = FileLogSink.Builder(
+        directory ?: this?.directory
+        ?: throw IllegalArgumentException("A LogFileConfiguration must specify a directory")
+    )
+
+    (level ?: this?.level)?.let { builder.level = it }
+    (maxSize ?: this?.maxFileSize)?.let { builder.maxFileSize = it }
+    (maxRotateCount ?: this?.maxKeptFiles)?.let { builder.maxKeptFiles = it }
+    (isPlainText ?: this?.isPlainText)?.let { builder.isPlainText = it }
+
+    LogSinks.get().file = builder.build()
+}
+
+/**
  * Configuration factory for new LogFileConfigurations
  *
  * Usage:
@@ -120,6 +187,7 @@ val LogFileConfigurationFactory: LogFileConfiguration? = null
  * @param usePlainText whether or not to log in plaintext.
  *
  * @see com.couchbase.lite.LogFileConfiguration
+ * @deprecated Use FileLogSink?.install(String?, LogLevel?, Long?, Int?, Boolean?)
  */
 fun LogFileConfiguration?.newConfig(
     directory: String? = null,
