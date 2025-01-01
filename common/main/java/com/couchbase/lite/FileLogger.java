@@ -32,7 +32,7 @@ import com.couchbase.lite.logging.LogSinks;
  * stopped or encountered a problem.  Each log level is written to
  * a separate file.
  *
- * @deprecated Use com.couchbase.lite.logging.FileLogger
+ * @deprecated Use com.couchbase.lite.logging.FileLogSink
  */
 @SuppressWarnings("PMD.UnnecessaryFullyQualifiedName")
 @Deprecated
@@ -50,13 +50,15 @@ public final class FileLogger implements Logger {
             super.log(level, domain, message);
         }
 
-        boolean isLegacy() { return true; }
+        protected boolean isLegacy() { return true; }
     }
 
     @Nullable
     private LogFileConfiguration configuration;
     @Nullable
     private ShimLogger logger;
+
+    FileLogger() { }
 
     /**
      * Gets the level that will be logged via this logger.
@@ -71,15 +73,15 @@ public final class FileLogger implements Logger {
     }
 
     /**
-     * Sets the overall logging level that will be written to the logging files.
+     * Sets the lowest level that will be logged to the logging files.
      *
-     * @param level The maximum level to include in the logs
+     * @param level The lowest (most verbose) level to include in the logs
      */
     public void setLevel(@NonNull LogLevel level) {
+        Preconditions.assertNotNull(level, "level");
+
         final LogFileConfiguration config = configuration;
         if (config == null) { throw new CouchbaseLiteError(Log.lookupStandardMessage("CannotSetLogLevel")); }
-
-        Preconditions.assertNotNull(level, "level");
 
         // if the logging level has changed, install a new logger with the new level
         final LogLevel curLevel = getLevel();
@@ -129,7 +131,8 @@ public final class FileLogger implements Logger {
         final ShimLogger newLogger = (config == null)
             ? null
             : new ShimLogger(
-                new FileLogSink.Builder(config.getDirectory())
+                new FileLogSink.Builder()
+                    .setDirectory(config.getDirectory())
                     .setLevel(level)
                     .setMaxKeptFiles(config.getMaxRotateCount())
                     .setMaxFileSize(config.getMaxSize())

@@ -156,10 +156,10 @@ fun FileLogSink?.install(
     maxRotateCount: Int? = null,
     isPlainText: Boolean? = null
 ) {
-    val builder = FileLogSink.Builder(
-        directory ?: this?.directory
-        ?: throw IllegalArgumentException("A LogFileConfiguration must specify a directory")
-    )
+    val builder = FileLogSink.Builder()
+
+    (directory ?: this?.directory)?.let { builder.setDirectory(it) }
+        ?: throw IllegalArgumentException("A LogFileSink must have a directory")
 
     (level ?: this?.level)?.let { builder.level = it }
     (maxSize ?: this?.maxFileSize)?.let { builder.maxFileSize = it }

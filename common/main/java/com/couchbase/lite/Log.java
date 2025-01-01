@@ -28,7 +28,7 @@ import com.couchbase.lite.logging.LogSinks;
 /**
  * Holder for the three Couchbase Lite loggers:  console, file, and custom.
  *
- * @deprecated Use com.couchbase.lite.logging.Loggers
+ * @deprecated Use com.couchbase.lite.logging.LogSinks
  */
 @SuppressWarnings({"PMD.UnnecessaryFullyQualifiedName", "DeprecatedIsStillUsed"})
 @Deprecated
@@ -48,11 +48,11 @@ public final class Log {
 
             // if the custom logger has changed its level since the last log, install a new one.
             // NOTE: this may call back into lite core!
-            // If it was called on a LiteCore thread it may deadlock
+            // If it was called from a LiteCore thread it may deadlock
             if (getLevel() != logger.getLevel()) { installCustomLogger(logger); }
         }
 
-        boolean isLegacy() { return true; }
+        protected boolean isLegacy() { return true; }
     }
 
 
@@ -73,7 +73,7 @@ public final class Log {
      * Gets the logger that writes to the system console
      *
      * @return The logger that writes to the system console
-     * @deprecated Use com.couchbase.lite.logging.Loggers.getConsoleLogger
+     * @deprecated Use com.couchbase.lite.logging.LogSinks.getConsole
      */
     @Deprecated
     @NonNull
@@ -86,7 +86,7 @@ public final class Log {
      * Gets the logger that writes to log files
      *
      * @return The logger that writes to log files
-     * @deprecated Use com.couchbase.lite.logging.Loggers.getFileLogger
+     * @deprecated Use com.couchbase.lite.logging.LogSinks.getFile
      */
     @Deprecated
     @NonNull
@@ -101,7 +101,7 @@ public final class Log {
      *
      * @return The custom logger that was registered by
      * the application, or null.
-     * @deprecated Use com.couchbase.lite.logging.Loggers.getCustomLogger
+     * @deprecated Use com.couchbase.lite.logging.LogSinks.getCustom
      */
     @Deprecated
     @Nullable
@@ -111,7 +111,7 @@ public final class Log {
      * Sets an application specific logging method
      *
      * @param customLogger A Logger implementation that will receive logging messages
-     * @deprecated Use com.couchbase.lite.logging.Loggers.getCustomLogger
+     * @deprecated Use com.couchbase.lite.logging.LogSinks.setCustom
      */
     @Deprecated
     public void setCustom(@Nullable Logger customLogger) {

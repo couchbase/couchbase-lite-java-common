@@ -76,5 +76,5 @@ public abstract class AbstractLogSink {
         return (domains.size() == other.domains.size()) && domains.containsAll(other.domains);
     }
 
-    boolean isLegacy() { return false; }
+    protected boolean isLegacy() { return false; }
 }

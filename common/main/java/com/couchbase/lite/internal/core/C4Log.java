@@ -177,7 +177,7 @@ public final class C4Log {
     }
 
     // This method modifies the list passed as oldDomains!
-    // ??? the loops, here,  might be pushed into the JNI
+    // ??? The loops, here, might be pushed into the JNI
     // when the legacy API is removed.
     public void setLogFilter(
         @NonNull LogLevel newLevel,

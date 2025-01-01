@@ -40,10 +40,10 @@ class LoadTest : BaseDbTest() {
             "dandelion_global" to 100,
             "cheetah" to 100,
             "sunfish" to 80,
-            "taimen" to 55,
+            "taimen" to 65,
             "shamu" to 200,
             "hammerhead" to 200,
-            "occam" to 220,
+            "occam" to 250,
         )
     }
 

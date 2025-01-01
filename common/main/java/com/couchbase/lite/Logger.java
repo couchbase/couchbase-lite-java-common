@@ -23,7 +23,7 @@ import androidx.annotation.NonNull;
  * to route log messages to an arbitrary endpoint can do so by
  * installing an implementation of this interface with {@link Log#setCustom(Logger)}.
  *
- * @deprecated Use AbstractLogger
+ * @deprecated Use com.couchbase.lite.logging.BaseLogSink
  */
 @SuppressWarnings("DeprecatedIsStillUsed")
 @Deprecated

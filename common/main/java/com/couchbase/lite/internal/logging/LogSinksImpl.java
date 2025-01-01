@@ -25,6 +25,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+import com.couchbase.lite.CouchbaseLiteError;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.LogLevel;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
@@ -64,6 +65,8 @@ public final class LogSinksImpl implements LogSinks {
             CouchbaseLiteInternal.PLATFORM + " Initialized: " + CBLVersion.getVersionInfo());
 
         LOG_SINKS.set(logSinks);
+
+        logSinks.usedLegacyLogging = null;
     }
 
     public static void logToCore(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
@@ -116,7 +119,7 @@ public final class LogSinksImpl implements LogSinks {
     @Nullable
     private BaseLogSink customLogger;
 
-    private Boolean isLegacy = null;
+    private Boolean usedLegacyLogging;
 
     private LogSinksImpl(@NonNull C4Log c4Log) {
         this.c4Log = c4Log;
@@ -189,7 +192,6 @@ public final class LogSinksImpl implements LogSinks {
         writeToLocalLoggers(level, domain, msg);
     }
 
-
     @SuppressWarnings({"RegexpSinglelineJava", "PMD.SystemPrintln", "PMD.GuardLogStatement"})
     public void writeToLocalLoggers(@NonNull LogLevel level, @NonNull LogDomain domain, @Nullable String message) {
         final String msg = (message == null) ? "" : message;
@@ -229,10 +231,14 @@ public final class LogSinksImpl implements LogSinks {
     private void forbidNewAndLegacyLogging(@Nullable AbstractLogSink newLogger) {
         if (newLogger == null) { return; }
 
-        Boolean isLegacy = this.isLegacy;
-        this.isLegacy = newLogger.isLegacy();
+        final Boolean usedLegacyLogging = this.usedLegacyLogging;
+        this.usedLegacyLogging = newLogger.isLegacy();
 
-        if (isLegacy != this.isLegacy) { throw new IllegalStateException("Cannot mix new and legacy loggers"); }
+        if (usedLegacyLogging == null) { return; }
+
+        if (!usedLegacyLogging.equals(this.usedLegacyLogging)) {
+            throw new CouchbaseLiteError("Cannot mix new and legacy loggers");
+        }
     }
 
     private void setLogFilter() {
@@ -250,7 +256,7 @@ public final class LogSinksImpl implements LogSinks {
         if (customLogger != null) {
             l = customLogger.getLevel();
             if (l.compareTo(callbackLevel) < 0) { callbackLevel = l; }
-            newDomains.addAll(consoleLogger.getDomains());
+            newDomains.addAll(customLogger.getDomains());
         }
 
         // ignore the file logger's domains
@@ -262,7 +268,7 @@ public final class LogSinksImpl implements LogSinks {
         // gets what it needs
         if (callbackLevel.compareTo(logLevel) < 0) { logLevel = callbackLevel; }
 
-        // .. the callback level, though, is is just the min of the Console
+        // ... the callback level, though, is just the min of the Console
         // and Custom levels, because that's all the platform needs.
         l = this.callbackLevel.getAndSet(callbackLevel);
         if (l != callbackLevel) { c4Log.setCallbackLevel(callbackLevel); }

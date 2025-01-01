@@ -21,6 +21,7 @@ import androidx.annotation.VisibleForTesting;
 
 import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.Set;
 
 import com.couchbase.lite.internal.utils.Preconditions;
 import com.couchbase.lite.logging.ConsoleLogSink;
@@ -29,10 +30,8 @@ import com.couchbase.lite.logging.LogSinks;
 
 /**
  * A class that sends log messages to Android's system log, available via 'adb logcat'.
- * <p/>
- * Do not subclass! This class is not final only for testing.
  *
- * @deprecated Use com.couchbase.lite.logging.ConsoleLogger
+ * @deprecated Use com.couchbase.lite.logging.ConsoleLogSink
  */
 @SuppressWarnings({"PMD.UnnecessaryFullyQualifiedName", "DeprecatedIsStillUsed"})
 @Deprecated
@@ -55,7 +54,7 @@ public class ConsoleLogger implements Logger {
             super.log(level, domain, message);
         }
 
-        boolean isLegacy() { return true; }
+        protected boolean isLegacy() { return true; }
     }
 
 
@@ -65,7 +64,7 @@ public class ConsoleLogger implements Logger {
     ConsoleLogger() { }
 
     /**
-     * Gets the level that will be logged via this logger.
+     * Gets the level that will be logged by the current logger.
      *
      * @return The maximum level to log
      */
@@ -99,9 +98,11 @@ public class ConsoleLogger implements Logger {
     @NonNull
     public EnumSet<LogDomain> getDomains() {
         final ConsoleLogSink curLogger = LogSinks.get().getConsole();
-        return ((logger == null) || (logger != curLogger) || logger.getDomains().isEmpty())
+        if (curLogger == null) { return EnumSet.noneOf(LogDomain.class); }
+        final Set<LogDomain> curDomains = curLogger.getDomains();
+        return (curDomains.isEmpty())
             ? EnumSet.noneOf(LogDomain.class)
-            : EnumSet.copyOf(curLogger.getDomains());
+            : EnumSet.copyOf(curDomains);
     }
 
     /**
@@ -114,11 +115,10 @@ public class ConsoleLogger implements Logger {
 
         // trivial optimization: if the domain filter hasn't changed, we're done
         final ConsoleLogSink curLogger = loggers.getConsole();
-        if ((logger != null) && (logger == curLogger) && domains.equals(logger.getDomains())) { return; }
+        if ((curLogger != null) && domains.equals(curLogger.getDomains())) { return; }
 
         // otherwise, install a new shim
-        final EnumSet<LogDomain> logDomains = Preconditions.assertNotNull(domains, "domains");
-        logger = shimFactory(getLevel(), logDomains);
+        logger = shimFactory(getLevel(), Preconditions.assertNotNull(domains, "domains"));
         loggers.setConsole(logger);
     }
 

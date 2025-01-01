@@ -20,6 +20,7 @@ import androidx.annotation.Nullable;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 import com.couchbase.lite.LogDomain;
@@ -29,7 +30,10 @@ import com.couchbase.lite.internal.utils.SystemStream;
 
 
 /**
- * A class for sending log messages to the console.
+ * A log sink that writes log messages the system console.
+ * <p>
+ * Do not subclass!
+ * This class will be final in future versions of Couchbase Lite
  */
 public class ConsoleLogSink extends AbstractLogSink {
     public ConsoleLogSink(@NonNull LogLevel level, @NonNull Set<LogDomain> domains) {
@@ -38,6 +42,23 @@ public class ConsoleLogSink extends AbstractLogSink {
 
     public ConsoleLogSink(@NonNull LogLevel level, @NonNull LogDomain domain1, @Nullable LogDomain... domains) {
         this(level, aggregateDomains(domain1, domains));
+    }
+
+    @NonNull
+    @Override
+    public final String toString() {
+        return "ConsoleLogSink{" + ((isLegacy()) ? "!" : "" ) + listDomains(getDomains()) + "@" + getLevel() + "}";
+    }
+
+    @Override
+    public final int hashCode() { return Objects.hash(getLevel(), getDomains()); }
+
+    @Override
+    public final boolean equals(Object o) {
+        if (this == o) { return true; }
+        if (!(o instanceof ConsoleLogSink)) { return false; }
+        final ConsoleLogSink other = (ConsoleLogSink) o;
+        return similarLevels(other) && similarDomains(other);
     }
 
     @Override

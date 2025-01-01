@@ -27,7 +27,6 @@ import com.couchbase.lite.LogLevel;
 import com.couchbase.lite.internal.logging.AbstractLogSink;
 import com.couchbase.lite.internal.logging.Log;
 import com.couchbase.lite.internal.logging.LogSinksImpl;
-import com.couchbase.lite.internal.utils.Internal;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
@@ -35,12 +34,12 @@ import com.couchbase.lite.internal.utils.Preconditions;
  * A log sink that writes log messages the LiteCore logfile.
  * <p>
  * Do not subclass!
- * This class will be final in future version of Couchbase Lite
+ * This class will be final in future versions of Couchbase Lite
  */
 public class FileLogSink extends AbstractLogSink {
     public static final class Builder {
         @Nullable
-        private final String directory;
+        private String directory;
         @NonNull
         private LogLevel level = LogLevel.WARNING;
         private int maxKeptFiles = Defaults.LogFile.MAX_ROTATE_COUNT;
@@ -48,7 +47,29 @@ public class FileLogSink extends AbstractLogSink {
         private boolean plainText;
 
 
-        public Builder(@NonNull String directory) {
+        public Builder() { }
+
+        public Builder(@NonNull Builder builder) {
+            this.directory = builder.directory;
+            this.level = builder.getLevel();
+            this.maxKeptFiles = builder.maxKeptFiles;
+            this.maxFileSize = builder.maxFileSize;
+            this.plainText = builder.plainText;
+        }
+
+        public Builder(@NonNull FileLogSink sink) {
+            this.directory = sink.directory;
+            this.level = sink.getLevel();
+            this.maxKeptFiles = sink.maxKeptFiles;
+            this.maxFileSize = sink.maxFileSize;
+            this.plainText = sink.plainText;
+        }
+
+        @Nullable
+        public String getDirectory() { return directory; }
+
+        @NonNull
+        public Builder setDirectory(@NonNull String directory) {
             final String logDirPath = Preconditions.assertNotEmpty(directory, "directory");
             final File logDir = new File(logDirPath);
             if (logDir.exists()) {
@@ -64,14 +85,8 @@ public class FileLogSink extends AbstractLogSink {
             if (!logDir.canWrite()) { Log.w(LogDomain.DATABASE, logDir.getAbsolutePath() + " is not writable"); }
 
             this.directory = logDirPath;
-        }
 
-        public Builder(@NonNull FileLogSink sink) {
-            this(sink.directory);
-            this.level = sink.getLevel();
-            this.maxKeptFiles = sink.maxKeptFiles;
-            this.maxFileSize = sink.maxFileSize;
-            this.plainText = sink.plainText;
+            return this;
         }
 
         @NonNull
@@ -124,8 +139,7 @@ public class FileLogSink extends AbstractLogSink {
     private final long maxFileSize;
     private final boolean plainText;
 
-    @Internal("This method is not part of the public API")
-    public FileLogSink(@NonNull Builder builder) {
+    protected FileLogSink(@NonNull Builder builder) {
         super(builder.level, LogDomain.ALL);
 
         final String dir = builder.directory;
@@ -149,20 +163,22 @@ public class FileLogSink extends AbstractLogSink {
     @NonNull
     @Override
     public final String toString() {
-        return "FileLogger{"
+        return "FileLogSink{"
+            + ((isLegacy()) ? "!" : "")
             + ((plainText) ? "+" : "")
-            + directory + ", " + getLevel() + ", " + maxFileSize + ", " + maxKeptFiles + "}";
+            + listDomains(getDomains()) + "@" + getLevel() + ": "
+            + directory + ", " + maxFileSize + ", " + maxKeptFiles + "}";
     }
 
     @Override
-    public final int hashCode() { return Objects.hash(directory, maxKeptFiles, maxFileSize); }
+    public final int hashCode() { return Objects.hash(getLevel(), directory, maxKeptFiles, maxFileSize); }
 
     @Override
     public final boolean equals(Object o) {
         if (this == o) { return true; }
         if (!(o instanceof FileLogSink)) { return false; }
         final FileLogSink other = (FileLogSink) o;
-        return similar(other) && (getLevel() == other.getLevel());
+        return similar(other) && similarLevels(other) && similarDomains(other);
     }
 
     public final boolean similar(@Nullable FileLogSink other) {
