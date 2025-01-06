@@ -105,7 +105,7 @@ public final class FileLogger implements Logger {
             : new LogFileConfiguration(
                 fileLogger.getDirectory(),
                 fileLogger.getMaxFileSize(),
-                fileLogger.getMaxKeptFiles(),
+                fileLogger.getMaxKeptFiles() - 1,
                 fileLogger.isPlainText(),
                 true);
     }
@@ -134,7 +134,7 @@ public final class FileLogger implements Logger {
                 new FileLogSink.Builder()
                     .setDirectory(config.getDirectory())
                     .setLevel(level)
-                    .setMaxKeptFiles(config.getMaxRotateCount())
+                    .setMaxKeptFiles(config.getMaxRotateCount() + 1)
                     .setMaxFileSize(config.getMaxSize())
                     .setPlainText(config.usesPlaintext()));
         LogSinks.get().setFile(newLogger);

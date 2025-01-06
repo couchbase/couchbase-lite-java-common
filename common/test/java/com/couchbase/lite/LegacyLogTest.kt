@@ -20,6 +20,7 @@ package com.couchbase.lite
 import com.couchbase.lite.internal.core.CBLVersion
 import com.couchbase.lite.internal.logging.Log
 import com.couchbase.lite.internal.logging.LogSinksImpl
+import com.couchbase.lite.logging.BaseLogSink
 import com.couchbase.lite.logging.ConsoleLogSink
 import com.couchbase.lite.logging.FileLogSink
 import com.couchbase.lite.logging.LogSinks
@@ -69,11 +70,7 @@ class LegacyLogTest : BaseDbTest() {
         }
 
     private val logFiles: Array<File>
-        get() {
-            val files = tempDir?.listFiles()
-            assertNotNull(files)
-            return files!!
-        }
+        get() = assertNonNull(tempDir?.listFiles())
 
     @Before
     fun setUpLogTest() {
@@ -254,10 +251,10 @@ class LegacyLogTest : BaseDbTest() {
     fun testFileLoggingMaxSize() {
         val config = LogFileConfiguration(scratchDirPath!!).setUsePlaintext(true).setMaxSize(1024)
         testWithConfiguration(LogLevel.DEBUG, config) {
-            // This should create two files for each of the 5 levels except verbose (debug, info, warning, error):
-            // 1k of logs plus the headers. There should be only one file at the verbose level (just the headers)
+            // This should create three files for each of the 5 levels except verbose (debug, info, warning, error):
+            // 1k of logs plus .5k headers. There should be only one file at the verbose level (just the headers)
             write1KBToLog()
-            assertEquals((4 * 2) + 1, logFiles.size)
+            assertEquals((4 * 3) + 1, logFiles.size)
         }
     }
 
@@ -417,25 +414,86 @@ class LegacyLogTest : BaseDbTest() {
     }
 
     @Test
-    fun testMixLegacyAndNewAPIs() {
+    fun testMixLegacyAndNewAPIs1() {
         assertThrows(CouchbaseLiteError::class.java) {
-            Database.log.file.config = LogFileConfiguration(scratchDirPath!!)
-            LogSinks.get().file = FileLogSink.Builder().setDirectory(scratchDirPath!!).build()
+            val fileLogger = Database.log.file
+            fileLogger.config = LogFileConfiguration(scratchDirPath!!)
+            fileLogger.setLevel(LogLevel.VERBOSE)
+            LogSinks.get().file = FileLogSink.Builder().setDirectory(scratchDirPath!!).setLevel(LogLevel.ERROR).build()
         }
+    }
 
+    @Test
+    fun testMixLegacyAndNewAPIs2() {
+        assertThrows(CouchbaseLiteError::class.java) {
+            LogSinks.get().file = FileLogSink.Builder().setDirectory(scratchDirPath!!).setLevel(LogLevel.ERROR).build()
+            val fileLogger = Database.log.file
+            fileLogger.config = LogFileConfiguration(scratchDirPath!!)
+            fileLogger.setLevel(LogLevel.VERBOSE)
+        }
+    }
+
+    @Test
+    fun testMixLegacyAndNewAPIs3() {
         assertThrows(CouchbaseLiteError::class.java) {
             Database.log.console.level = LogLevel.VERBOSE
             LogSinks.get().console = ConsoleLogSink(LogLevel.ERROR, LogDomain.ALL)
         }
+    }
 
-        assertThrows(CouchbaseLiteError::class.java) {
-            LogSinks.get().file = FileLogSink.Builder().setDirectory(scratchDirPath!!).build()
-            Database.log.file.config = LogFileConfiguration(scratchDirPath!!)
-        }
-
+    @Test
+    fun testMixLegacyAndNewAPIs4() {
         assertThrows(CouchbaseLiteError::class.java) {
             LogSinks.get().console = ConsoleLogSink(LogLevel.VERBOSE, LogDomain.ALL)
             Database.log.console.level = LogLevel.ERROR
+        }
+    }
+
+    @Test
+    fun testMixLegacyAndNewAPIs5() {
+        assertThrows(CouchbaseLiteError::class.java) {
+            Database.log.custom = object : Logger {
+                override fun getLevel() = LogLevel.VERBOSE
+                override fun log(level: LogLevel, domain: LogDomain, message: String) {}
+            }
+            LogSinks.get().custom = object : BaseLogSink(LogLevel.ERROR, LogDomain.ALL) {
+                override fun writeLog(level: LogLevel, domain: LogDomain, message: String) {}
+            }
+        }
+    }
+
+    @Test
+    fun testMixLegacyAndNewAPIs6() {
+        assertThrows(CouchbaseLiteError::class.java) {
+            LogSinks.get().custom = object : BaseLogSink(LogLevel.ERROR, LogDomain.ALL) {
+                override fun writeLog(level: LogLevel, domain: LogDomain, message: String) {}
+            }
+            Database.log.custom = object : Logger {
+                override fun getLevel() = LogLevel.VERBOSE
+                override fun log(level: LogLevel, domain: LogDomain, message: String) {}
+            }
+        }
+    }
+
+    @Test
+    fun testMixLegacyAndNewAPIs7() {
+        assertThrows(CouchbaseLiteError::class.java) {
+            Database.log.custom = object : Logger {
+                override fun getLevel() = LogLevel.VERBOSE
+                override fun log(level: LogLevel, domain: LogDomain, message: String) {}
+            }
+            LogSinks.get().file = FileLogSink.Builder().setDirectory(scratchDirPath!!).setLevel(LogLevel.ERROR).build()
+        }
+    }
+
+    @Test
+    fun testMixLegacyAndNewAPIs8() {
+        assertThrows(CouchbaseLiteError::class.java) {
+            LogSinks.get().file = FileLogSink.Builder().setDirectory(scratchDirPath!!).setLevel(LogLevel.ERROR).build()
+            Database.log.custom = object : Logger {
+                override fun getLevel() = LogLevel.VERBOSE
+                override fun log(level: LogLevel, domain: LogDomain, message: String) {}
+            }
         }
     }
 
@@ -454,7 +512,7 @@ class LegacyLogTest : BaseDbTest() {
     private fun write1KBToLog() {
         val message = "11223344556677889900" // ~43 bytes
         // 24 * 43 = 1032
-        for (i in 0..23) {
+        for (i in 0..20) {
             writeAllLogs(message)
         }
     }

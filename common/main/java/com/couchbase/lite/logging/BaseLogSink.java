@@ -18,9 +18,7 @@ package com.couchbase.lite.logging;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.Collection;
 
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.LogLevel;
@@ -33,11 +31,11 @@ import com.couchbase.lite.internal.logging.AbstractLogSink;
  * Only logs that match the filter level and domain will be passed to the writeLog method.
  */
 public abstract class BaseLogSink extends AbstractLogSink {
-    protected BaseLogSink(@NonNull LogLevel level, @NonNull LogDomain domain1, @Nullable LogDomain... domains) {
-        this(level, aggregateDomains(domain1, domains));
+    protected BaseLogSink(@NonNull LogLevel level, @Nullable LogDomain... domains) {
+        super(level, defaultDomains(domains));
     }
 
-    protected BaseLogSink(@NonNull LogLevel level, @NonNull Set<LogDomain> domains) {
-        super(level, Collections.unmodifiableSet(new HashSet<>(domains)));
+    protected BaseLogSink(@NonNull LogLevel level, @Nullable Collection<LogDomain> domains) {
+        super(level, defaultDomains(domains));
     }
 }

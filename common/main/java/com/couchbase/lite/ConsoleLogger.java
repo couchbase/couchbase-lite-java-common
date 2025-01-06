@@ -38,7 +38,7 @@ import com.couchbase.lite.logging.LogSinks;
 public class ConsoleLogger implements Logger {
     @VisibleForTesting
     static class ShimLogger extends ConsoleLogSink {
-        ShimLogger(@NonNull LogLevel level, @NonNull EnumSet<LogDomain> logDomains) { super(level, logDomains); }
+        ShimLogger(@NonNull LogLevel level, @Nullable EnumSet<LogDomain> logDomains) { super(level, logDomains); }
 
         protected void writeLog(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
             doWriteLog(level, domain, message);

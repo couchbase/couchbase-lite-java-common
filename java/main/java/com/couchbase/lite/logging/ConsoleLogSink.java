@@ -18,10 +18,8 @@ package com.couchbase.lite.logging;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import java.util.Collections;
-import java.util.HashSet;
+import java.util.Collection;
 import java.util.Objects;
-import java.util.Set;
 
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.LogLevel;
@@ -36,18 +34,18 @@ import com.couchbase.lite.internal.utils.SystemStream;
  * This class will be final in future versions of Couchbase Lite
  */
 public class ConsoleLogSink extends AbstractLogSink {
-    public ConsoleLogSink(@NonNull LogLevel level, @NonNull Set<LogDomain> domains) {
-        super(level, Collections.unmodifiableSet(new HashSet<>(domains)));
+    public ConsoleLogSink(@NonNull LogLevel level, @Nullable LogDomain... domains) {
+        super(level, defaultDomains(domains));
     }
 
-    public ConsoleLogSink(@NonNull LogLevel level, @NonNull LogDomain domain1, @Nullable LogDomain... domains) {
-        this(level, aggregateDomains(domain1, domains));
+    public ConsoleLogSink(@NonNull LogLevel level, @Nullable Collection<LogDomain> domains) {
+        super(level, defaultDomains(domains));
     }
 
     @NonNull
     @Override
     public final String toString() {
-        return "ConsoleLogSink{" + ((isLegacy()) ? "!" : "" ) + listDomains(getDomains()) + "@" + getLevel() + "}";
+        return "ConsoleLogSink{" + ((isLegacy()) ? "!" : "") + listDomains(getDomains()) + "@" + getLevel() + "}";
     }
 
     @Override

@@ -63,7 +63,7 @@ private class TestC4Logger(private val domainFilter: String) : C4Log.NativeImpl 
 }
 
 // !!! This won't work when the ConsoleLogSink turns final
-private class TestConsoleLogSink(level: LogLevel, domains: Set<LogDomain>) : ConsoleLogSink(level, domains) {
+private class TestConsoleLogSink(level: LogLevel, domains: Set<LogDomain>? = null) : ConsoleLogSink(level, domains) {
     private val buf = StringBuilder()
     val content
         get() = buf.toString()
@@ -112,11 +112,7 @@ class LogTest : BaseDbTest() {
         }
 
     private val logFiles: Array<File>
-        get() {
-            val files = tempDir?.listFiles()
-            Assert.assertNotNull(files)
-            return files!!
-        }
+        get() = assertNonNull(tempDir?.listFiles())
 
     @Before
     fun setUpLogTest() {
@@ -209,6 +205,7 @@ class LogTest : BaseDbTest() {
 
     @Test
     fun testConsoleLoggerDomains() {
+
         for (level in LogLevel.values()) {
             if (level == LogLevel.NONE) {
                 continue
@@ -237,6 +234,22 @@ class LogTest : BaseDbTest() {
             consoleLogSink.writeToLog(LogLevel.ERROR, LogDomain.DATABASE, "E")
 
             Assert.assertEquals("", consoleLogSink.content)
+        }
+
+        var i = 0
+        for (level in LogLevel.values()) {
+            if (level == LogLevel.NONE) {
+                continue
+            }
+
+            val consoleLogSink = TestConsoleLogSink(level)
+            consoleLogSink.writeToLog(LogLevel.DEBUG, LogDomain.DATABASE, "D")
+            consoleLogSink.writeToLog(LogLevel.VERBOSE, LogDomain.DATABASE, "V")
+            consoleLogSink.writeToLog(LogLevel.INFO, LogDomain.DATABASE, "I")
+            consoleLogSink.writeToLog(LogLevel.WARNING, LogDomain.DATABASE, "W")
+            consoleLogSink.writeToLog(LogLevel.ERROR, LogDomain.DATABASE, "E")
+
+            Assert.assertEquals("DVIWE".substring(i++), consoleLogSink.content)
         }
 
         val consoleLogSink = TestConsoleLogSink(LogLevel.DEBUG, LogDomain.ALL)

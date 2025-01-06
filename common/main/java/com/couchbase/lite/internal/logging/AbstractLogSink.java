@@ -19,6 +19,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -29,11 +31,14 @@ import com.couchbase.lite.internal.utils.Preconditions;
 
 public abstract class AbstractLogSink {
     @NonNull
-    protected static Set<LogDomain> aggregateDomains(@NonNull LogDomain domain1, @Nullable LogDomain... domains) {
-        final Set<LogDomain> set = new HashSet<>();
-        set.add(domain1);
-        if (domains != null) { set.addAll(Arrays.asList(domains)); }
-        return set;
+    protected static Set<LogDomain> defaultDomains(@Nullable LogDomain[] domains) {
+        return defaultDomains((domains == null) ? null : Arrays.asList(domains));
+    }
+
+    @NonNull
+    protected static Set<LogDomain> defaultDomains(@Nullable Collection<LogDomain> domains) {
+        if (domains == null) { return LogDomain.ALL; }
+        return Collections.unmodifiableSet(new HashSet<>(domains));
     }
 
     @NonNull
