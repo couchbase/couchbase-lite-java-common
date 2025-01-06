@@ -42,7 +42,7 @@ import com.couchbase.lite.logging.LogSinks;
 public final class LogSinksImpl implements LogSinks {
     private static final int LOG_QUEUE_MAX = 8;
 
-    // the singleton implementation of Loggers
+    // the singleton implementation of LogSinks
     @NonNull
     private static final AtomicReference<LogSinksImpl> LOG_SINKS = new AtomicReference<>();
 
@@ -55,11 +55,11 @@ public final class LogSinksImpl implements LogSinks {
 
         final LogSinksImpl logSinks = new LogSinksImpl(C4Log.create());
 
-        final ConsoleLogSink consoleLogger
+        final ConsoleLogSink consoleLogSink
             = new ConsoleLogSink(CouchbaseLiteInternal.debugging() ? LogLevel.DEBUG : LogLevel.WARNING, LogDomain.ALL);
-        logSinks.setConsole(consoleLogger);
+        logSinks.setConsole(consoleLogSink);
 
-        ((AbstractLogSink) consoleLogger).writeLog(
+        ((AbstractLogSink) consoleLogSink).writeLog(
             LogLevel.INFO,
             LogDomain.DATABASE,
             CouchbaseLiteInternal.PLATFORM + " Initialized: " + CBLVersion.getVersionInfo());
@@ -70,21 +70,21 @@ public final class LogSinksImpl implements LogSinks {
     }
 
     public static void logToCore(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
-        final LogSinksImpl loggers = LOG_SINKS.get();
-        if (loggers == null) { return; }
-        loggers.c4Log.logToCore(domain, level, message);
+        final LogSinksImpl sinks = LOG_SINKS.get();
+        if (sinks == null) { return; }
+        sinks.c4Log.logToCore(domain, level, message);
     }
 
     public static void logFromCore(@NonNull LogLevel level, @NonNull LogDomain domain, @Nullable String message) {
-        final LogSinksImpl loggers = LOG_SINKS.get();
-        if (loggers == null) { return; }
-        loggers.writeToLocalLoggers(level, domain, message);
+        final LogSinksImpl sinks = LOG_SINKS.get();
+        if (sinks == null) { return; }
+        sinks.writeToLocalLogSinks(level, domain, message);
     }
 
-    public static void warnNoLogger() {
-        final LogSinksImpl loggers = LOG_SINKS.get();
-        if (loggers == null) { return; }
-        loggers.warnIfNoFileLogger();
+    public static void warnNoFileLogSink() {
+        final LogSinksImpl sinks = LOG_SINKS.get();
+        if (sinks == null) { return; }
+        sinks.warnIfNoFileLogSink();
     }
 
 
@@ -100,7 +100,7 @@ public final class LogSinksImpl implements LogSinks {
     @NonNull
     private final AtomicReference<Set<LogDomain>> logDomains = new AtomicReference<>(new HashSet<>());
 
-    // If true, the client has been warned that logging is off.
+    // If true, the client has been warned that file logging is off.
     @NonNull
     private final AtomicBoolean warned = new AtomicBoolean();
 
@@ -108,16 +108,16 @@ public final class LogSinksImpl implements LogSinks {
     private final ExecutionService.CloseableExecutor customLogQueue;
 
     @NonNull
-    private C4Log c4Log;
+    private final C4Log c4Log;
 
     @Nullable
-    private FileLogSink fileLogger;
+    private FileLogSink fileLogSink;
 
     @Nullable
-    private ConsoleLogSink consoleLogger;
+    private ConsoleLogSink consoleLogSink;
 
     @Nullable
-    private BaseLogSink customLogger;
+    private BaseLogSink customLogSink;
 
     private Boolean usedLegacyLogging;
 
@@ -128,80 +128,84 @@ public final class LogSinksImpl implements LogSinks {
 
     @Override
     @Nullable
-    public FileLogSink getFile() { return fileLogger; }
+    public FileLogSink getFile() { return fileLogSink; }
 
     @Override
-    public void setFile(@Nullable FileLogSink newLogger) {
-        if (Objects.equals(fileLogger, newLogger)) { return; }
-        forbidNewAndLegacyLogging(newLogger);
+    public void setFile(@Nullable FileLogSink newSink) {
+        if (Objects.equals(fileLogSink, newSink)) { return; }
+        forbidNewAndLegacyLogging(newSink);
 
         final LogLevel newLevel;
-        if (newLogger == null) {
+        if (newSink == null) {
             newLevel = LogLevel.NONE;
-            c4Log.initFileLogger("", newLevel, 0, 0, false, "");
+            c4Log.initFileLogging("", newLevel, 0, 0, false, "");
         }
         else {
-            newLevel = newLogger.getLevel();
-            if (newLogger.similar(fileLogger)) { c4Log.setFileLogLevel(newLevel); }
+            newLevel = newSink.getLevel();
+            if (newSink.similar(fileLogSink)) { c4Log.setFileLogLevel(newLevel); }
             else {
-                c4Log.initFileLogger(
-                    newLogger.getDirectory(),
+                c4Log.initFileLogging(
+                    newSink.getDirectory(),
                     newLevel,
-                    newLogger.getMaxKeptFiles(),
-                    newLogger.getMaxFileSize(),
-                    newLogger.isPlainText(),
+                    newSink.getMaxKeptFiles(),
+                    newSink.getMaxFileSize(),
+                    newSink.isPlainText(),
                     CBLVersion.getVersionInfo());
             }
         }
 
-        fileLogger = newLogger;
+        fileLogSink = newSink;
         setLogFilter();
 
-        warnIfNoFileLogger();
+        warnIfNoFileLogSink();
     }
 
     @Override
     @Nullable
-    public ConsoleLogSink getConsole() { return consoleLogger; }
+    public ConsoleLogSink getConsole() { return consoleLogSink; }
 
     @Override
-    public void setConsole(@Nullable ConsoleLogSink newLogger) {
-        forbidNewAndLegacyLogging(newLogger);
-        consoleLogger = newLogger;
+    public void setConsole(@Nullable ConsoleLogSink newSink) {
+        forbidNewAndLegacyLogging(newSink);
+        consoleLogSink = newSink;
         setLogFilter();
     }
 
     @Override
     @Nullable
-    public BaseLogSink getCustom() { return customLogger; }
+    public BaseLogSink getCustom() { return customLogSink; }
 
     @Override
-    public void setCustom(@Nullable BaseLogSink newLogger) {
-        forbidNewAndLegacyLogging(newLogger);
-        customLogger = newLogger;
+    public void setCustom(@Nullable BaseLogSink newSink) {
+        forbidNewAndLegacyLogging(newSink);
+        customLogSink = newSink;
         setLogFilter();
     }
 
     @SuppressWarnings("PMD.GuardLogStatement")
-    public void writeToLoggers(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String msg) {
-        try { log(fileLogger, level, domain, msg); }
+    public void writeToSinks(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String msg) {
+        try { log(fileLogSink, level, domain, msg); }
         catch (Exception e) {
-            log(consoleLogger, LogLevel.WARNING, LogDomain.DATABASE, "File logger failure: " + Log.formatStackTrace(e));
+            log(
+                consoleLogSink,
+                LogLevel.WARNING,
+                LogDomain.DATABASE,
+                "File log sinc failure: " + Log.formatStackTrace(e));
         }
 
-        writeToLocalLoggers(level, domain, msg);
+        writeToLocalLogSinks(level, domain, msg);
     }
 
     @SuppressWarnings({"RegexpSinglelineJava", "PMD.SystemPrintln", "PMD.GuardLogStatement"})
-    public void writeToLocalLoggers(@NonNull LogLevel level, @NonNull LogDomain domain, @Nullable String message) {
+    public void writeToLocalLogSinks(@NonNull LogLevel level, @NonNull LogDomain domain, @Nullable String message) {
         final String msg = (message == null) ? "" : message;
 
-        final ConsoleLogSink console = consoleLogger;
+        final ConsoleLogSink console = consoleLogSink;
         try { log(console, level, domain, msg); }
-        catch (Exception e) { System.err.println("Console logger failure" + Log.formatStackTrace(e)); }
+        catch (Exception e) { System.err.println("Console log sink failure" + Log.formatStackTrace(e)); }
 
-        // A custom logger is client code: give it 1 second on a safe thread
-        final BaseLogSink custom = customLogger;
+        // A custom log sink is client code: give it 1 second on a safe thread
+        final BaseLogSink custom = customLogSink;
         if ((custom != null) && ((custom.getLevel().compareTo(level) <= 0))) {
             if (customLogQueue.getPending() > LOG_QUEUE_MAX) {
                 log(console, LogLevel.WARNING, LogDomain.DATABASE, "Log queue overflow: Logs dropped");
@@ -225,62 +229,65 @@ public final class LogSinksImpl implements LogSinks {
     @NonNull
     public C4Log getC4Log() { return c4Log; }
 
-    @VisibleForTesting
-    public void setC4Log(@NonNull C4Log c4Log) { this.c4Log = c4Log; }
-
-    private void forbidNewAndLegacyLogging(@Nullable AbstractLogSink newLogger) {
-        if (newLogger == null) { return; }
+    private void forbidNewAndLegacyLogging(@Nullable AbstractLogSink newSink) {
+        if (newSink == null) { return; }
 
         final Boolean usedLegacyLogging = this.usedLegacyLogging;
-        this.usedLegacyLogging = newLogger.isLegacy();
+        this.usedLegacyLogging = newSink.isLegacy();
 
         if (usedLegacyLogging == null) { return; }
 
         if (!usedLegacyLogging.equals(this.usedLegacyLogging)) {
-            throw new CouchbaseLiteError("Cannot mix new and legacy loggers");
+            throw new CouchbaseLiteError("Cannot mix new and legacy logging");
         }
     }
 
     private void setLogFilter() {
         final Set<LogDomain> newDomains = new HashSet<>();
-        LogLevel callbackLevel = LogLevel.NONE;
+        LogLevel platformLogLevel = LogLevel.NONE;
 
+        AbstractLogSink sink;
         LogLevel l;
 
-        if (consoleLogger != null) {
-            l = consoleLogger.getLevel();
-            if (l.compareTo(callbackLevel) < 0) { callbackLevel = l; }
-            newDomains.addAll(consoleLogger.getDomains());
+        sink = this.consoleLogSink;
+        if (sink != null) {
+            l = sink.getLevel();
+            if (l.compareTo(platformLogLevel) < 0) { platformLogLevel = l; }
+            newDomains.addAll(sink.getDomains());
         }
 
-        if (customLogger != null) {
-            l = customLogger.getLevel();
-            if (l.compareTo(callbackLevel) < 0) { callbackLevel = l; }
-            newDomains.addAll(customLogger.getDomains());
+        sink = this.customLogSink;
+        if (sink != null) {
+            l = sink.getLevel();
+            if (l.compareTo(platformLogLevel) < 0) { platformLogLevel = l; }
+            newDomains.addAll(sink.getDomains());
         }
 
-        // ignore the file logger's domains
-        LogLevel logLevel = LogLevel.NONE;
-        if (fileLogger != null) { logLevel = fileLogger.getLevel(); }
+        // ignore the file log sink's domains
+        LogLevel fileLogLevel = LogLevel.NONE;
+        if (fileLogSink != null) { fileLogLevel = fileLogSink.getLevel(); }
 
-        // logLevel is the min of the Console, Custom, and File levels:
-        // log sources must log at this level to be sure the File logger
+        // fileLogLevel is the min of the Console, Custom, and File levels:
+        // core loggers must log at this level to be sure the File sink
         // gets what it needs
-        if (callbackLevel.compareTo(logLevel) < 0) { logLevel = callbackLevel; }
+        if (platformLogLevel.compareTo(fileLogLevel) < 0) { fileLogLevel = platformLogLevel; }
 
         // ... the callback level, though, is just the min of the Console
         // and Custom levels, because that's all the platform needs.
-        l = this.callbackLevel.getAndSet(callbackLevel);
-        if (l != callbackLevel) { c4Log.setCallbackLevel(callbackLevel); }
+        l = this.callbackLevel.getAndSet(platformLogLevel);
+        if (l != platformLogLevel) { c4Log.setCallbackLevel(platformLogLevel); }
 
-        l = this.logLevel.getAndSet(logLevel);
-        final Set<LogDomain> oldDomains = this.logDomains.getAndSet(newDomains);
-        if (l != logLevel) { c4Log.setLogFilter(logLevel, oldDomains, newDomains); }
+        this.logLevel.set(fileLogLevel);
+        this.logDomains.set(newDomains);
+
+        // Because of the way the file log sink works, we will touch the log level
+        // of every known domain.  There's no point in trying to optimize this.
+        c4Log.setLogFilter(fileLogLevel, platformLogLevel, newDomains);
     }
 
-    private void warnIfNoFileLogger() {
-        final FileLogSink logger = fileLogger;
-        if ((logger != null) && (logger.getLevel() != LogLevel.NONE) && !warned.getAndSet(true)) { return; }
+    private void warnIfNoFileLogSink() {
+        final FileLogSink sink = fileLogSink;
+        if ((sink != null) && (sink.getLevel() != LogLevel.NONE) && !warned.getAndSet(true)) { return; }
         ((AbstractLogSink) new ConsoleLogSink(LogLevel.WARNING, LogDomain.DATABASE)).writeLog(
             LogLevel.WARNING,
             LogDomain.DATABASE,
@@ -289,10 +296,10 @@ public final class LogSinksImpl implements LogSinks {
     }
 
     private void log(
-        @Nullable AbstractLogSink logger,
+        @Nullable AbstractLogSink sink,
         @NonNull LogLevel level,
         @NonNull LogDomain domain,
         @NonNull String message) {
-        if (logger != null) { logger.log(level, domain, message); }
+        if (sink != null) { sink.log(level, domain, message); }
     }
 }

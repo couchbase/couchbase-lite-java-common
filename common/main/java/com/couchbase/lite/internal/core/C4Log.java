@@ -19,11 +19,9 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -96,24 +94,29 @@ public final class C4Log {
     }
 
     @NonNull
-    private static final Map<LogDomain, List<String>> LOGGING_DOMAIN_TO_C4;
+    private static final Map<LogDomain, Set<String>> LOGGING_DOMAIN_TO_C4;
+    private static final Set<String> KNOWN_C4_LOGGING_DOMAINS;
     static {
-        final Map<LogDomain, List<String>> m = new HashMap<>();
+        final Set<String> s = new HashSet<>();
+        final Map<LogDomain, Set<String>> m = new HashMap<>();
         for (Map.Entry<String, LogDomain> entry: LOGGING_DOMAIN_FROM_C4.entrySet()) {
             final LogDomain domain = entry.getValue();
 
-            List<String> domains = m.get(domain);
+            Set<String> domains = m.get(domain);
             if (domains == null) {
-                domains = new ArrayList<>();
+                domains = new HashSet<>();
                 m.put(domain, domains);
             }
 
             domains.add(entry.getKey());
         }
-        for (Map.Entry<LogDomain, List<String>> entry: m.entrySet()) {
-            m.put(entry.getKey(), Collections.unmodifiableList(entry.getValue()));
+        for (Map.Entry<LogDomain, Set<String>> entry: m.entrySet()) {
+            final Set<String> domains = entry.getValue();
+            m.put(entry.getKey(), Collections.unmodifiableSet(domains));
+            s.addAll(domains);
         }
         LOGGING_DOMAIN_TO_C4 = Collections.unmodifiableMap(m);
+        KNOWN_C4_LOGGING_DOMAINS = Collections.unmodifiableSet(s);
     }
 
     @NonNull
@@ -151,21 +154,20 @@ public final class C4Log {
     @NonNull
     private final NativeImpl impl;
 
-    @VisibleForTesting
-    public C4Log(@NonNull NativeImpl impl) { this.impl = impl; }
+    private C4Log(@NonNull NativeImpl impl) { this.impl = impl; }
 
     public void logToCore(@NonNull LogDomain domain, @NonNull LogLevel level, @NonNull String message) {
         impl.nLog(getCanonicalC4DomainForLoggingDomain(domain), getC4LevelForLogLevel(level), message);
     }
 
-    public void initFileLogger(
+    public void initFileLogging(
         String path,
         LogLevel level,
-        int maxRotate,
+        int maxKept,
         long maxSize,
         boolean plainText,
         String header) {
-        impl.nWriteToBinaryFile(path, getC4LevelForLogLevel(level), maxRotate, maxSize, plainText, header);
+        impl.nWriteToBinaryFile(path, getC4LevelForLogLevel(level), maxKept - 1, maxSize, plainText, header);
     }
 
     public void setFileLogLevel(@NonNull LogLevel newLevel) {
@@ -176,20 +178,25 @@ public final class C4Log {
         impl.nSetCallbackLevel(getC4LevelForLogLevel(newLevel));
     }
 
-    // This method modifies the list passed as oldDomains!
-    // ??? The loops, here, might be pushed into the JNI
-    // when the legacy API is removed.
+    // ??? Most of this function might be pushed into the JNI
     public void setLogFilter(
-        @NonNull LogLevel newLevel,
-        @NonNull Set<LogDomain> oldDomains,
-        @NonNull Set<LogDomain> newDomains) {
-        // turn off logging on domains that are no longer enabled
-        oldDomains.removeAll(newDomains);
-        for (LogDomain domain: oldDomains) { setLogLevel(domain, LogLevel.NONE); }
+        @NonNull LogLevel fileLevel,
+        @NonNull LogLevel platformLevel,
+        @NonNull Set<LogDomain> platformDomains) {
+        final Set<String> fileDomains = new HashSet<>(KNOWN_C4_LOGGING_DOMAINS);
 
-        // set the new log level for the domains that are logging
-        final int level = getC4LevelForLogLevel(newLevel);
-        for (String c4Domain: getC4DomainsForLoggingDomains(newDomains)) { setLogLevel(c4Domain, level); }
+        // If the platform wants logging for its domains at higher levels than the file
+        // log wants, set the levels for its domains separately.  The file logger will
+        // get more than it wants for those domains. Tough.
+        final Set<String> domains = getC4DomainsForLoggingDomains(platformDomains);
+        if (platformLevel.compareTo(fileLevel) < 0) {
+            for (String domain: domains) { setLogLevel(domain, platformLevel); }
+            fileDomains.removeAll(domains);
+        }
+
+        // Any domain for which the platform level is greater than or equal to
+        // the file log's level has to log at the file log level.
+        for (String domain: fileDomains) { setLogLevel(domain, fileLevel); }
     }
 
     @VisibleForTesting
@@ -197,14 +204,17 @@ public final class C4Log {
         setLogLevel(getCanonicalC4DomainForLoggingDomain(domain), getC4LevelForLogLevel(level));
     }
 
-    @VisibleForTesting
-    public void setLogLevel(@NonNull String domain, int level) { impl.nSetLevel(domain, level); }
+    private void setLogLevel(@NonNull String domain, @NonNull LogLevel level) {
+        setLogLevel(domain, getC4LevelForLogLevel(level));
+    }
+
+    private void setLogLevel(@NonNull String domain, int level) { impl.nSetLevel(domain, level); }
 
     @NonNull
     private Set<String> getC4DomainsForLoggingDomains(@NonNull Set<LogDomain> domains) {
         final Set<String> newC4Domains = new HashSet<>();
         for (LogDomain domain: domains) {
-            final List<String> c4Domains = LOGGING_DOMAIN_TO_C4.get(domain);
+            final Set<String> c4Domains = LOGGING_DOMAIN_TO_C4.get(domain);
             if (c4Domains != null) { newC4Domains.addAll(c4Domains); }
         }
         return newC4Domains;

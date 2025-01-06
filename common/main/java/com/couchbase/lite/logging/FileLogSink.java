@@ -42,10 +42,9 @@ public class FileLogSink extends AbstractLogSink {
         private String directory;
         @NonNull
         private LogLevel level = LogLevel.WARNING;
-        private int maxKeptFiles = Defaults.LogFile.MAX_ROTATE_COUNT;
-        private long maxFileSize = Defaults.LogFile.MAX_SIZE;
-        private boolean plainText;
-
+        private int maxKeptFiles = Defaults.FileLogSink.MAX_KEPT_FILES;
+        private long maxFileSize = Defaults.FileLogSink.MAX_SIZE;
+        private boolean plainText = Defaults.FileLogSink.USE_PLAINTEXT;
 
         public Builder() { }
 

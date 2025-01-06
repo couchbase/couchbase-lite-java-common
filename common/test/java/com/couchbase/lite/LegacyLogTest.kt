@@ -249,12 +249,15 @@ class LegacyLogTest : BaseDbTest() {
 
     @Test
     fun testFileLoggingMaxSize() {
-        val config = LogFileConfiguration(scratchDirPath!!).setUsePlaintext(true).setMaxSize(1024)
+        val config = LogFileConfiguration(scratchDirPath!!)
+            .setUsePlaintext(true)
+            .setMaxSize(1024)
+            .setMaxRotateCount(10)
         testWithConfiguration(LogLevel.DEBUG, config) {
-            // This should create three files for each of the 5 levels except verbose (debug, info, warning, error):
+            // This should create two files for each of the 5 levels except verbose (debug, info, warning, error):
             // 1k of logs plus .5k headers. There should be only one file at the verbose level (just the headers)
             write1KBToLog()
-            assertEquals((4 * 3) + 1, logFiles.size)
+            assertEquals((4 * 2) + 1, logFiles.size)
         }
     }
 
@@ -510,9 +513,9 @@ class LegacyLogTest : BaseDbTest() {
     }
 
     private fun write1KBToLog() {
-        val message = "11223344556677889900" // ~43 bytes
-        // 24 * 43 = 1032
-        for (i in 0..20) {
+        val message = "11223344556677889900" // ~65 bytes including the line headers
+        // 16 * 65 ~= 1024.
+        for (i in 0..15) {
             writeAllLogs(message)
         }
     }

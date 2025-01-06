@@ -39,8 +39,8 @@ class LoadTest : BaseDbTest() {
             "starqlteue" to 150,
             "dandelion_global" to 100,
             "cheetah" to 100,
-            "sunfish" to 80,
-            "taimen" to 65,
+            "sunfish" to 85,
+            "taimen" to 55,
             "shamu" to 200,
             "hammerhead" to 200,
             "occam" to 250,
@@ -245,7 +245,7 @@ class LoadTest : BaseDbTest() {
         val elapsedTime = System.currentTimeMillis() - t0
         Report.log("Load test ${testName} completed in ${elapsedTime}ms (${maxTimeMs}) on ${device}")
         assertTrue(
-            "Load test ${testName} over time: ${elapsedTime} > ${maxTimeMs}",
+            "Load test ${testName} over time: ${elapsedTime} > ${maxTimeMs} on ${device}",
             elapsedTime < maxTimeMs
         )
     }

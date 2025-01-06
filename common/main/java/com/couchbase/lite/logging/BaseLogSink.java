@@ -31,8 +31,10 @@ import com.couchbase.lite.internal.logging.AbstractLogSink;
  * Only logs that match the filter level and domain will be passed to the writeLog method.
  */
 public abstract class BaseLogSink extends AbstractLogSink {
-    protected BaseLogSink(@NonNull LogLevel level, @Nullable LogDomain... domains) {
-        super(level, defaultDomains(domains));
+    public BaseLogSink(@NonNull LogLevel level) { this(level, (Collection<LogDomain>) null); }
+
+    public BaseLogSink(@NonNull LogLevel level, @NonNull LogDomain domain1, @Nullable LogDomain... domains) {
+        this(level, aggregateDomains(domain1, domains));
     }
 
     protected BaseLogSink(@NonNull LogLevel level, @Nullable Collection<LogDomain> domains) {

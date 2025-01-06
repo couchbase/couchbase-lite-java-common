@@ -7,13 +7,9 @@ import com.couchbase.lite.DataSource
 import com.couchbase.lite.Defaults
 import com.couchbase.lite.LogDomain
 import com.couchbase.lite.LogLevel
-import com.couchbase.lite.Meta
 import com.couchbase.lite.MutableDocument
 import com.couchbase.lite.QueryBuilder
 import com.couchbase.lite.SelectResult
-import com.couchbase.lite.internal.core.C4Constants
-import com.couchbase.lite.internal.core.C4Log
-import com.couchbase.lite.internal.core.C4TestUtils
 import com.couchbase.lite.internal.core.CBLVersion
 import com.couchbase.lite.internal.logging.Log
 import com.couchbase.lite.internal.logging.LogSinksImpl
@@ -32,36 +28,6 @@ import java.util.UUID
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
-private class TestC4Logger(private val domainFilter: String) : C4Log.NativeImpl {
-    var minLevel = 0
-        private set
-
-    fun reset() {
-        minLevel = C4Constants.LogLevel.NONE
-    }
-
-    override fun nLog(domain: String, level: Int, message: String) {
-        if (domainFilter != domain) {
-            return
-        }
-        if (level < minLevel) {
-            minLevel = level
-        }
-    }
-
-    override fun nSetLevel(domain: String, level: Int) = Unit
-    override fun nSetCallbackLevel(level: Int) = Unit
-    override fun nSetBinaryFileLevel(level: Int) = Unit
-    override fun nWriteToBinaryFile(
-        path: String?,
-        level: Int,
-        maxRotateCount: Int,
-        maxSize: Long,
-        usePlaintext: Boolean,
-        header: String?
-    ) = Unit
-}
-
 // !!! This won't work when the ConsoleLogSink turns final
 private class TestConsoleLogSink(level: LogLevel, domains: Set<LogDomain>? = null) : ConsoleLogSink(level, domains) {
     private val buf = StringBuilder()
@@ -75,7 +41,7 @@ private class TestConsoleLogSink(level: LogLevel, domains: Set<LogDomain>? = nul
     }
 }
 
-private class SingleLineLogSink(private val prefix: String?) : BaseLogSink(LogLevel.DEBUG, LogDomain.ALL) {
+private class SingleLineLogSink(private val prefix: String? = null) : BaseLogSink(LogLevel.DEBUG) {
     private var level: LogLevel? = null
     private var domain: LogDomain? = null
     private var message: String? = null
@@ -127,7 +93,7 @@ class LogTest : BaseDbTest() {
         val mark = "$$$ ${UUID.randomUUID()}"
 
         val c4Log = LogSinksImpl.getLogSinks().c4Log
-        c4Log.initFileLogger(scratchDirPath, LogLevel.DEBUG, 10, 1024, true, "$$$ TEST")
+        c4Log.initFileLogging(scratchDirPath, LogLevel.DEBUG, 10, 1024, true, "$$$ TEST")
 
         for (level in LogLevel.values()) {
             if (level == LogLevel.NONE) {
@@ -167,7 +133,7 @@ class LogTest : BaseDbTest() {
     @Test
     fun testC4MaxFileSize() {
         val c4Log = LogSinksImpl.getLogSinks().c4Log
-        c4Log.initFileLogger(scratchDirPath, LogLevel.DEBUG, 10, 1024, true, "$$$$ TEST")
+        c4Log.initFileLogging(scratchDirPath, LogLevel.DEBUG, 10, 1024, true, "$$$$ TEST")
         c4Log.setLogLevel(LogDomain.DATABASE, LogLevel.DEBUG)
 
         val message = "11223344556677889900" // ~43 bytes
@@ -262,9 +228,9 @@ class LogTest : BaseDbTest() {
     @Test
     fun testFileLoggerDefaults() {
         val sink = FileLogSink.Builder().setDirectory(scratchDirPath!!).build()
-        Assert.assertEquals(Defaults.LogFile.MAX_SIZE, sink.maxFileSize)
-        Assert.assertEquals(Defaults.LogFile.MAX_ROTATE_COUNT, sink.maxKeptFiles)
-        Assert.assertEquals(Defaults.LogFile.USE_PLAINTEXT, sink.isPlainText)
+        Assert.assertEquals(Defaults.FileLogSink.MAX_SIZE, sink.maxFileSize)
+        Assert.assertEquals(Defaults.FileLogSink.MAX_KEPT_FILES, sink.maxKeptFiles)
+        Assert.assertEquals(Defaults.FileLogSink.USE_PLAINTEXT, sink.isPlainText)
     }
 
     @Test
@@ -362,12 +328,36 @@ class LogTest : BaseDbTest() {
     fun testFileLoggingMaxSize() {
         testWithConfiguration(
             LogLevel.DEBUG,
-            FileLogSink.Builder().setDirectory(scratchDirPath!!).setPlainText(true).setMaxFileSize(1024)
+            FileLogSink.Builder()
+                .setDirectory(scratchDirPath!!)
+                .setPlainText(true)
+                .setMaxFileSize(1024)
+                .setMaxKeptFiles(10)
         ) {
             // This should create two files for each of the 5 levels except verbose (debug, info, warning, error):
-            // 1k of logs plus the headers. There should be only one file at the verbose level (just the headers)
+            // 1k of logs plus .5k headers. There should be only one file at the verbose level (just the headers)
             write1KBToLog()
             Assert.assertEquals((4 * 2) + 1, logFiles.size)
+        }
+    }
+
+    @Test
+    fun testFileLoggingMaxKeptFiles() {
+        testWithConfiguration(
+            LogLevel.DEBUG,
+            FileLogSink.Builder()
+                .setDirectory(scratchDirPath!!)
+                .setPlainText(true)
+                .setMaxFileSize(1024)
+                .setMaxKeptFiles(3)
+        ) {
+            // This should create several files for each of the 5 levels except verbose (debug, info, warning, error):
+            // 1k of logs plus .5k headers. Although lots of files are created they should be trimmed to only 3
+            // at each level.  There should be only one file at the verbose level (just the headers)
+            for (i in 0..20) {
+                write1KBToLog()
+            }
+            Assert.assertEquals((4 * 3) + 1, logFiles.size)
         }
     }
 
@@ -583,40 +573,6 @@ class LogTest : BaseDbTest() {
         Assert.assertTrue(customLogger.text.contains("[{\"hebrew\":\"$hebrew\"}]"))
     }
 
-    // Verify that we can set the level for log domains that the platform doesn't recognize.
-    // !!! I don't think this test is actually testing anything.
-    @Test
-    fun testInternalLogging() {
-        val c4Domain = "foo"
-
-        val testNativeC4Logger = TestC4Logger(c4Domain)
-        val testC4Logger = C4Log(testNativeC4Logger)
-
-        LogSinksImpl.getLogSinks().c4Log = testC4Logger
-
-        testNativeC4Logger.reset()
-        QueryBuilder.select(SelectResult.expression(Meta.id))
-            .from(DataSource.collection(testCollection))
-            .execute()
-        val actualMinLevel = testNativeC4Logger.minLevel
-        Assert.assertTrue(actualMinLevel >= C4TestUtils.getLogLevel(c4Domain))
-
-        testNativeC4Logger.reset()
-        testC4Logger.setLogLevel(c4Domain, actualMinLevel + 1)
-        QueryBuilder.select(SelectResult.expression(Meta.id))
-            .from(DataSource.collection(testCollection))
-            .execute()
-        // If level > maxLevel, should be no logs
-        Assert.assertEquals(C4Constants.LogLevel.NONE, testNativeC4Logger.minLevel)
-
-        testNativeC4Logger.reset()
-        testC4Logger.setLogLevel(c4Domain, C4TestUtils.getLogLevel(c4Domain))
-        QueryBuilder.select(SelectResult.expression(Meta.id))
-            .from(DataSource.collection(testCollection))
-            .execute()
-        Assert.assertEquals(actualMinLevel, testNativeC4Logger.minLevel)
-    }
-
     private fun testWithConfiguration(level: LogLevel, builder: FileLogSink.Builder, task: Runnable) {
         val sinks = LogSinks.get()
         sinks.console = ConsoleLogSink(level, LogDomain.ALL)
@@ -625,9 +581,9 @@ class LogTest : BaseDbTest() {
     }
 
     private fun write1KBToLog() {
-        val message = "11223344556677889900" // ~43 bytes
-        // 24 * 43 = 1032
-        for (i in 0..23) {
+        val message = "11223344556677889900" // ~65 bytes including the line headers
+        // 16 * 65 ~= 1024.
+        for (i in 0..15) {
             writeAllLogs(message)
         }
     }

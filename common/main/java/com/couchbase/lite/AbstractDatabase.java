@@ -284,7 +284,7 @@ abstract class AbstractDatabase extends BaseDatabase
         this.sharedKeys = c4db.getFLSharedKeys();
 
         // warn if logging has not been turned on
-        LogSinksImpl.warnNoLogger();
+        LogSinksImpl.warnNoFileLogSink();
     }
 
     //---------------------------------------------

@@ -31,14 +31,16 @@ import com.couchbase.lite.internal.utils.Preconditions;
 
 public abstract class AbstractLogSink {
     @NonNull
-    protected static Set<LogDomain> defaultDomains(@Nullable LogDomain[] domains) {
-        return defaultDomains((domains == null) ? null : Arrays.asList(domains));
+    protected static Set<LogDomain> defaultDomains(@Nullable Collection<LogDomain> domains) {
+        return (domains == null) ? LogDomain.ALL : Collections.unmodifiableSet(new HashSet<>(domains));
     }
 
     @NonNull
-    protected static Set<LogDomain> defaultDomains(@Nullable Collection<LogDomain> domains) {
-        if (domains == null) { return LogDomain.ALL; }
-        return Collections.unmodifiableSet(new HashSet<>(domains));
+    protected static Set<LogDomain> aggregateDomains(@NonNull LogDomain domain1, @Nullable LogDomain[] domains) {
+        final Set<LogDomain> set = new HashSet<>();
+        set.add(Preconditions.assertNotNull(domain1, "domain"));
+        if (domains != null) { set.addAll(Arrays.asList(domains)); }
+        return set;
     }
 
     @NonNull

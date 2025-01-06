@@ -277,7 +277,7 @@ public final class Log {
 
         if (err != null) { message += formatStackTrace(err); }
 
-        logSinks.writeToLoggers(level, (domain != null) ? domain : LogDomain.DATABASE, LOG_HEADER + message);
+        logSinks.writeToSinks(level, (domain != null) ? domain : LogDomain.DATABASE, LOG_HEADER + message);
     }
 
     @NonNull
