@@ -55,6 +55,7 @@ public abstract class PlatformBaseTest implements PlatformTest {
                 () -> !Arrays.asList(Locale.getAvailableLocales()).contains(new Locale("sv"))));
         PLATFORM_DEPENDENT_TESTS = Collections.unmodifiableMap(m);
     }
+
     protected static void initCouchbase() { CouchbaseLite.init(true); }
 
 

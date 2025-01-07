@@ -15,7 +15,9 @@
 //
 package com.couchbase.lite;
 
+import java.util.Collections;
 import java.util.EnumSet;
+import java.util.Set;
 
 
 /**
@@ -24,6 +26,16 @@ import java.util.EnumSet;
 public enum LogDomain {
     DATABASE, QUERY, REPLICATOR, NETWORK, LISTENER;
 
+    /**
+     * All domains.
+     */
+    public static final Set<LogDomain> ALL;
+    static { ALL = Collections.unmodifiableSet(EnumSet.allOf(LogDomain.class)); }
+
+    /**
+     * @deprecated Use LogDomain.ALL
+     */
+    @Deprecated
     public static final EnumSet<LogDomain> ALL_DOMAINS;
     static { ALL_DOMAINS = EnumSet.allOf(LogDomain.class); }
 }

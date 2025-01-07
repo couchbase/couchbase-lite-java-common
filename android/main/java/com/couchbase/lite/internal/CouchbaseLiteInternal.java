@@ -30,6 +30,7 @@ import java.util.Scanner;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -41,6 +42,7 @@ import com.couchbase.lite.internal.connectivity.AndroidConnectivityManager;
 import com.couchbase.lite.internal.core.C4;
 import com.couchbase.lite.internal.exec.ExecutionService;
 import com.couchbase.lite.internal.logging.Log;
+import com.couchbase.lite.internal.logging.LogSinksImpl;
 import com.couchbase.lite.internal.replicator.NetworkConnectivityManager;
 import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.Preconditions;
@@ -70,10 +72,15 @@ public final class CouchbaseLiteInternal {
 
     private static final AtomicBoolean INITIALIZED = new AtomicBoolean(false);
 
-    private static volatile boolean debugging;
-    private static volatile File defaultDbDir;
-
+    @NonNull
     static final Object LOCK = new Object();
+
+    private static volatile boolean debugging;
+
+    @SuppressWarnings("NotNullFieldNotInitialized")
+    @SuppressFBWarnings("NP_NONNULL_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR")
+    @NonNull
+    private static volatile File defaultDbDir;
 
     /**
      * Initialize CouchbaseLite library. This method MUST be called before using CouchbaseLite.
@@ -96,11 +103,12 @@ public final class CouchbaseLiteInternal {
 
         C4.debug(debugging);
 
-        Log.initLogging();
+        LogSinksImpl.initLogging();
 
         setC4TmpDirPath(FileUtils.verifyDir(scratchDir));
     }
 
+    // DO NOT HOLD A REFERENCE TO THE CONTEXT!
     @NonNull
     public static Context getContext() {
         requireInit("Application context not initialized");
@@ -113,9 +121,6 @@ public final class CouchbaseLiteInternal {
     }
 
     public static boolean debugging() { return debugging; }
-
-    @VisibleForTesting
-    public static void setDebugging(boolean debug) { debugging = debug; }
 
     @NonNull
     public static NetworkConnectivityManager getNetworkConnectivityManager() {
@@ -147,20 +152,8 @@ public final class CouchbaseLiteInternal {
 
     @NonNull
     public static String getDefaultDbDirPath() {
-        requireInit("Can't create DB path");
+        requireInit("Can't create Default DB path");
         return defaultDbDir.getAbsolutePath();
-    }
-
-    @VisibleForTesting
-    public static void reset() {
-        debugging = false;
-        defaultDbDir = null;
-
-        CONTEXT.set(null);
-        EXECUTION_SERVICE.set(null);
-        CONNECTIVITY_MANAGER.set(null);
-
-        INITIALIZED.set(false);
     }
 
     @NonNull
@@ -177,6 +170,18 @@ public final class CouchbaseLiteInternal {
         }
 
         return errorMessages;
+    }
+
+    @VisibleForTesting
+    public static void reset() {
+        debugging = false;
+        defaultDbDir = null;
+
+        CONTEXT.set(null);
+        EXECUTION_SERVICE.set(null);
+        CONNECTIVITY_MANAGER.set(null);
+
+        INITIALIZED.set(false);
     }
 
     private static void setC4TmpDirPath(@NonNull File scratchDir) {

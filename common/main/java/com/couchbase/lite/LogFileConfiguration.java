@@ -24,7 +24,10 @@ import com.couchbase.lite.internal.utils.Preconditions;
  * an attempt to mutate it will cause an exception.
  * To change the configuration of a logger, copy its configuration, mutate the
  * copy and then use it to replace the loggers current configuration.
+ *
+ * @deprecated Use FileLogSink.Builder
  */
+@Deprecated
 public final class LogFileConfiguration {
     //---------------------------------------------
     // member variables
@@ -93,9 +96,6 @@ public final class LogFileConfiguration {
     }
 
     @Override
-    public int hashCode() { return Objects.hash(directory); }
-
-    @Override
     public boolean equals(Object o) {
         if (this == o) { return true; }
         if (!(o instanceof LogFileConfiguration)) { return false; }
@@ -105,6 +105,9 @@ public final class LogFileConfiguration {
             && (usePlaintext == that.usePlaintext)
             && directory.equals(that.directory);
     }
+
+    @Override
+    public int hashCode() { return Objects.hash(directory); }
 
     @NonNull
     @Override
