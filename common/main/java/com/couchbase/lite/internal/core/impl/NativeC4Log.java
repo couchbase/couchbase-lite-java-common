@@ -21,10 +21,14 @@ public final class NativeC4Log implements C4Log.NativeImpl {
 
     @Override
     public void nWriteToBinaryFile(
-        String path, int level, int maxRotateCount, long maxSize, boolean usePlaintext, String header) {
+        String path,
+        int level,
+        int maxRotateCount,
+        long maxSize,
+        boolean usePlaintext,
+        String header) {
         writeToBinaryFile(path, level, maxRotateCount, maxSize, usePlaintext, header);
     }
-
 
     //-------------------------------------------------------------------------
     // Native methods
@@ -33,9 +37,9 @@ public final class NativeC4Log implements C4Log.NativeImpl {
     // Methods without a @GuardedBy annotation are otherwise thread-safe
     //-------------------------------------------------------------------------
 
-    private static native void log(String domain, int level, String message);
+    private static native void log(@NonNull String domain, int level, @NonNull String message);
 
-    private static native void setLevel(String domain, int level);
+    private static native void setLevel(@NonNull String domain, int level);
 
     private static native void setCallbackLevel(int level);
 

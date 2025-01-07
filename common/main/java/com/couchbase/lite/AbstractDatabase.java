@@ -52,6 +52,7 @@ import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.listener.ChangeListenerToken;
 import com.couchbase.lite.internal.listener.Listenable;
 import com.couchbase.lite.internal.logging.Log;
+import com.couchbase.lite.internal.logging.LogSinksImpl;
 import com.couchbase.lite.internal.replicator.ConflictResolutionException;
 import com.couchbase.lite.internal.sockets.MessageFraming;
 import com.couchbase.lite.internal.utils.ClassUtils;
@@ -124,20 +125,6 @@ abstract class AbstractDatabase extends BaseDatabase
             return process.equals(other.process);
         }
     }
-
-    // ---------------------------------------------
-    // API - public static fields
-    // ---------------------------------------------
-
-    /**
-     * Gets the logging controller for the Couchbase Lite library to configure the
-     * logging settings and add custom logging.
-     * <p>
-     */
-    // Public API.  Do not fix the name.
-    @SuppressWarnings({"ConstantName", "PMD.FieldNamingConventions"})
-    @NonNull
-    public static final com.couchbase.lite.Log log = new com.couchbase.lite.Log();
 
     // ---------------------------------------------
     // API - public static methods
@@ -281,7 +268,7 @@ abstract class AbstractDatabase extends BaseDatabase
         this.sharedKeys = c4db.getFLSharedKeys();
 
         // warn if logging has not been turned on
-        Log.warn();
+        LogSinksImpl.warnNoFileLogSink();
     }
 
     //---------------------------------------------
