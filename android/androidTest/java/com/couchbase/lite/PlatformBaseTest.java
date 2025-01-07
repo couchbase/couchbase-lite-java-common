@@ -30,9 +30,7 @@ import java.util.Map;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import com.couchbase.lite.internal.AndroidExecutionService;
-import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.exec.AbstractExecutionService;
-import com.couchbase.lite.internal.exec.ExecutionService;
 import com.couchbase.lite.internal.utils.FileUtils;
 
 
@@ -59,7 +57,7 @@ public abstract class PlatformBaseTest implements PlatformTest {
         PLATFORM_DEPENDENT_TESTS = Collections.unmodifiableMap(m);
     }
 
-    static { CouchbaseLite.init(getAppContext(), true); }
+    static { setupPlatform(); }
 
     static {
         try { Runtime.getRuntime().exec("logcat --prune /" + android.os.Process.myPid()).waitFor(); }
@@ -67,8 +65,8 @@ public abstract class PlatformBaseTest implements PlatformTest {
     }
     private static Context getAppContext() { return ApplicationProvider.getApplicationContext(); }
 
-    @Override
-    public final void setupPlatform() { }
+    public static void setupPlatform() { CouchbaseLite.init(getAppContext(), true); }
+
 
     @Override
     public final File getTmpDir() {
@@ -78,12 +76,6 @@ public abstract class PlatformBaseTest implements PlatformTest {
     @Override
     public final AbstractExecutionService getExecutionService(ThreadPoolExecutor executor) {
         return new AndroidExecutionService(executor);
-    }
-
-    @Override
-    public final void executeAsync(long delayMs, Runnable task) {
-        ExecutionService executionService = CouchbaseLiteInternal.getExecutionService();
-        executionService.postDelayedOnExecutor(delayMs, executionService.getDefaultExecutor(), task);
     }
 
     @Override

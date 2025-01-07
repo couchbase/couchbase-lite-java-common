@@ -79,8 +79,6 @@ final class NativeLibrary {
      * Extracts the two native libraries from the jar file, puts them on the file system and loads them.
      */
     static void load(@NonNull File scratchDir) {
-        CouchbaseLiteInternal.requireInit("Cannot load native libraries");
-
         if (LOADED.getAndSet(true)) { return; }
 
         final String os = System.getProperty("os.name");
@@ -262,7 +260,7 @@ final class NativeLibrary {
         if (targetFile.exists()) { return targetPath; }
 
         final String resPath = resDirPath + JAVA_PATH_SEPARATOR + lib;
-        Log.d(LogDomain.DATABASE, "Extracting library %s from %s to %s", lib, resPath, targetPath);
+        // It would be really nice to log here... but the logger hasn't been initialized
         try (InputStream in = NativeLibrary.class.getResourceAsStream(resPath)) {
             if (in == null) { throw new IOException("Cannot find resource for native library at " + resPath); }
 

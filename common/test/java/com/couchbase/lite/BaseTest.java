@@ -41,7 +41,7 @@ import org.junit.runner.Description;
 
 import com.couchbase.lite.internal.core.C4Database;
 import com.couchbase.lite.internal.exec.ExecutionService;
-import com.couchbase.lite.internal.logging.Log;
+import com.couchbase.lite.internal.logging.LogSinksImpl;
 import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.JSONUtils;
@@ -186,14 +186,7 @@ public abstract class BaseTest extends PlatformBaseTest {
     ///////////////////////////////   L O G G I N G   ///////////////////////////////
 
     private static void setupLogging(String msg) {
-        Log.initLoggingInternal();
-
-        Database.log.reset();
-
-        final ConsoleLogger console = Database.log.getConsole();
-        console.setLevel(LogLevel.DEBUG);
-        console.setDomains(LogDomain.ALL_DOMAINS);
-
+        LogSinksImpl.initLogging();
         Report.log(msg);
     }
 

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020 Couchbase, Inc.
+// Copyright (c) 2024 Couchbase, Inc All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-package com.couchbase.lite;
+package com.couchbase.lite.internal.utils;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -23,46 +23,34 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 
+import com.couchbase.lite.LogLevel;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
-import com.couchbase.lite.internal.core.C4Log;
 
 
-/**
- * A class for sending log messages to the console.
- */
-public class ConsoleLogger extends AbstractConsoleLogger {
+public final class SystemStream {
+    private SystemStream() { }
+
     private static final String LOG_TAG = "/CouchbaseLite/";
     private static final int THREAD_FIELD_LEN = 7;
     private static final String THREAD_FIELD_PAD = String.join("", Collections.nCopies(THREAD_FIELD_LEN, " "));
     private static final ThreadLocal<DateTimeFormatter> TS_FORMAT
         = ThreadLocal.withInitial(() -> DateTimeFormatter.ofPattern("MM-dd HH:mm:ss.SSS"));
 
-    @NonNull
-    public static PrintStream getLogStream(@NonNull LogLevel level) {
-        return ((CouchbaseLiteInternal.debugging()) || (LogLevel.WARNING.compareTo(level) > 0))
+    public static void print(
+        @NonNull LogLevel level,
+        @NonNull String domain,
+        @NonNull String message,
+        @Nullable Throwable err) {
+        final PrintStream logStream = ((CouchbaseLiteInternal.debugging()) || (LogLevel.WARNING.compareTo(level) > 0))
             ? System.out
             : System.err;
-    }
 
-    @NonNull
-    public static String formatLog(@NonNull LogLevel level, @NonNull String domain, @NonNull String message) {
         final String tf = THREAD_FIELD_PAD + Thread.currentThread().getId();
-        return TS_FORMAT.get().format(LocalDateTime.now())
+        logStream.println(TS_FORMAT.get().format(LocalDateTime.now())
             + tf.substring(tf.length() - THREAD_FIELD_LEN)
-            + " " + level + LOG_TAG + domain + ": "
-            + message;
-    }
+            + " " + level + LOG_TAG + domain
+            + ": " + message);
 
-
-    ConsoleLogger(@Nullable C4Log c4Log) { super(c4Log); }
-
-    @Override
-    public void log(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
-        super.log(level, domain, message);
-    }
-
-    @Override
-    protected void doLog(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
-        getLogStream(level).println(formatLog(level, domain.name(), message));
+        if (err != null) { err.printStackTrace(logStream); }
     }
 }

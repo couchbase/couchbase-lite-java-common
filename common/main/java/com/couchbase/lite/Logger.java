@@ -21,11 +21,12 @@ import androidx.annotation.NonNull;
 /**
  * The logging interface for Couchbase Lite.  An application that wishes
  * to route log messages to an arbitrary endpoint can do so by
- * installing an implemention of this interface with {@link Log#setCustom(Logger)}.
+ * installing an implementation of this interface with {@link Log#setCustom(Logger)}.
+ *
+ * @deprecated Use com.couchbase.lite.logging.BaseLogSink
  */
-// !!! There is, currently, no way to tell when the log level changes
-// for a custom logger.  Setting a more verbose log level will not
-// have any effect until the logger is polled for its level.
+@SuppressWarnings("DeprecatedIsStillUsed")
+@Deprecated
 public interface Logger {
     /**
      * Gets the level that will be logged via this logger.

@@ -30,6 +30,7 @@ import java.util.Scanner;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -41,6 +42,7 @@ import com.couchbase.lite.internal.connectivity.AndroidConnectivityManager;
 import com.couchbase.lite.internal.core.C4;
 import com.couchbase.lite.internal.exec.ExecutionService;
 import com.couchbase.lite.internal.logging.Log;
+import com.couchbase.lite.internal.logging.LogSinksImpl;
 import com.couchbase.lite.internal.replicator.NetworkConnectivityManager;
 import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.Preconditions;
@@ -70,10 +72,14 @@ public final class CouchbaseLiteInternal {
 
     private static final AtomicBoolean INITIALIZED = new AtomicBoolean(false);
 
+    @NonNull
     static final Object LOCK = new Object();
 
     private static volatile boolean debugging;
 
+    @SuppressWarnings("NotNullFieldNotInitialized")
+    @SuppressFBWarnings("NP_NONNULL_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR")
+    @NonNull
     private static volatile File defaultDbDir;
 
     /**
@@ -97,11 +103,12 @@ public final class CouchbaseLiteInternal {
 
         C4.debug(debugging);
 
-        Log.initLogging(debugging, loadErrorMessages(ctxt));
+        LogSinksImpl.initLogging();
 
         setC4TmpDirPath(FileUtils.verifyDir(scratchDir));
     }
 
+    // DO NOT HOLD A REFERENCE TO THE CONTEXT!
     @NonNull
     public static Context getContext() {
         requireInit("Application context not initialized");
@@ -144,17 +151,16 @@ public final class CouchbaseLiteInternal {
     }
 
     @NonNull
-    public static String getDefaultDbDirPath() { return defaultDbDir.getAbsolutePath(); }
+    public static String getDefaultDbDirPath() {
+        requireInit("Can't create Default DB path");
+        return defaultDbDir.getAbsolutePath();
+    }
 
-    @VisibleForTesting
-    public static void reset(boolean state) { INITIALIZED.set(state); }
-
-    @VisibleForTesting
     @NonNull
-    public static Map<String, String> loadErrorMessages(@NonNull Context ctxt) {
+    public static Map<String, String> loadErrorMessages() {
         final Map<String, String> errorMessages = new HashMap<>();
 
-        try (InputStream is = ctxt.getResources().openRawResource(R.raw.errors)) {
+        try (InputStream is = getContext().getResources().openRawResource(R.raw.errors)) {
             final JSONObject root = new JSONObject(new Scanner(is, "UTF-8").useDelimiter("\\A").next());
             final Iterable<String> errors = root::keys;
             for (String error: errors) { errorMessages.put(error, root.getString(error)); }
@@ -164,6 +170,18 @@ public final class CouchbaseLiteInternal {
         }
 
         return errorMessages;
+    }
+
+    @VisibleForTesting
+    public static void reset() {
+        debugging = false;
+        defaultDbDir = null;
+
+        CONTEXT.set(null);
+        EXECUTION_SERVICE.set(null);
+        CONNECTIVITY_MANAGER.set(null);
+
+        INITIALIZED.set(false);
     }
 
     private static void setC4TmpDirPath(@NonNull File scratchDir) {

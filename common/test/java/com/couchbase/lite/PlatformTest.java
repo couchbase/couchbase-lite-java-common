@@ -39,9 +39,6 @@ public interface PlatformTest {
         }
     }
 
-    /* initialize the platform */
-    void setupPlatform();
-
     /* get a scratch directory */
     File getTmpDir();
 
@@ -52,7 +49,4 @@ public interface PlatformTest {
     String getDevice();
 
     AbstractExecutionService getExecutionService(ThreadPoolExecutor executor);
-
-    /* Schedule a task to be executed asynchronously. */
-    void executeAsync(long delayMs, Runnable task);
 }
