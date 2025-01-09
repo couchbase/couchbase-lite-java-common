@@ -15,6 +15,7 @@
 //
 package com.couchbase.lite
 
+import com.couchbase.lite.logging.LogSinks
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Test
@@ -32,8 +33,11 @@ class CommonConfigFactoryTest : BaseTest() {
 
     @Test
     fun testFullTextIndexConfigurationFactoryWithProps() {
-        val config =
-            FullTextIndexConfigurationFactory.newConfig(CONFIG_FACTORY_TEST_STRING, language = "fr", ignoreAccents = true)
+        val config = FullTextIndexConfigurationFactory.newConfig(
+            CONFIG_FACTORY_TEST_STRING,
+            language = "fr",
+            ignoreAccents = true
+        )
         assertEquals(1, config.expressions.size)
         assertEquals(CONFIG_FACTORY_TEST_STRING, config.expressions[0])
         assertEquals(true, config.isIgnoringAccents)
@@ -95,4 +99,39 @@ class CommonConfigFactoryTest : BaseTest() {
         assertEquals(CONFIG_FACTORY_TEST_STRING, config2.directory)
         assertEquals(1024L, config2.maxSize)
     }
+
+    @Test
+    fun testFileLogSinkFactory() {
+        val dir = getScratchDirectoryPath(getUniqueName("sink-dir"))
+        fileLogSinkFactory.install(directory = dir, maxSize = 4096L)
+        LogSinks.get().file?.let {
+            assertEquals(dir, it.directory)
+            assertEquals(4096L, it.maxFileSize)
+        }
+    }
+
+    @Test
+    fun testFileLogSinkactoryNullDir() {
+        assertThrows(IllegalArgumentException::class.java) { fileLogSinkFactory.install() }
+    }
+
+    @Test
+    fun testFileLogSinkCopy() {
+        val dir1 = getScratchDirectoryPath(getUniqueName("sink-dir1"))
+        fileLogSinkFactory.install(directory = dir1, maxSize = 4096L)
+        val sink = LogSinks.get().file
+        sink?.let {
+            assertEquals(dir1, it.directory)
+            assertEquals(4096L, it.maxFileSize)
+        }
+
+        val dir2 = getScratchDirectoryPath(getUniqueName("sink-dir2"))
+        sink.install(directory = dir2, maxSize = 8192L)
+        LogSinks.get().file?.let {
+            assertNotEquals(sink, it)
+            assertEquals(dir2, it.directory)
+            assertEquals(8192L, it.maxFileSize)
+        }
+    }
 }
+

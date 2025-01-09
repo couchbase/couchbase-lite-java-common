@@ -1507,12 +1507,13 @@ abstract class AbstractDatabase extends BaseDatabase
                 }
             }
             else {
-                final FLSliceResult mergedBody = resolvedDoc.encode();
-                // if the resolved doc has attachments, be sure has the flag
-                if (C4Document.dictContainsBlobs(mergedBody, sharedKeys)) {
-                    mergedFlags |= C4Constants.RevisionFlags.HAS_ATTACHMENTS;
+                try (FLSliceResult mergedBody = resolvedDoc.encode()) {
+                    // if the resolved doc has attachments, be sure has the flag
+                    if (C4Document.dictContainsBlobs(mergedBody, sharedKeys)) {
+                        mergedFlags |= C4Constants.RevisionFlags.HAS_ATTACHMENTS;
+                    }
+                    mergedBodyBytes = mergedBody.getContent();
                 }
-                mergedBodyBytes = mergedBody.getContent();
             }
         }
 

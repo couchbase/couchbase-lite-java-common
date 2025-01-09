@@ -20,7 +20,6 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Objects;
 
@@ -36,10 +35,10 @@ import com.couchbase.lite.internal.logging.AbstractLogSink;
  * This class will be final in future versions of Couchbase Lite
  */
 public class ConsoleLogSink extends AbstractLogSink {
-    public ConsoleLogSink(@NonNull LogLevel level) { this(level, (Collection<LogDomain>) null); }
+    public ConsoleLogSink(@NonNull LogLevel level) { this(level, null); }
 
     public ConsoleLogSink(@NonNull LogLevel level, @NonNull LogDomain domain1, @NonNull LogDomain... domains) {
-        this(level, Arrays.asList(domains));
+        this(level, aggregateDomains(domain1, domains));
     }
 
     public ConsoleLogSink(@NonNull LogLevel level, @Nullable Collection<LogDomain> domains) {
