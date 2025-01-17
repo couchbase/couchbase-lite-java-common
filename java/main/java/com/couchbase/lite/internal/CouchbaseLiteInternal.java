@@ -26,12 +26,15 @@ import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import com.couchbase.lite.CouchbaseLiteError;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.core.C4;
 import com.couchbase.lite.internal.exec.ExecutionService;
 import com.couchbase.lite.internal.logging.Log;
+import com.couchbase.lite.internal.logging.LogSinksImpl;
 import com.couchbase.lite.internal.utils.FileUtils;
 
 
@@ -56,11 +59,20 @@ public final class CouchbaseLiteInternal {
 
     private static final AtomicBoolean INITIALIZED = new AtomicBoolean(false);
 
+    @NonNull
+    static final Object LOCK = new Object();
+
     private static volatile boolean debugging;
+
+    @SuppressWarnings("NotNullFieldNotInitialized")
+    @SuppressFBWarnings("NP_NONNULL_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR")
+    @NonNull
     private static volatile File defaultDbDir;
+    @SuppressWarnings("NotNullFieldNotInitialized")
+    @SuppressFBWarnings("NP_NONNULL_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR")
+    @NonNull
     private static volatile File scratchDir;
 
-    static final Object LOCK = new Object();
 
     public static void init(boolean debug, @NonNull File defaultDbDir, @NonNull File tempDir) {
         if (INITIALIZED.getAndSet(true)) { return; }
@@ -77,15 +89,12 @@ public final class CouchbaseLiteInternal {
 
         C4.debug(debugging);
 
-        Log.initLogging();
+        LogSinksImpl.initLogging();
 
         setC4TmpDirPath(tmpDir);
     }
 
     public static boolean debugging() { return debugging; }
-
-    @VisibleForTesting
-    public static void setDebugging(boolean debug) { debugging = debug; }
 
     /**
      * This method is for internal used only and will be removed in the future release.
@@ -124,17 +133,6 @@ public final class CouchbaseLiteInternal {
     }
 
     @VisibleForTesting
-    public static void reset() {
-        debugging = false;
-        defaultDbDir = null;
-        scratchDir = null;
-
-        EXECUTION_SERVICE.set(null);
-
-        INITIALIZED.set(false);
-    }
-
-    @VisibleForTesting
     @SuppressWarnings({"unchecked", "rawtypes"})
     @NonNull
     public static Map<String, String> loadErrorMessages() {
@@ -144,6 +142,17 @@ public final class CouchbaseLiteInternal {
         }
         catch (IOException e) { Log.i(LogDomain.DATABASE, "Failed to load error messages!", e); }
         return (Map<String, String>) (Map) errors;
+    }
+
+    @VisibleForTesting
+    public static void reset() {
+        debugging = false;
+        defaultDbDir = null;
+        scratchDir = null;
+
+        EXECUTION_SERVICE.set(null);
+
+        INITIALIZED.set(false);
     }
 
     private static void setC4TmpDirPath(@NonNull File scratchDir) {

@@ -16,6 +16,7 @@
 package com.couchbase.lite
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal
+import com.couchbase.lite.logging.LogSinks
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
@@ -29,12 +30,12 @@ class PreInitTest : BaseTest() {
 
     @Test
     fun testGetConsoleLoggerBeforeInit() {
-        assertThrows(CouchbaseLiteError::class.java) { Log().console }
+        assertThrows(CouchbaseLiteError::class.java) { LogSinks.get().console }
     }
 
     @Test
     fun testGetFileLoggerBeforeInit() {
-        assertThrows(CouchbaseLiteError::class.java) { Log().file }
+        assertThrows(CouchbaseLiteError::class.java) { LogSinks.get().file }
     }
 
     @Test
@@ -52,20 +53,6 @@ class PreInitTest : BaseTest() {
         assertThrows(CouchbaseLiteError::class.java) {
             ReplicatorConfiguration(URLEndpoint(URI("wss://foo.bar")))
         }
-    }
-
-    private fun assertThrows(ex: Class<out Exception>, test: () -> Unit) {
-        var err: Throwable? = null
-        try {
-            test()
-        } catch (e: Throwable) {
-            if (ex == e::class.java) {
-                return; }
-            err = e
-        }
-
-        err?.printStackTrace()
-        Assert.fail("Expected exception ${ex} but got ${err}")
     }
 }
 

@@ -23,7 +23,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.util.*
+import java.util.Date
 
 
 private const val ITERATIONS = 2000
@@ -45,11 +45,11 @@ class LoadTest : BaseDbTest() {
 
             // android local
             "taimen" to 70,
-            "sunfish" to 200,
+            "sunfish" to 100,
             "shamu" to 200,
             "hammerhead" to 200,
             "occam" to 300,
-            )
+        )
     }
 
     private val speedMultiplier: Int
@@ -250,7 +250,7 @@ class LoadTest : BaseDbTest() {
         val elapsedTime = System.currentTimeMillis() - t0
         Report.log("Load test ${testName} completed in ${elapsedTime}ms (${maxTimeMs}) on ${device}")
         assertTrue(
-            "Load test ${testName} over time: ${elapsedTime} > ${maxTimeMs}",
+            "Load test ${testName} over time: ${elapsedTime} > ${maxTimeMs} on ${device}",
             elapsedTime < maxTimeMs
         )
     }

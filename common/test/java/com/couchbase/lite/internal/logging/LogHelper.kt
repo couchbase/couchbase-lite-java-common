@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020 Couchbase, Inc.
+// Copyright (c) 2025 Couchbase, Inc All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,23 +13,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-package com.couchbase.lite;
+package com.couchbase.lite.internal.logging
 
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.Set;
+import com.couchbase.lite.LogDomain
+import com.couchbase.lite.LogLevel
 
 
-/**
- * Log domain
- */
-public enum LogDomain {
-    DATABASE, QUERY, REPLICATOR, NETWORK, LISTENER;
-
-    /**
-     * All domains.
-     */
-    public static final Set<LogDomain> ALL;
-    static { ALL = Collections.unmodifiableSet(EnumSet.allOf(LogDomain.class)); }
-}
-
+fun AbstractLogSink.writeToLog(level: LogLevel, domain: LogDomain, message: String) = log(level, domain, message)

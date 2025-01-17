@@ -21,7 +21,6 @@ import androidx.annotation.Nullable;
 
 import com.couchbase.lite.Collection;
 import com.couchbase.lite.CouchbaseLiteException;
-import com.couchbase.lite.LogFileConfiguration;
 import com.couchbase.lite.Replicator;
 
 
@@ -40,15 +39,5 @@ public final class KotlinHelpers {
     public static boolean callIsDocumentPendingWithNullId(@NonNull Replicator repl)
         throws CouchbaseLiteException {
         return repl.isDocumentPending(null);
-    }
-
-    // Kotlin will not allow a the call LogFileConfiguration.<init>((String) null)
-    public static LogFileConfiguration createLogFileConfigWithNullDir() {
-        return new LogFileConfiguration((String) null);
-    }
-
-    // Kotlin will not allow a the call LogFileConfiguration.<init>((LogFileConfiguration) null)
-    public static LogFileConfiguration createLogFileConfigWithNullConfig() {
-        return new LogFileConfiguration((LogFileConfiguration) null);
     }
 }
