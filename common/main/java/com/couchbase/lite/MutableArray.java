@@ -62,7 +62,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
     public MutableArray(@NonNull String json) { setJSON(json); }
 
     // Create a MutableArray that is a copy of the passed Array
-    MutableArray(@NonNull Array array) { super(new MArray(array.internalArray, true)); }
+    MutableArray(@NonNull Array array) { super(new MArray(array.contents, true)); }
 
     // Called from the MValueConverter.
     MutableArray(@NonNull MValue val, @Nullable MCollection parent) { super(val, parent); }
@@ -85,8 +85,8 @@ public final class MutableArray extends Array implements MutableArrayInterface {
     @Override
     public MutableArray setData(@NonNull List<?> data) {
         synchronized (lock) {
-            internalArray.clear();
-            for (Object obj: data) { internalArray.append(toFleece(obj)); }
+            contents.clear();
+            for (Object obj: data) { contents.append(toFleece(obj)); }
         }
         return this;
     }
@@ -124,8 +124,8 @@ public final class MutableArray extends Array implements MutableArrayInterface {
     public MutableArray setValue(int index, @Nullable Object value) {
         final Object val = toFleece(value);
         synchronized (lock) {
-            if (Fleece.willMutate(val, internalArray.get(index), internalArray)
-                && (!internalArray.set(index, val))) {
+            if (Fleece.willMutate(val, contents.get(index), contents)
+                && (!contents.set(index, val))) {
                 throw new IndexOutOfBoundsException("Array index " + index + " is out of range");
             }
         }
@@ -263,7 +263,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
     @Override
     public MutableArray addValue(@Nullable Object value) {
         final Object val = toFleece(value);
-        synchronized (lock) { internalArray.append(val); }
+        synchronized (lock) { contents.append(val); }
         return this;
     }
 
@@ -389,7 +389,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
     public MutableArray insertValue(int index, @Nullable Object value) {
         final Object val = toFleece(value);
         synchronized (lock) {
-            if (!internalArray.insert(index, val)) {
+            if (!contents.insert(index, val)) {
                 throw new IndexOutOfBoundsException("Array index " + index + " is out of range");
             }
         }
@@ -527,7 +527,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
     @Override
     public MutableArray remove(int index) {
         synchronized (lock) {
-            if (!internalArray.remove(index, 1)) {
+            if (!contents.remove(index, 1)) {
                 throw new IndexOutOfBoundsException("Array index " + index + " is out of range");
             }
             return this;

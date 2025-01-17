@@ -66,7 +66,7 @@ static bool httpAuthCallback(C4Listener *ignore, C4Slice authHeader, void *conte
     JNIEnv *env = nullptr;
     jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
 
-    jboolean ok = false;
+    jboolean ok = JNI_FALSE;
 
     if (getEnvStat == JNI_OK) {
         jstring _header = toJString(env, authHeader);
@@ -88,14 +88,15 @@ static bool httpAuthCallback(C4Listener *ignore, C4Slice authHeader, void *conte
         C4Warn("httpAuthCallback(): Failed to get the environment: getEnvStat -> %d", getEnvStat);
     }
 
-    return ok;
+    return ok != JNI_FALSE;
 }
 
 static bool certAuthCallback(C4Listener *ignore, C4Slice clientCertData, void *context) {
     JNIEnv *env = nullptr;
     jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
 
-    bool ok = false;
+    jboolean ok = JNI_FALSE;
+
     if (getEnvStat == JNI_OK) {
         jbyteArray _data = toJByteArray(env, clientCertData);
         ok = env->CallStaticBooleanMethod(cls_C4Listener, m_C4Listener_certAuthCallback, (jlong) context, _data);
@@ -116,7 +117,7 @@ static bool certAuthCallback(C4Listener *ignore, C4Slice clientCertData, void *c
         C4Warn("certAuthCallback(): Failed to get the environment: getEnvStat -> %d", getEnvStat);
     }
 
-    return ok;
+    return ok != JNI_FALSE;
 }
 
 // The Java method returns a byte array of key data.
@@ -150,7 +151,8 @@ static bool publicKeyDataCallback(void *externalKey, void *output, size_t output
     JNIEnv *env = nullptr;
     jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
 
-    bool ok = false;
+    jboolean ok = JNI_FALSE;
+
     if (getEnvStat == JNI_OK) {
         ok = doKeyDataCallback(env, externalKey, outputMaxLen, output, outputLen);
     } else if (getEnvStat == JNI_EDETACHED) {
@@ -165,7 +167,7 @@ static bool publicKeyDataCallback(void *externalKey, void *output, size_t output
         C4Warn("publicKeyDataCallback(): Failed to get the environment: getEnvStat -> %d", getEnvStat);
     }
 
-    return ok;
+    return ok != JNI_FALSE;
 }
 
 // The Java method takes a byte array of encrypted data and returns a byte array
@@ -217,7 +219,8 @@ static bool decryptKeyCallback(void *externalKey, C4Slice input, void *output, s
     JNIEnv *env = nullptr;
     jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
 
-    bool ok = false;
+    jboolean ok = JNI_FALSE;
+
     if (getEnvStat == JNI_OK) {
         ok = doDecryptCallback(env, externalKey, input, outputMaxLen, output, outputLen);
     } else if (getEnvStat == JNI_EDETACHED) {
@@ -232,7 +235,7 @@ static bool decryptKeyCallback(void *externalKey, C4Slice input, void *output, s
         C4Warn("decryptKeyCallback(): Failed to get the environment: getEnvStat -> %d", getEnvStat);
     }
 
-    return ok;
+    return ok != JNI_FALSE;
 }
 
 // The Java method takes a byte array of data and returns a byte array
@@ -278,7 +281,8 @@ static bool signKeyCallback(
     JNIEnv *env = nullptr;
     jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
 
-    bool ok = false;
+    jboolean ok = JNI_FALSE;
+
     if (getEnvStat == JNI_OK) {
         ok = doSignCallback(env, externalKey, digestAlgorithm, inputData, outSignature);
     } else if (getEnvStat == JNI_EDETACHED) {
@@ -293,7 +297,7 @@ static bool signKeyCallback(
         C4Warn("signKeyCallback(): Failed to get the environment: getEnvStat -> %d", getEnvStat);
     }
 
-    return ok;
+    return ok != JNI_FALSE;
 }
 
 // See C4ExternalKeyCallbacks in C4Certificate.h

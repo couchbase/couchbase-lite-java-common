@@ -74,6 +74,8 @@ public abstract class MCollection implements Encodable {
     // Public Methods
     //---------------------------------------------
 
+    public abstract int count();
+
     public final boolean isMutable() { return mutable; }
 
     public final boolean hasMutableChildren() { return mutableChildren; }

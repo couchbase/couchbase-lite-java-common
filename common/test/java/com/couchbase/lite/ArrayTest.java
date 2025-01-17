@@ -1898,8 +1898,7 @@ public class ArrayTest extends BaseDbTest {
     }
 
     private void populateData(MutableArray array) {
-        List<Object> data = arrayOfAllTypes();
-        for (Object o: data) { array.addValue(o); }
+        for (Object o: arrayOfAllTypes()) { array.addValue(o); }
     }
 
     @SuppressWarnings("UnnecessaryUnboxing")
