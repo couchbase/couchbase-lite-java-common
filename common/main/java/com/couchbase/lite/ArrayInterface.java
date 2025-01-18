@@ -28,12 +28,15 @@ import com.couchbase.lite.internal.utils.Internal;
  * Internal interface
  */
 // You look at this and the DictionaryInterface and you see that they
-// are, obviously, the same and should be a single inteface with a
-// generic key type. Just try it...
+// are, obviously, the same and should be a single interface with a
+// generic key type.
+// Just try it...
 // Result extends both interfaces.  You can't extend
 // two interfaces with the same erasure.  Curses!!!
-@Internal("This interface  is not part of the public API")
-public interface ArrayInterface extends CollectionInterface {
+@Internal("This interface is not part of the public API")
+public interface ArrayInterface extends JFleeceCollectionInterface {
+    boolean getBoolean(int index);
+
     int getInt(int index);
 
     long getLong(int index);
@@ -41,8 +44,6 @@ public interface ArrayInterface extends CollectionInterface {
     float getFloat(int index);
 
     double getDouble(int index);
-
-    boolean getBoolean(int index);
 
     @Nullable
     Number getNumber(int index);
@@ -64,6 +65,9 @@ public interface ArrayInterface extends CollectionInterface {
 
     @Nullable
     Object getValue(int index);
+
+    @Nullable
+    <T> T getValue(@NonNull Class<T> klass, int index);
 
     @NonNull
     List<Object> toList();

@@ -28,7 +28,7 @@ import com.couchbase.lite.internal.utils.Internal;
  * This is an internal interface and not part of the public API.
  */
 @Internal("This interface is not part of the public API")
-interface MutableArrayInterface extends ArrayInterface {
+public interface MutableArrayInterface extends ArrayInterface {
 
     @Nullable
     @Override

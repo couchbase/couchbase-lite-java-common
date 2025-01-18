@@ -33,6 +33,7 @@ import com.couchbase.lite.internal.core.C4Document;
 import com.couchbase.lite.internal.fleece.FLDict;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
+import com.couchbase.lite.internal.fleece.JSONEncodable;
 import com.couchbase.lite.internal.fleece.MRoot;
 import com.couchbase.lite.internal.utils.ClassUtils;
 import com.couchbase.lite.internal.utils.Internal;
@@ -43,7 +44,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
  * Readonly version of the Document.
  */
 @SuppressWarnings("PMD.CyclomaticComplexity")
-public class Document implements DictionaryInterface, Iterable<String> {
+public class Document implements DictionaryInterface, JSONEncodable, Iterable<String> {
 
     /// Factory methods
 
@@ -253,49 +254,14 @@ public class Document implements DictionaryInterface, Iterable<String> {
     public List<String> getKeys() { return getContent().getKeys(); }
 
     /**
-     * Gets a property's value as an object. The object types are Blob, Array,
-     * Dictionary, Number, or String based on the underlying data type; or nil if the
-     * property value is null or the property doesn't exist.
-     *
-     * @param key the key.
-     * @return the object value or null.
-     */
-    @Nullable
-    @Override
-    public Object getValue(@NonNull String key) { return getContent().getValue(key); }
-
-    /**
-     * Gets a property's value as an object. The object types are Blob, Array,
-     * Dictionary, Number, or String based on the underlying data type; or nil if the
-     * property value is null or the property doesn't exist.
-     *
-     * @param key the key.
-     * @return the object value or null.
-     */
-    @Nullable
-    public <T> T getValue(@NonNull Class<T> klass, @NonNull String key) { return getContent().getValue(klass, key); }
-
-    /**
-     * Gets a property's value as a String.
-     * Returns null if the value doesn't exist, or its value is not a String.
+     * Gets a property's value as a boolean. Returns true if the value exists, and is either `true`
+     * or a nonzero number.
      *
      * @param key the key
-     * @return the String or null.
+     * @return the boolean value.
      */
-    @Nullable
     @Override
-    public String getString(@NonNull String key) { return getContent().getString(key); }
-
-    /**
-     * Gets a property's value as a Number.
-     * Returns null if the value doesn't exist, or its value is not a Number.
-     *
-     * @param key the key
-     * @return the Number or nil.
-     */
-    @Nullable
-    @Override
-    public Number getNumber(@NonNull String key) { return getContent().getNumber(key); }
+    public boolean getBoolean(@NonNull String key) { return getContent().getBoolean(key); }
 
     /**
      * Gets a property's value as an int.
@@ -342,25 +308,26 @@ public class Document implements DictionaryInterface, Iterable<String> {
     public double getDouble(@NonNull String key) { return getContent().getDouble(key); }
 
     /**
-     * Gets a property's value as a boolean. Returns true if the value exists, and is either `true`
-     * or a nonzero number.
+     * Gets a property's value as a Number.
+     * Returns null if the value doesn't exist, or its value is not a Number.
      *
      * @param key the key
-     * @return the boolean value.
-     */
-    @Override
-    public boolean getBoolean(@NonNull String key) { return getContent().getBoolean(key); }
-
-    /**
-     * Gets a property's value as a Blob.
-     * Returns null if the value doesn't exist, or its value is not a Blob.
-     *
-     * @param key the key
-     * @return the Blob value or null.
+     * @return the Number or nil.
      */
     @Nullable
     @Override
-    public Blob getBlob(@NonNull String key) { return getContent().getBlob(key); }
+    public Number getNumber(@NonNull String key) { return getContent().getNumber(key); }
+
+    /**
+     * Gets a property's value as a String.
+     * Returns null if the value doesn't exist, or its value is not a String.
+     *
+     * @param key the key
+     * @return the String or null.
+     */
+    @Nullable
+    @Override
+    public String getString(@NonNull String key) { return getContent().getString(key); }
 
     /**
      * Gets a property's value as a Date.
@@ -376,6 +343,17 @@ public class Document implements DictionaryInterface, Iterable<String> {
     @Nullable
     @Override
     public Date getDate(@NonNull String key) { return getContent().getDate(key); }
+
+    /**
+     * Gets a property's value as a Blob.
+     * Returns null if the value doesn't exist, or its value is not a Blob.
+     *
+     * @param key the key
+     * @return the Blob value or null.
+     */
+    @Nullable
+    @Override
+    public Blob getBlob(@NonNull String key) { return getContent().getBlob(key); }
 
     /**
      * Get a property's value as an Array.
@@ -398,6 +376,29 @@ public class Document implements DictionaryInterface, Iterable<String> {
     @Nullable
     @Override
     public Dictionary getDictionary(@NonNull String key) { return getContent().getDictionary(key); }
+
+    /**
+     * Gets a property's value as an object. The object types are Blob, Array,
+     * Dictionary, Number, or String based on the underlying data type; or nil if the
+     * property value is null or the property doesn't exist.
+     *
+     * @param key the key.
+     * @return the object value or null.
+     */
+    @Nullable
+    @Override
+    public Object getValue(@NonNull String key) { return getContent().getValue(key); }
+
+    /**
+     * Gets a property's value as an object. The object types are Blob, Array,
+     * Dictionary, Number, or String based on the underlying data type; or nil if the
+     * property value is null or the property doesn't exist.
+     *
+     * @param key the key.
+     * @return the object value or null.
+     */
+    @Nullable
+    public <T> T getValue(@NonNull Class<T> klass, @NonNull String key) { return getContent().getValue(klass, key); }
 
     /**
      * Gets content of the current object as a Map. The values contained in the returned
@@ -645,7 +646,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
         if (db == null) { throw new CouchbaseLiteError("document has not been saved to a database"); }
 
         final MRoot newRoot = new MRoot(new DocContext(db, c4Document), data.toFLValue(), mutable);
-        internalDict = (Dictionary) Preconditions.assertNotNull(newRoot.asNative(), "root dictionary");
+        internalDict = (Dictionary) Preconditions.assertNotNull(newRoot.toJFleece(), "root dictionary");
         root = newRoot;
     }
 }

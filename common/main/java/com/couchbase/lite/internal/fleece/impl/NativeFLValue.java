@@ -54,7 +54,7 @@ public final class NativeFLValue implements FLValue.NativeImpl {
     public String nToJSON5(long peer) { return toJSON5(peer); }
 
     @NonNull
-    public byte[] nAsData(long value) { return asData(value); }
+    public byte[] nAsByteArray(long value) { return asData(value); }
 
     @Override
     public boolean nAsBool(long value) { return asBool(value); }

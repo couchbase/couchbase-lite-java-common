@@ -28,10 +28,10 @@ import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLValue;
 
-import static com.couchbase.lite.internal.fleece.FLConstants.ValueType.ARRAY;
-import static com.couchbase.lite.internal.fleece.FLConstants.ValueType.DATA;
-import static com.couchbase.lite.internal.fleece.FLConstants.ValueType.DICT;
-import static com.couchbase.lite.internal.fleece.FLConstants.ValueType.STRING;
+import static com.couchbase.lite.internal.fleece.FLValue.ARRAY;
+import static com.couchbase.lite.internal.fleece.FLValue.DATA;
+import static com.couchbase.lite.internal.fleece.FLValue.DICT;
+import static com.couchbase.lite.internal.fleece.FLValue.STRING;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -71,7 +71,7 @@ public class C4FleeceTest extends C4BaseTest {
             assertNotNull(value);
             assertEquals(DATA, value.getType());
 
-            byte[] decoded = value.asData();
+            byte[] decoded = value.asByteArray();
             assertNotNull(decoded);
             Assert.assertArrayEquals(data, decoded);
         }
@@ -92,7 +92,7 @@ public class C4FleeceTest extends C4BaseTest {
             assertNotNull(value);
             assertEquals(ARRAY, value.getType());
 
-            List<Object> decoded = value.asArray();
+            List<Object> decoded = value.asList(Object.class);
             assertNotNull(decoded);
             assertEquals(1, decoded.size());
 
@@ -117,7 +117,8 @@ public class C4FleeceTest extends C4BaseTest {
             assertNotNull(value);
             assertEquals(DICT, value.getType());
 
-            Map<String, Object> decoded = value.asDict();
+            Map<String, Object> decoded = value.asMap(String.class, Object.class);
+
             assertNotNull(decoded);
             assertTrue(decoded.containsKey("bytes"));
 

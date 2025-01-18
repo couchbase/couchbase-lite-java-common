@@ -686,7 +686,7 @@ public abstract class C4Replicator extends C4Peer {
     public Set<String> getPendingDocIDs(@NonNull String scope, @NonNull String collection) throws LiteCoreException {
         try (FLSliceResult result = withPeerOrNull(peer -> impl.nGetPendingDocIds(peer, scope, collection))) {
             final FLValue val = FLValue.fromData(result);
-            return (val == null) ? Collections.emptySet() : new HashSet<>(val.asTypedArray(String.class));
+            return (val == null) ? Collections.emptySet() : new HashSet<>(val.asList(String.class));
         }
     }
 

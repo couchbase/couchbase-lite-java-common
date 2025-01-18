@@ -300,8 +300,8 @@ public abstract class FLEncoder extends C4NativePeer {
             }
 
             // Encodable
-            if (value instanceof Encodable) {
-                ((Encodable) value).encodeTo(this);
+            if (value instanceof FleeceEncodable) {
+                ((FleeceEncodable) value).encodeTo(this);
                 return true;
             }
 

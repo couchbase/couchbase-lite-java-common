@@ -13,16 +13,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-package com.couchbase.lite;
+package com.couchbase.lite.internal.fleece;
 
 import androidx.annotation.NonNull;
 
+import com.couchbase.lite.CouchbaseLiteException;
 
-public interface CollectionInterface {
-    int count();
 
-    boolean isEmpty();
-
+public interface JSONEncodable {
     @NonNull
     String toJSON() throws CouchbaseLiteException;
 }

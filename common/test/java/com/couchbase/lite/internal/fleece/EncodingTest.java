@@ -15,6 +15,9 @@
 //
 package com.couchbase.lite.internal.fleece;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -148,7 +151,7 @@ public class EncodingTest extends BaseTest {
                 flValue = FLValue.fromData(slice);
                 assertNotNull(flValue);
 
-                Object obj = FLValue.toObject(flValue);
+                Object obj = toObject(flValue);
                 Report.log("ROUND TRIP SLICE: '%s'; FROM: '%s'; EXPECTING: '%s'", obj, item, expected);
                 assertEquals(expected, obj);
             }
@@ -157,8 +160,11 @@ public class EncodingTest extends BaseTest {
 
     private void testSlice(byte[] utf8Slice, String expected) {
         FLValue flValue = FLValue.fromData(utf8Slice);
-        Object obj = FLValue.toObject(flValue);
+        Object obj = toObject(flValue);
         Report.log("DECODE SLICE: '%s'; EXPECTED: '%s'", obj, expected);
         assertEquals(expected, obj);
     }
+
+    @Nullable
+    public static Object toObject(@NonNull FLValue flValue) { return flValue.toJava(); }
 }
