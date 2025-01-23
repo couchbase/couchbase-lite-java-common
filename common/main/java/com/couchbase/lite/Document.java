@@ -238,7 +238,10 @@ public class Document implements DictionaryInterface, Iterable<String> {
      * @return the number of entries in the document.
      */
     @Override
-    public int count() { return getContent().count(); }
+    public final int count() { return getContent().count(); }
+
+    @Override
+    public final boolean isEmpty() { return getContent().isEmpty(); }
 
     //---------------------------------------------
     // API - Implements ReadOnlyDictionaryInterface
@@ -534,8 +537,6 @@ public class Document implements DictionaryInterface, Iterable<String> {
     final boolean isMutable() { return mutable; }
 
     int compareAge(@NonNull Document target) { return Long.compare(getTimestamp(), target.getTimestamp()); }
-
-    final boolean isEmpty() { return getContent().isEmpty(); }
 
     final boolean isNewDocument() { return getRevisionID() == null; }
 

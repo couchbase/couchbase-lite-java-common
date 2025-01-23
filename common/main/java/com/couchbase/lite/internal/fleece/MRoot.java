@@ -36,6 +36,9 @@ public final class MRoot extends MCollection {
     //---------------------------------------------
 
     @Override
+    public int count() { return 0; }
+
+    @Override
     public void encodeTo(@NonNull FLEncoder enc) { content.encodeTo(enc); }
 
     @Override

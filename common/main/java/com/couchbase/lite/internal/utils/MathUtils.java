@@ -28,4 +28,10 @@ public final class MathUtils {
         @NonNull
         protected synchronized Random initialValue() { return new Random(); }
     };
+
+    public static int asUnsignedInt(long x) { return (x > Integer.MAX_VALUE) ? -1 : (int) x; }
+
+    public static int asSignedInt(long x) {
+        return ((x > Integer.MAX_VALUE) || (x < Integer.MIN_VALUE)) ? 0 : (int) x;
+    }
 }

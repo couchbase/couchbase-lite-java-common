@@ -553,7 +553,7 @@ abstract class BaseDbTest : BaseTest() {
         //#8 array.addLong(Long.MAX_VALUE);
         assertEquals(java.lang.Long.valueOf(Long.MAX_VALUE), array.getValue(8))
         assertTrue(array.getBoolean(8))
-        assertEquals(java.lang.Long.valueOf(Long.MAX_VALUE).toInt(), array.getInt(8))
+        assertEquals(0, array.getInt(8))
         assertEquals(Long.MAX_VALUE, array.getLong(8))
         assertEquals(Long.MAX_VALUE.toFloat(), array.getFloat(8), 100.0f)
         assertEquals(Long.MAX_VALUE.toDouble(), array.getDouble(8), 100.0)
@@ -1020,7 +1020,7 @@ abstract class BaseDbTest : BaseTest() {
         //#8 dict.setLong(Long.MAX_VALUE);
         assertEquals(Long.MAX_VALUE, dict.getValue("dict-9"))
         assertTrue(dict.getBoolean("dict-9"))
-        assertEquals(Long.MAX_VALUE.toInt(), dict.getInt("dict-9"))
+        assertEquals(0, dict.getInt("dict-9"))
         assertEquals(Long.MAX_VALUE, dict.getLong("dict-9"))
         assertEquals(Long.MAX_VALUE.toFloat(), dict.getFloat("dict-9"), 100.0f)
         assertEquals(Long.MAX_VALUE.toDouble(), dict.getDouble("dict-9"), 100.0)
@@ -1510,7 +1510,7 @@ abstract class BaseDbTest : BaseTest() {
         //#8 doc.setLong(Long.MAX_VALUE);
         assertEquals(java.lang.Long.valueOf(Long.MAX_VALUE), doc.getValue("doc-9"))
         assertTrue(doc.getBoolean("doc-9"))
-        assertEquals(java.lang.Long.valueOf(Long.MAX_VALUE).toInt().toLong(), doc.getInt("doc-9").toLong())
+        assertEquals(0, doc.getInt("doc-9").toLong())
         assertEquals(Long.MAX_VALUE, doc.getLong("doc-9"))
         assertEquals(Long.MAX_VALUE.toFloat(), doc.getFloat("doc-9"), 100.0f)
         assertEquals(Long.MAX_VALUE.toDouble(), doc.getDouble("doc-9"), 100.0)

@@ -22,6 +22,7 @@ import com.couchbase.lite.internal.fleece.FLValue;
 import com.couchbase.lite.internal.fleece.MCollection;
 import com.couchbase.lite.internal.fleece.MValue;
 import com.couchbase.lite.internal.utils.ClassUtils;
+import com.couchbase.lite.internal.utils.MathUtils;
 
 
 final class CBLConverter {
@@ -47,7 +48,7 @@ final class CBLConverter {
 
     static int asInteger(@NonNull MValue val, @Nullable MCollection container) {
         final FLValue value = val.getValue();
-        if (value != null) { return (int) value.asInt(); }
+        if (value != null) { return MathUtils.asSignedInt(value.asInt()); }
 
         final Number num = asNumber(val.asNative(container));
         return num != null ? num.intValue() : 0;

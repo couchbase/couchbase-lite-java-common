@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.couchbase.lite.CouchbaseLiteError;
+import com.couchbase.lite.internal.utils.MathUtils;
 
 
 /**
@@ -78,7 +79,8 @@ public final class MDict extends MCollection {
      *
      * @return dictionary size
      */
-    public long count() { return valCount; }
+    @Override
+    public int count() { return MathUtils.asUnsignedInt(valCount); }
 
     /**
      * Find out if the dictionary contains the passed key.

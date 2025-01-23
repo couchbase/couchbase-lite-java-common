@@ -28,12 +28,13 @@ import com.couchbase.lite.internal.utils.Internal;
 /**
  * This is an internal interface and not part of the public API.
  */
+// You look at this and the ArrayInterface and you see that they
+// are, obviously, the same and should be a single inteface with a
+// generic key type. Just try it...
+// Result extends both interfaces.  You can't extend
+// two interfaces with the same erasure.  Curses!!!
 @Internal("This interface is not part of the public API")
-public interface DictionaryInterface {
-    int count();
-
-    boolean contains(@NonNull String key);
-
+public interface DictionaryInterface extends CollectionInterface {
     int getInt(@NonNull String key);
 
     long getLong(@NonNull String key);
@@ -65,13 +66,12 @@ public interface DictionaryInterface {
     @Nullable
     Object getValue(@NonNull String key);
 
+    boolean contains(@NonNull String key);
+
     // Return a COPY of all keys
     @NonNull
     List<String> getKeys();
 
     @NonNull
     Map<String, Object> toMap();
-
-    @Nullable
-    String toJSON() throws CouchbaseLiteException;
 }

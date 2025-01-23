@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.couchbase.lite.CouchbaseLiteError;
+import com.couchbase.lite.internal.utils.MathUtils;
 
 
 /**
@@ -77,7 +78,8 @@ public final class MArray extends MCollection {
      *
      * @return array size
      */
-    public long count() { return values.size(); }
+    @Override
+    public int count() { return values.size(); }
 
     /**
      * Returns a reference to the MValue of the item at the given index.
@@ -87,12 +89,13 @@ public final class MArray extends MCollection {
     public MValue get(long index) {
         assertOpen();
 
-        if ((index < 0) || (index >= values.size())) { return MValue.EMPTY; }
+        final int idx = checkBounds(values.size(), index);
+        if (idx < 0) { return MValue.EMPTY; }
 
-        MValue value = values.get((int) index);
+        MValue value = values.get(idx);
         if (value.isEmpty() && (baseArray != null)) {
             value = new MValue(baseArray.get(index));
-            values.set((int) index, value);
+            values.set(idx, value);
         }
 
         return value;
@@ -107,10 +110,11 @@ public final class MArray extends MCollection {
         if (!isMutable()) { throw new CouchbaseLiteError("Cannot set items in a non-mutable MArray"); }
         assertOpen();
 
-        if ((index < 0) || (index >= count())) { return false; }
+        final int idx = checkBounds(count(), index);
+        if (idx < 0) { return false; }
 
         mutate();
-        values.set((int) index, new MValue(value));
+        values.set(idx, new MValue(value));
 
         return true;
     }
@@ -119,30 +123,33 @@ public final class MArray extends MCollection {
         if (!isMutable()) { throw new CouchbaseLiteError("Cannot insert items in a non-mutable MArray"); }
         assertOpen();
 
-        if ((index < 0) || (index > count())) { return false; }
+        final int count = count();
 
-        if (index < count()) { populateValues(); }
+        final int idx = checkBounds(count + 1, index);
+        if (idx < 0) { return false; }
+
+        if (idx < count) { populateValues(); }
 
         mutate();
-        values.add((int) index, new MValue(value));
+        values.add(idx, new MValue(value));
 
         return true;
     }
 
-    public boolean remove(long start, long num) {
+    public boolean remove(int start, int num) {
         if (!isMutable()) { throw new CouchbaseLiteError("Cannot remove items in a non-mutable MArray"); }
         assertOpen();
 
-        final long end = start + num;
+        final int end = start + num;
         if (end <= start) { return end == start; }
 
-        final long count = count();
-        if (end > count) { return false; }
+        final int count = count();
 
+        if (end > count) { return false; }
         if (end < count) { populateValues(); }
 
         mutate();
-        values.subList((int) start, (int) end).clear();
+        values.subList(start, end).clear();
 
         return true;
     }
@@ -185,9 +192,10 @@ public final class MArray extends MCollection {
     private void resize() {
         assertOpen();
         if (baseArray == null) { return; }
-        final long newSize = baseArray.count();
+        final int newSize = MathUtils.asUnsignedInt(baseArray.count());
+        if (newSize < 0) { return; }
         final int count = values.size();
-        if (newSize < count) { values.subList((int) newSize, count).clear(); }
+        if (newSize < count) { values.subList(newSize, count).clear(); }
         else if (newSize > count) {
             for (int i = 0; i < newSize - count; i++) { values.add(MValue.EMPTY); }
         }
@@ -204,5 +212,9 @@ public final class MArray extends MCollection {
         for (int i = 0; i < size; i++) {
             if (values.get(i).isEmpty()) { values.set(i, new MValue(baseArray.get(i))); }
         }
+    }
+
+    private int checkBounds(long upperBound, long index) {
+        return (index < 0) || (index >= upperBound) ? -1 : (int) index;
     }
 }

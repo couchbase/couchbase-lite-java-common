@@ -14,9 +14,6 @@ package "Encoder" #DDDDDD {
 interface Encodable
 Encodable : encodeTo()
 
-interface FLEncodable
-FLEncodable : encodeTo()
-
 class FLEncoder
 NativePeer <|-- FLEncoder
 FLEncoder : bool write...()
@@ -108,19 +105,19 @@ ArrayInterface : T get...(int)
 ArrayInterface : String toJSON()
 
 class Array
-FLEncodable <|-- Array
+Encodable <|-- Array
 ArrayInterface <|-- Array
 Array *-- MArray
 Array : MutableArray toMutable()
 
 class Dictionary
-FLEncodable <|-- Dictionary
+Encodable <|-- Dictionary
 DictionaryInterface <|-- Dictionary
 Dictionary *-- MDict
 Dictionary : MutableDictionary toMutable()
 
 class Blob
-FLEncodable <|-- Blob
+Encodable <|-- Blob
 
 class Document
 DictionaryInterface <|-- Document
