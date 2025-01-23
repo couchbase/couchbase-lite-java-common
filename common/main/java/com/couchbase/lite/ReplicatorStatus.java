@@ -24,6 +24,7 @@ import java.util.Map;
 
 import com.couchbase.lite.internal.core.C4ReplicatorStatus;
 import com.couchbase.lite.internal.logging.Log;
+import com.couchbase.lite.internal.utils.MathUtils;
 
 
 /**
@@ -84,7 +85,9 @@ public final class ReplicatorStatus {
     ReplicatorStatus(@NonNull C4ReplicatorStatus c4Status) {
         this(
             getActivityLevelFromC4(c4Status.getActivityLevel()),
-            new ReplicatorProgress((int) c4Status.getProgressUnitsCompleted(), (int) c4Status.getProgressUnitsTotal()),
+            new ReplicatorProgress(
+                MathUtils.asUnsignedInt(c4Status.getProgressUnitsCompleted()),
+                MathUtils.asUnsignedInt(c4Status.getProgressUnitsTotal())),
             convertC4StatusError(c4Status));
     }
 

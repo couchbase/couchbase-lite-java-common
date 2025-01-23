@@ -25,20 +25,16 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 
-import com.couchbase.lite.internal.fleece.FLEncodable;
-import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.MArray;
 import com.couchbase.lite.internal.fleece.MCollection;
-import com.couchbase.lite.internal.fleece.MContext;
 import com.couchbase.lite.internal.fleece.MValue;
-import com.couchbase.lite.internal.utils.Internal;
 import com.couchbase.lite.internal.utils.JSONUtils;
 
 
 /**
  * Array provides readonly access to array data.
  */
-public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
+public class Array extends AbstractCollection<MArray> implements ArrayInterface, Iterable<Object> {
     //---------------------------------------------
     // Types
     //---------------------------------------------
@@ -46,29 +42,20 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
         private final long mutations;
         private int index;
 
-        ArrayIterator() { this.mutations = Array.this.internalArray.getLocalMutationCount(); }
+        ArrayIterator() { this.mutations = contents.getLocalMutationCount(); }
 
         @Override
-        public boolean hasNext() { return index < Array.this.count(); }
+        public boolean hasNext() { return index < count(); }
 
         @Nullable
         @Override
         public Object next() {
-            if (Array.this.internalArray.getLocalMutationCount() != mutations) {
+            if (contents.getLocalMutationCount() != mutations) {
                 throw new ConcurrentModificationException("Array modified during iteration");
             }
             return getValue(index++);
         }
     }
-
-    //---------------------------------------------
-    // Instance members
-    //---------------------------------------------
-
-    @NonNull
-    protected final Object lock;
-    @NonNull
-    protected final MArray internalArray;
 
     //---------------------------------------------
     // Constructors
@@ -81,12 +68,7 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
     Array(@NonNull MValue val, @Nullable MCollection parent) { this(new MArray(val, parent)); }
 
     // Construct a new array with the passed content
-    protected Array(@NonNull MArray array) {
-        internalArray = array;
-        final MContext context = array.getContext();
-        final BaseDatabase db = (context == null) ? null : context.getDatabase();
-        lock = (db == null) ? new Object() : db.getDbLock();
-    }
+    protected Array(@NonNull MArray array) { super(array); }
 
     //---------------------------------------------
     // API - public methods
@@ -103,16 +85,6 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
     }
 
     /**
-     * Gets a number of the items in the array.
-     *
-     * @return the size of the array
-     */
-    @Override
-    public final int count() {
-        synchronized (lock) { return (int) internalArray.count(); }
-    }
-
-    /**
      * Gets value at the given index as an object. The object types are Blob,
      * Array, Dictionary, Number, or String based on the underlying
      * data type; or null if the value is nil.
@@ -123,7 +95,7 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
     @Nullable
     @Override
     public Object getValue(int index) {
-        synchronized (lock) { return getMValue(internalArray, index).asNative(internalArray); }
+        synchronized (lock) { return getMValue(contents, index).asNative(contents); }
     }
 
     /**
@@ -151,7 +123,7 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
     @Override
     public String getString(int index) {
         synchronized (lock) {
-            final Object obj = getMValue(internalArray, index).asNative(internalArray);
+            final Object obj = getMValue(contents, index).asNative(contents);
             return !(obj instanceof String) ? null : (String) obj;
         }
     }
@@ -165,7 +137,9 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
     @Nullable
     @Override
     public Number getNumber(int index) {
-        synchronized (lock) { return CBLConverter.asNumber(getMValue(internalArray, index).asNative(internalArray)); }
+        synchronized (lock) {
+            return CBLConverter.asNumber(getMValue(contents, index).asNative(contents));
+        }
     }
 
     /**
@@ -178,7 +152,7 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
      */
     @Override
     public int getInt(int index) {
-        synchronized (lock) { return CBLConverter.asInteger(getMValue(internalArray, index), internalArray); }
+        synchronized (lock) { return CBLConverter.asInteger(getMValue(contents, index), contents); }
     }
 
     /**
@@ -191,7 +165,7 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
      */
     @Override
     public long getLong(int index) {
-        synchronized (lock) { return CBLConverter.asLong(getMValue(internalArray, index), internalArray); }
+        synchronized (lock) { return CBLConverter.asLong(getMValue(contents, index), contents); }
     }
 
     /**
@@ -204,7 +178,7 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
      */
     @Override
     public float getFloat(int index) {
-        synchronized (lock) { return CBLConverter.asFloat(getMValue(internalArray, index), internalArray); }
+        synchronized (lock) { return CBLConverter.asFloat(getMValue(contents, index), contents); }
     }
 
     /**
@@ -217,7 +191,7 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
      */
     @Override
     public double getDouble(int index) {
-        synchronized (lock) { return CBLConverter.asDouble(getMValue(internalArray, index), internalArray); }
+        synchronized (lock) { return CBLConverter.asDouble(getMValue(contents, index), contents); }
     }
 
     /**
@@ -228,7 +202,9 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
      */
     @Override
     public boolean getBoolean(int index) {
-        synchronized (lock) { return CBLConverter.asBoolean(getMValue(internalArray, index).asNative(internalArray)); }
+        synchronized (lock) {
+            return CBLConverter.asBoolean(getMValue(contents, index).asNative(contents));
+        }
     }
 
     /**
@@ -242,7 +218,7 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
     @Override
     public Blob getBlob(int index) {
         synchronized (lock) {
-            final Object obj = getMValue(internalArray, index).asNative(internalArray);
+            final Object obj = getMValue(contents, index).asNative(contents);
             return !(obj instanceof Blob) ? null : (Blob) obj;
         }
     }
@@ -273,7 +249,7 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
     @Override
     public Array getArray(int index) {
         synchronized (lock) {
-            final Object obj = getMValue(internalArray, index).asNative(internalArray);
+            final Object obj = getMValue(contents, index).asNative(contents);
             return !(obj instanceof Array) ? null : (Array) obj;
         }
     }
@@ -288,7 +264,7 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
     @Override
     public Dictionary getDictionary(int index) {
         synchronized (lock) {
-            final Object obj = getMValue(internalArray, index).asNative(internalArray);
+            final Object obj = getMValue(contents, index).asNative(contents);
             return !(obj instanceof Dictionary) ? null : (Dictionary) obj;
         }
     }
@@ -303,30 +279,12 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
     @Override
     public List<Object> toList() {
         synchronized (lock) {
-            final int count = (int) internalArray.count();
+            final int count = contents.count();
             final List<Object> result = new ArrayList<>(count);
             for (int index = 0; index < count; index++) {
-                result.add(Fleece.toObject(getMValue(internalArray, index).asNative(internalArray)));
+                result.add(Fleece.toObject(getMValue(contents, index).asNative(contents)));
             }
             return result;
-        }
-    }
-
-    /**
-     * Encode an Array as a JSON string
-     *
-     * @return JSON encoded representation of the Array
-     * @throws CouchbaseLiteException on encoder failure.
-     */
-    @NonNull
-    @Override
-    public String toJSON() throws CouchbaseLiteException {
-        try (FLEncoder.JSONEncoder encoder = FLEncoder.getJSONEncoder()) {
-            internalArray.encodeTo(encoder);
-            return encoder.finishJSON();
-        }
-        catch (LiteCoreException e) {
-            throw CouchbaseLiteException.convertException(e, "Cannot encode array: " + this);
         }
     }
 
@@ -345,14 +303,6 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
     @NonNull
     @Override
     public Iterator<Object> iterator() { return new ArrayIterator(); }
-
-    //-------------------------------------------------------------------------
-    // Implementation of FLEncodable
-    //-------------------------------------------------------------------------
-
-    @Internal("This method is not part of the public API")
-    @Override
-    public void encodeTo(@NonNull FLEncoder enc) { internalArray.encodeTo(enc); }
 
     //-------------------------------------------------------------------------
     // Object overrides
@@ -384,7 +334,7 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
     @NonNull
     @Override
     public String toString() {
-        final StringBuilder buf = new StringBuilder("Array{(").append(internalArray.getStateString()).append(')');
+        final StringBuilder buf = new StringBuilder("Array{(").append(contents.getStateString()).append(')');
 
         final int n = count();
         for (int i = 0; i < n; i++) {

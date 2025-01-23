@@ -32,6 +32,7 @@ import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLValue;
 import com.couchbase.lite.internal.fleece.MRoot;
 import com.couchbase.lite.internal.utils.JSONUtils;
+import com.couchbase.lite.internal.utils.MathUtils;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
@@ -78,6 +79,9 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
         assertOpen();
         return getColumnCount();
     }
+
+    @Override
+    public boolean isEmpty() { return count() == 0; }
 
     //---------------------------------------------
     // implementation of ReadOnlyArrayInterface
@@ -135,8 +139,8 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     public int getInt(int index) {
         assertValid(index);
         final FLValue flValue = values.get(index);
-        return (flValue == null) ? 0 : (int) flValue.asInt();
-    }
+        return (flValue == null) ? 0 : MathUtils.asSignedInt(flValue.asInt());
+     }
 
     /**
      * The result at the given index interpreted as a long.

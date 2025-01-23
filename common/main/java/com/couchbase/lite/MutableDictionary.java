@@ -62,7 +62,7 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
     public MutableDictionary(@NonNull String json) { setJSON(json); }
 
     // Create a MutableDictionary that is a copy of the passed Dictionary
-    MutableDictionary(@NonNull Dictionary dict) { super(new MDict(dict.internalDict, true)); }
+    MutableDictionary(@NonNull Dictionary dict) { super(new MDict(dict.contents, true)); }
 
     // Called from the MValueConverter.
     MutableDictionary(@NonNull MValue val, @Nullable MCollection parent) { super(val, parent); }
@@ -85,9 +85,9 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
     @Override
     public MutableDictionary setData(@NonNull Map<String, ?> data) {
         synchronized (lock) {
-            internalDict.clear();
+            contents.clear();
             for (Map.Entry<String, ?> entry: data.entrySet()) {
-                internalDict.set(
+                contents.set(
                     Preconditions.assertNotNull(entry.getKey(), "data key"),
                     new MValue(toFleece(entry.getValue())));
             }
@@ -129,7 +129,9 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
         Preconditions.assertNotNull(key, "key");
         final Object val = toFleece(value);
         synchronized (lock) {
-            if (Fleece.willMutate(val, internalDict.get(key), internalDict)) { internalDict.set(key, new MValue(val)); }
+            if (Fleece.willMutate(val, contents.get(key), contents)) {
+                contents.set(key, new MValue(val));
+            }
         }
         return this;
     }
@@ -267,7 +269,7 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
     @Override
     public MutableDictionary remove(@NonNull String key) {
         Preconditions.assertNotNull(key, "key");
-        synchronized (lock) { internalDict.remove(key); }
+        synchronized (lock) { contents.remove(key); }
         return this;
     }
 
@@ -299,7 +301,7 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
 
     @VisibleForTesting
     boolean isChanged() {
-        synchronized (lock) { return internalDict.isMutated(); }
+        synchronized (lock) { return contents.isMutated(); }
     }
 
     @Nullable

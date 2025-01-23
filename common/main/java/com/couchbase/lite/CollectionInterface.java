@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020 Couchbase, Inc.
+// Copyright (c) 2025 Couchbase, Inc All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,8 +13,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-package com.couchbase.lite.internal.fleece;
+package com.couchbase.lite;
 
-public interface FLEncodable {
-    void encodeTo(FLEncoder enc);
+import androidx.annotation.NonNull;
+
+
+public interface CollectionInterface {
+    int count();
+
+    boolean isEmpty();
+
+    @NonNull
+    String toJSON() throws CouchbaseLiteException;
 }

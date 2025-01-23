@@ -299,9 +299,9 @@ public abstract class FLEncoder extends C4NativePeer {
                 return (val != null) && val;
             }
 
-            // FLEncodable
-            if (value instanceof FLEncodable) {
-                ((FLEncodable) value).encodeTo(this);
+            // Encodable
+            if (value instanceof Encodable) {
+                ((Encodable) value).encodeTo(this);
                 return true;
             }
 

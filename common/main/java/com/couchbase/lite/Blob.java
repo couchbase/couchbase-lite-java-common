@@ -34,7 +34,7 @@ import com.couchbase.lite.internal.core.C4BlobKey;
 import com.couchbase.lite.internal.core.C4BlobReadStream;
 import com.couchbase.lite.internal.core.C4BlobStore;
 import com.couchbase.lite.internal.core.C4BlobWriteStream;
-import com.couchbase.lite.internal.fleece.FLEncodable;
+import com.couchbase.lite.internal.fleece.Encodable;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.logging.Log;
 import com.couchbase.lite.internal.utils.ClassUtils;
@@ -54,7 +54,7 @@ import com.couchbase.lite.internal.utils.Volatile;
 // This class should be re-implemented as a wrapper that delegates to one of three internal implementations:
 // content in memory, content in stream, content in DB.
 @SuppressWarnings("PMD.CyclomaticComplexity")
-public final class Blob implements FLEncodable {
+public final class Blob implements Encodable {
 
     //---------------------------------------------
     // Constants
