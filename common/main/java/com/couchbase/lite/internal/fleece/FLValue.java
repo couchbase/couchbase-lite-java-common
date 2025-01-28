@@ -30,6 +30,29 @@ import com.couchbase.lite.internal.utils.Preconditions;
 
 @SuppressWarnings({"PMD.TooManyMethods", "PMD.ExcessivePublicCount"})
 public class FLValue {
+    public static final int UNDEFINED = -1; // Type of a nullptr FLValue (i.e. no such value)
+    public static final int NULL = 0;
+    public static final int BOOLEAN = 1;
+    public static final int NUMBER = 2;
+    public static final int STRING = 3;
+    public static final int DATA = 4;
+    public static final int ARRAY = 5;
+    public static final int DICT = 6;
+
+    public static final class Error {
+        private Error() { }
+
+        public static final int NO_ERROR = 0;
+        public static final int MEMORY_ERROR = 1;   // Out of memory, or allocation failed
+        public static final int OUT_OF_RANGE = 2;   // Array index or iterator out of range
+        public static final int INVALID_DATA = 3;   // Bad input data (NaN, non-string key, etc.)
+        public static final int ENCODE_ERROR = 4;   // Structural error encoding (missing value, too many ends, etc.)
+        public static final int JSON_ERROR = 5;     // Error parsing JSON
+        public static final int UNKNOWN_VALUE = 6;  // Unparsable data in a Value (corrupt or from a distant future?)
+        public static final int INTERNAL_ERROR = 7; // Something that shouldn't happen
+        public static final int NOT_FOUND = 8;
+    }
+
     public interface NativeImpl {
         long nFromTrustedData(byte[] data);
         long nFromData(long ptr, long size);
@@ -44,7 +67,7 @@ public class FLValue {
         @Nullable
         String nToJSON5(long handle);
         @NonNull
-        byte[] nAsData(long value);
+        byte[] nAsByteArray(long value);
         boolean nAsBool(long value);
         long nAsUnsigned(long value);
         long nAsInt(long value);
@@ -67,9 +90,6 @@ public class FLValue {
 
     @NonNull
     public static FLValue getFLValue(long peer) { return new FLValue(NATIVE_IMPL, peer); }
-
-    @Nullable
-    public static Object toObject(@NonNull FLValue flValue) { return flValue.asObject(); }
 
     @NonNull
     public static FLValue fromData(@NonNull byte[] data) { return fromData(NATIVE_IMPL, data); }
@@ -151,7 +171,7 @@ public class FLValue {
      *
      * @return true if value is a number
      */
-    public boolean isNumber() { return getType() == FLConstants.ValueType.NUMBER; }
+    public boolean isNumber() { return getType() == NUMBER; }
 
     /**
      * Is this value an integer?
@@ -205,7 +225,7 @@ public class FLValue {
      * @return byte[]
      */
     @NonNull
-    public byte[] asData() { return impl.nAsData(peer); }
+    public byte[] asByteArray() { return impl.nAsByteArray(peer); }
 
     /**
      * Returns a value coerced to boolean.
@@ -253,10 +273,7 @@ public class FLValue {
     public String asString() { return impl.nAsString(peer); }
 
     @NonNull
-    public List<Object> asArray() { return asFLArray().asArray(); }
-
-    @NonNull
-    public <T> List<T> asTypedArray(@NonNull Class<T> klass) { return asFLArray().asTypedArray(klass); }
+    public <T> List<T> asList(@NonNull Class<T> klass) { return asFLArray().asList(klass); }
 
     /**
      * Returns the contents as a dictionary.
@@ -272,31 +289,33 @@ public class FLValue {
      * @return long (FLDict)
      */
     @NonNull
-    public Map<String, Object> asDict() { return asFLDict().asDict(); }
+    public <K, V> Map<K, V> asMap(@NonNull Class<K> keyClass, @NonNull Class<V> valueClass) {
+        return asFLDict().asMap(keyClass, valueClass);
+    }
 
     /**
-     * Return an object of the appropriate type.
+     * Return a Java object of the appropriate type.
      *
      * @return Object
      */
     @Nullable
-    public Object asObject() {
+    public Object toJava() {
         switch (impl.nGetType(peer)) {
-            case FLConstants.ValueType.BOOLEAN:
+            case BOOLEAN:
                 return Boolean.valueOf(asBool());
-            case FLConstants.ValueType.NUMBER:
+            case NUMBER:
                 if (isInteger()) { return (isUnsigned()) ? Long.valueOf(asUnsigned()) : Long.valueOf(asInt()); }
                 if (isDouble()) { return Double.valueOf(asDouble()); }
                 return Float.valueOf(asFloat());
-            case FLConstants.ValueType.STRING:
+            case STRING:
                 return asString();
-            case FLConstants.ValueType.DATA:
-                return asData();
-            case FLConstants.ValueType.ARRAY:
-                return asArray();
-            case FLConstants.ValueType.DICT:
-                return asDict();
-            case FLConstants.ValueType.NULL:
+            case DATA:
+                return asByteArray();
+            case ARRAY:
+                return asList(Object.class);
+            case DICT:
+                return asMap(String.class, Object.class);
+            case NULL:
             default:
                 return null;
         }

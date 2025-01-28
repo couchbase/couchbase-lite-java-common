@@ -26,13 +26,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import com.couchbase.lite.internal.BaseJFleeceCollection;
 import com.couchbase.lite.internal.core.C4QueryEnumerator;
 import com.couchbase.lite.internal.fleece.FLArrayIterator;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLValue;
+import com.couchbase.lite.internal.fleece.JSONEncodable;
 import com.couchbase.lite.internal.fleece.MRoot;
 import com.couchbase.lite.internal.utils.JSONUtils;
-import com.couchbase.lite.internal.utils.MathUtils;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
@@ -43,7 +44,9 @@ import com.couchbase.lite.internal.utils.Preconditions;
  * An attempt to reference a Result after calling ResultSet.close on the ResultSet that
  * contains it will throw an CouchbaseLiteError
  */
-public final class Result implements ArrayInterface, DictionaryInterface, Iterable<String> {
+public final class Result
+    extends BaseJFleeceCollection
+    implements ArrayInterface, DictionaryInterface, JSONEncodable, Iterable<String> {
 
     //---------------------------------------------
     // member variables
@@ -88,31 +91,54 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     //---------------------------------------------
 
     /**
-     * The result value at the given index.
+     * The result at the given index interpreted as a boolean.
+     * Returns false if the value cannot be so interpreted.
      *
      * @param index the index of the required value.
-     * @return the value.
+     * @return a boolean value.
      */
-    @Nullable
     @Override
-    public Object getValue(int index) {
-        assertValid(index);
-        return fleeceValueToObject(index);
-    }
+    public boolean getBoolean(int index) { return asBoolean(getFleeceAt(index)); }
 
     /**
-     * The result at the given index converted to a String
+     * The result at the given index interpreted as and an int.
+     * Returns 0 if the value cannot be so interpreted.
      *
      * @param index the index of the required value.
-     * @return a String value.
+     * @return an int value.
      */
-    @Nullable
     @Override
-    public String getString(int index) {
-        assertValid(index);
-        final Object obj = fleeceValueToObject(index);
-        return !(obj instanceof String) ? null : (String) obj;
-    }
+    public int getInt(int index) { return toInteger(getFLValueAt(index)); }
+
+    /**
+     * The result at the given index interpreted as a long.
+     * Returns 0 if the value cannot be so interpreted.
+     *
+     * @param index the index of the required value.
+     * @return a long value.
+     */
+    @Override
+    public long getLong(int index) { return toLong(getFLValueAt(index)); }
+
+    /**
+     * The result at the given index interpreted as a float.
+     * Returns 0.0F if the value cannot be so interpreted.
+     *
+     * @param index the index of the required value.
+     * @return a float value.
+     */
+    @Override
+    public float getFloat(int index) { return toFloat(getFLValueAt(index)); }
+
+    /**
+     * The result at the given index interpreted as a double.
+     * Returns 0.0 if the value cannot be so interpreted.
+     *
+     * @param index the index of the required value.
+     * @return a double value.
+     */
+    @Override
+    public double getDouble(int index) { return toDouble(getFLValueAt(index)); }
 
     /**
      * The result at the given index interpreted as a Number.
@@ -123,80 +149,32 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      */
     @Nullable
     @Override
-    public Number getNumber(int index) {
-        assertValid(index);
-        return CBLConverter.asNumber(fleeceValueToObject(index));
-    }
+    public Number getNumber(int index) { return asNumber(getFleeceAt(index)); }
 
     /**
-     * The result at the given index interpreted as and an int.
-     * Returns 0 if the value cannot be so interpreted.
+     * The result at the given index converted to a String
      *
      * @param index the index of the required value.
-     * @return an int value.
+     * @return a String value.
      */
+    @Nullable
     @Override
-    public int getInt(int index) {
-        assertValid(index);
-        final FLValue flValue = values.get(index);
-        return (flValue == null) ? 0 : MathUtils.asSignedInt(flValue.asInt());
-     }
+    public String getString(int index) { return asString(getFleeceAt(index)); }
 
     /**
-     * The result at the given index interpreted as a long.
-     * Returns 0 if the value cannot be so interpreted.
+     * Gets value at the given index as a Date.
+     * JSON does not directly support dates, so the actual property value must be a string, which is
+     * then parsed according to the ISO-8601 date format (the default used in JSON.)
+     * Returns null if the value doesn't exist, is not a string, or is not parsable as a date.
+     * NOTE: This is not a generic date parser! It only recognizes the ISO-8601 format, with or
+     * without milliseconds.
      *
-     * @param index the index of the required value.
-     * @return a long value.
+     * @param index the index. This value must not exceed the bounds of the array.
+     * @return the Date value or null.
      */
+    @Nullable
     @Override
-    public long getLong(int index) {
-        assertValid(index);
-        final FLValue flValue = values.get(index);
-        return (flValue == null) ? 0L : flValue.asInt();
-    }
-
-    /**
-     * The result at the given index interpreted as a float.
-     * Returns 0.0F if the value cannot be so interpreted.
-     *
-     * @param index the index of the required value.
-     * @return a float value.
-     */
-    @Override
-    public float getFloat(int index) {
-        assertValid(index);
-        final FLValue flValue = values.get(index);
-        return (flValue == null) ? 0.0F : flValue.asFloat();
-    }
-
-    /**
-     * The result at the given index interpreted as a double.
-     * Returns 0.0 if the value cannot be so interpreted.
-     *
-     * @param index the index of the required value.
-     * @return a double value.
-     */
-    @Override
-    public double getDouble(int index) {
-        assertValid(index);
-        final FLValue flValue = values.get(index);
-        return (flValue == null) ? 0.0 : flValue.asDouble();
-    }
-
-    /**
-     * The result at the given index interpreted as a boolean.
-     * Returns false if the value cannot be so interpreted.
-     *
-     * @param index the index of the required value.
-     * @return a boolean value.
-     */
-    @Override
-    public boolean getBoolean(int index) {
-        assertValid(index);
-        final FLValue flValue = values.get(index);
-        return (flValue != null) && flValue.asBool();
-    }
+    public Date getDate(int index) { return JSONUtils.toDate(getString(index)); }
 
     /**
      * The result at the given index interpreted as a Blob.
@@ -207,25 +185,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      */
     @Nullable
     @Override
-    public Blob getBlob(int index) {
-        assertValid(index);
-        final Object obj = fleeceValueToObject(index);
-        return !(obj instanceof Blob) ? null : (Blob) obj;
-    }
-
-    /**
-     * The result at the given index interpreted as a Date.
-     * Returns null if the value cannot be so interpreted.
-     *
-     * @param index the index of the required value.
-     * @return a Date.
-     */
-    @Nullable
-    @Override
-    public Date getDate(int index) {
-        assertValid(index);
-        return JSONUtils.toDate(getString(index));
-    }
+    public Blob getBlob(int index) { return asBlob(getFleeceAt(index)); }
 
     /**
      * The result at the given index interpreted as an Array.
@@ -236,11 +196,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      */
     @Nullable
     @Override
-    public Array getArray(int index) {
-        assertValid(index);
-        final Object obj = fleeceValueToObject(index);
-        return !(obj instanceof Array) ? null : (Array) obj;
-    }
+    public Array getArray(int index) { return asArray(getFleeceAt(index)); }
 
     /**
      * The result at the given index interpreted as a Dictionary.
@@ -251,11 +207,27 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      */
     @Nullable
     @Override
-    public Dictionary getDictionary(int index) {
-        assertValid(index);
-        final Object obj = fleeceValueToObject(index);
-        return !(obj instanceof Dictionary) ? null : (Dictionary) obj;
-    }
+    public Dictionary getDictionary(int index) { return asDictionary(getFleeceAt(index)); }
+
+    /**
+     * The result value at the given index.
+     *
+     * @param index the index of the required value.
+     * @return the value.
+     */
+    @Nullable
+    @Override
+    public Object getValue(int index) { return getFleeceAt(index); }
+
+    /**
+     * The result value at the given index.
+     *
+     * @param index the index. This value must be 0 &lt;= index &lt; count().
+     * @param klass the class of the object.
+     * @return the array value at the index.
+     */
+    @Nullable
+    public <T> T getValue(@NonNull Class<T> klass, int index) { return asValue(klass, getValue(index)); }
 
     /**
      * Gets all the values as a List. The types of the values contained in the returned List
@@ -268,14 +240,32 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     public List<Object> toList() {
         assertOpen();
         final int nVals = count();
-        final List<Object> array = new ArrayList<>(nVals);
-        for (int i = 0; i < nVals; i++) { array.add(values.get(i).asObject()); }
-        return array;
+        final List<Object> list = new ArrayList<>(nVals);
+        for (int i = 0; i < nVals; i++) {
+            Object obj = getFleeceAt(i);
+            if (obj instanceof AbstractJFleeceCollection<?>) {
+                obj = toJFleeceCollection((AbstractJFleeceCollection<?>) obj);
+            }
+            list.add(obj);
+        }
+        return list;
     }
 
     //---------------------------------------------
     // implementation of ReadOnlyDictionaryInterface
     //---------------------------------------------
+
+    /**
+     * Tests whether key exists or not.
+     *
+     * @param key The select result key.
+     * @return True if exists, otherwise false.
+     */
+    @Override
+    public boolean contains(@NonNull String key) {
+        assertOpen();
+        return 0 <= getIndexForKey(key);
+    }
 
     /**
      * @return a list of keys
@@ -288,33 +278,68 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     }
 
     /**
-     * The result value for the given key as an Object
-     * Returns null if the key doesn't exist.
+     * The result value for the given key as a boolean
+     * Returns false if the key doesn't exist or if the value is not a boolean
      *
      * @param key The select result key.
-     * @return The Object.
+     * @return The boolean value.
      */
-    @Nullable
     @Override
-    public Object getValue(@NonNull String key) {
-        assertOpen();
-        final int index = indexForColumnName(Preconditions.assertNotNull(key, "key"));
-        return (!isInBounds(index)) ? null : getValue(index);
+    public boolean getBoolean(@NonNull String key) {
+        final int index = getIndexForKey(key);
+        return (index >= 0) && getBoolean(index);
     }
 
     /**
-     * The result value for the given key as a String
-     * Returns null if the key doesn't exist.
+     * The result value for the given key as an int
+     * Returns 0 if the key doesn't exist or if the value is not a int
      *
      * @param key The select result key.
-     * @return The String object.
+     * @return The integer value.
      */
-    @Nullable
     @Override
-    public String getString(@NonNull String key) {
-        assertOpen();
-        final int index = indexForColumnName(Preconditions.assertNotNull(key, "key"));
-        return (!isInBounds(index)) ? null : getString(index);
+    public int getInt(@NonNull String key) {
+        final int index = getIndexForKey(key);
+        return (index < 0) ? 0 : getInt(index);
+    }
+
+    /**
+     * The result value for the given key as a long
+     * Returns 0L if the key doesn't exist or if the value is not a long
+     *
+     * @param key The select result key.
+     * @return The long value.
+     */
+    @Override
+    public long getLong(@NonNull String key) {
+        final int index = getIndexForKey(key);
+        return (index < 0) ? 0L : getLong(index);
+    }
+
+    /**
+     * The result value for the given key as a float
+     * Returns 0.0F if the key doesn't exist or if the value is not a float
+     *
+     * @param key The select result key.
+     * @return The float value.
+     */
+    @Override
+    public float getFloat(@NonNull String key) {
+        final int index = getIndexForKey(key);
+        return (index < 0) ? 0.0F : getFloat(index);
+    }
+
+    /**
+     * The result value for the given key as a double
+     * Returns 0.0 if the key doesn't exist or if the value is not a double
+     *
+     * @param key The select result key.
+     * @return The double value.
+     */
+    @Override
+    public double getDouble(@NonNull String key) {
+        final int index = getIndexForKey(key);
+        return (index < 0) ? 0.0 : getDouble(index);
     }
 
     /**
@@ -327,94 +352,22 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     @Nullable
     @Override
     public Number getNumber(@NonNull String key) {
-        assertOpen();
-        final int index = indexForColumnName(Preconditions.assertNotNull(key, "key"));
-        return (!isInBounds(index)) ? null : getNumber(index);
+        final int index = getIndexForKey(key);
+        return (index < 0) ? null : getNumber(index);
     }
 
     /**
-     * The result value for the given key as an int
-     * Returns 0 if the key doesn't exist or if the value is not a int
+     * The result value for the given key as a String
+     * Returns null if the key doesn't exist.
      *
      * @param key The select result key.
-     * @return The integer value.
-     */
-    @Override
-    public int getInt(@NonNull String key) {
-        assertOpen();
-        final int index = indexForColumnName(Preconditions.assertNotNull(key, "key"));
-        return (!isInBounds(index)) ? 0 : getInt(index);
-    }
-
-    /**
-     * The result value for the given key as a long
-     * Returns 0L if the key doesn't exist or if the value is not a long
-     *
-     * @param key The select result key.
-     * @return The long value.
-     */
-    @Override
-    public long getLong(@NonNull String key) {
-        assertOpen();
-        final int index = indexForColumnName(Preconditions.assertNotNull(key, "key"));
-        return (!isInBounds(index)) ? 0L : getLong(index);
-    }
-
-    /**
-     * The result value for the given key as a float
-     * Returns 0.0F if the key doesn't exist or if the value is not a float
-     *
-     * @param key The select result key.
-     * @return The float value.
-     */
-    @Override
-    public float getFloat(@NonNull String key) {
-        assertOpen();
-        final int index = indexForColumnName(Preconditions.assertNotNull(key, "key"));
-        return (!isInBounds(index)) ? 0.0F : getFloat(index);
-    }
-
-    /**
-     * The result value for the given key as a double
-     * Returns 0.0 if the key doesn't exist or if the value is not a double
-     *
-     * @param key The select result key.
-     * @return The double value.
-     */
-    @Override
-    public double getDouble(@NonNull String key) {
-        assertOpen();
-        final int index = indexForColumnName(Preconditions.assertNotNull(key, "key"));
-        return (!isInBounds(index)) ? 0.0 : getDouble(index);
-    }
-
-    /**
-     * The result value for the given key as a boolean
-     * Returns false if the key doesn't exist or if the value is not a boolean
-     *
-     * @param key The select result key.
-     * @return The boolean value.
-     */
-    @Override
-    public boolean getBoolean(@NonNull String key) {
-        assertOpen();
-        final int index = indexForColumnName(Preconditions.assertNotNull(key, "key"));
-        return isInBounds(index) && getBoolean(index);
-    }
-
-    /**
-     * The result value for the given key as a Blob
-     * Returns null if the key doesn't exist or if the value is not a Blob
-     *
-     * @param key The select result key.
-     * @return The Blob object.
+     * @return The String object.
      */
     @Nullable
     @Override
-    public Blob getBlob(@NonNull String key) {
-        assertOpen();
-        final int index = indexForColumnName(Preconditions.assertNotNull(key, "key"));
-        return (!isInBounds(index)) ? null : getBlob(index);
+    public String getString(@NonNull String key) {
+        final int index = getIndexForKey(key);
+        return (index < 0) ? null : getString(index);
     }
 
     /**
@@ -427,9 +380,22 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     @Nullable
     @Override
     public Date getDate(@NonNull String key) {
-        assertOpen();
-        final int index = indexForColumnName(Preconditions.assertNotNull(key, "key"));
-        return (!isInBounds(index)) ? null : getDate(index);
+        final int index = getIndexForKey(key);
+        return (index < 0) ? null : getDate(index);
+    }
+
+    /**
+     * The result value for the given key as a Blob
+     * Returns null if the key doesn't exist or if the value is not a Blob
+     *
+     * @param key The select result key.
+     * @return The Blob object.
+     */
+    @Nullable
+    @Override
+    public Blob getBlob(@NonNull String key) {
+        final int index = getIndexForKey(key);
+        return (index < 0) ? null : getBlob(index);
     }
 
     /**
@@ -442,9 +408,8 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     @Nullable
     @Override
     public Array getArray(@NonNull String key) {
-        assertOpen();
-        final int index = indexForColumnName(Preconditions.assertNotNull(key, "key"));
-        return (!isInBounds(index)) ? null : getArray(index);
+        final int index = getIndexForKey(key);
+        return (index < 0) ? null : getArray(index);
     }
 
     /**
@@ -457,9 +422,37 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     @Nullable
     @Override
     public Dictionary getDictionary(@NonNull String key) {
-        assertOpen();
-        final int index = indexForColumnName(Preconditions.assertNotNull(key, "key"));
-        return (!isInBounds(index)) ? null : getDictionary(index);
+        final int index = getIndexForKey(key);
+        return (index < 0) ? null : getDictionary(index);
+    }
+
+    /**
+     * The result value for the given key as an Object
+     * Returns null if the key doesn't exist.
+     *
+     * @param key The select result key.
+     * @return The Object.
+     */
+    @Nullable
+    @Override
+    public Object getValue(@NonNull String key) {
+        final int index = getIndexForKey(key);
+        return (index < 0) ? null : getValue(index);
+    }
+
+    /**
+     * Gets a property's value as an object. The object types are Blob, Array,
+     * Dictionary, Number, or String based on the underlying data type; or nil if the
+     * property value is null or the property doesn't exist.
+     *
+     * @param key the key.
+     * @return The value in the dictionary at the key (or null).
+     * @throws ClassCastException if the value is not of the passed class.
+     */
+    @Nullable
+    public <T> T getValue(@NonNull Class<T> klass, @NonNull String key) {
+        final int index = getIndexForKey(key);
+        return (index < 0) ? null : getValue(klass, index);
     }
 
     /**
@@ -472,14 +465,18 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     @Override
     public Map<String, Object> toMap() {
         assertOpen();
-        final int nVals = values.size();
-        final Map<String, Object> dict = new HashMap<>(nVals);
-        for (String name: getColumnNames()) {
-            final int i = indexForColumnName(name);
-            if ((i < 0) || (i >= nVals)) { continue; }
-            dict.put(name, values.get(i).asObject());
+        final int n = values.size();
+        final Map<String, Object> map = new HashMap<>(n);
+        for (String key: getColumnNames()) {
+            final int i = getIndexForKey(key);
+            if ((i < 0) || (i >= n)) { continue; }
+            Object obj = values.get(i).toJava();
+            if (obj instanceof AbstractJFleeceCollection<?>) {
+                obj = toJFleeceCollection((AbstractJFleeceCollection<?>) obj);
+            }
+            map.put(key, obj);
         }
-        return dict;
+        return map;
     }
 
     /**
@@ -493,13 +490,12 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     public String toJSON() throws CouchbaseLiteException {
         assertOpen();
 
-        final int nVals = values.size();
-
+        final int n = values.size();
         try (FLEncoder.JSONEncoder enc = FLEncoder.getJSONEncoder()) {
-            enc.beginDict(nVals);
+            enc.beginDict(n);
             for (String columnName: getColumnNames()) {
-                final int i = indexForColumnName(columnName);
-                if ((i < 0) || (i >= nVals)) { continue; }
+                final int i = getIndexForKey(columnName);
+                if ((i < 0) || (i >= n)) { continue; }
 
                 enc.writeKey(columnName);
                 enc.writeValue(values.get(i));
@@ -510,18 +506,6 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
         catch (LiteCoreException e) {
             throw CouchbaseLiteException.convertException(e, "Cannot encode result: " + this);
         }
-    }
-
-    /**
-     * Tests whether key exists or not.
-     *
-     * @param key The select result key.
-     * @return True if exists, otherwise false.
-     */
-    @Override
-    public boolean contains(@NonNull String key) {
-        assertOpen();
-        return isInBounds(indexForColumnName(Preconditions.assertNotNull(key, "key")));
     }
 
     //---------------------------------------------
@@ -541,35 +525,45 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     // private access
     //---------------------------------------------
 
-    @Nullable
-    private Object fleeceValueToObject(int index) {
-        final FLValue value = values.get(index);
-        if (value == null) { return null; }
-        final AbstractDatabase db = Preconditions.assertNotNull(context.getDatabase(), "db");
-        final MRoot root = new MRoot(context, value, false);
-        synchronized (db.getDbLock()) { return root.asNative(); }
-    }
-
-    @NonNull
-    private List<FLValue> extractColumns(@NonNull FLArrayIterator columns) {
-        final List<FLValue> values = new ArrayList<>();
-        final int count = getColumnCount();
-        for (int i = 0; i < count; i++) { values.add(columns.getValueAt(i)); }
-        return values;
-    }
-
     private int getColumnCount() { return context.getResultSet().getColumnCount(); }
 
     @NonNull
     private List<String> getColumnNames() { return context.getResultSet().getColumnNames(); }
 
-    private int indexForColumnName(@NonNull String name) {
-        final int index = context.getResultSet().getColumnIndex(name);
-        if (index < 0) { return -1; }
-        return ((missingColumns & (1L << index)) == 0) ? index : -1;
+    @Nullable
+    private Object getFleeceAt(int index) {
+        final FLValue value = getFLValueAt(index);
+        if (value == null) { return null; }
+        synchronized (Preconditions.assertNotNull(context.getDatabase(), "db").getDbLock()) {
+            return new MRoot(context, value, false).toJFleece();
+        }
     }
 
-    private boolean isInBounds(int index) { return (0 <= index) && (index < count()); }
+    @Nullable
+    private FLValue getFLValueAt(int index) {
+        assertValid(index);
+        return values.get(index);
+    }
+
+    private int getIndexForKey(@Nullable String key) {
+        final int index = context.getResultSet().getColumnIndex(Preconditions.assertNotNull(key, "key"));
+        if (index < 0) { return -1; }
+        if ((missingColumns & (1L << index)) != 0) { return -1; }
+        return (!isInBounds(index)) ? -1 : index;
+    }
+
+    @NonNull
+    private List<FLValue> extractColumns(@NonNull FLArrayIterator columns) {
+        final int n = getColumnCount();
+        final List<FLValue> values = new ArrayList<>(n);
+        for (int i = 0; i < n; i++) { values.add(columns.getValueAt(i)); }
+        return values;
+    }
+
+    private void assertValid(int index) {
+        assertOpen();
+        if (!isInBounds(index)) { throw new ArrayIndexOutOfBoundsException(index + " is not 0 <= i < " + count()); }
+    }
 
     private void assertOpen() {
         if (context.isClosed()) {
@@ -577,8 +571,5 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
         }
     }
 
-    private void assertValid(int index) {
-        assertOpen();
-        if (!isInBounds(index)) { throw new ArrayIndexOutOfBoundsException(index + " is not 0 <= i < " + count()); }
-    }
+    private boolean isInBounds(int index) { return (0 <= index) && (index < count()); }
 }

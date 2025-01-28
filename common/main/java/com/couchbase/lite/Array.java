@@ -34,7 +34,7 @@ import com.couchbase.lite.internal.utils.JSONUtils;
 /**
  * Array provides readonly access to array data.
  */
-public class Array extends AbstractCollection<MArray> implements ArrayInterface, Iterable<Object> {
+public class Array extends AbstractJFleeceCollection<MArray> implements ArrayInterface, Iterable<Object> {
     //---------------------------------------------
     // Types
     //---------------------------------------------
@@ -61,14 +61,14 @@ public class Array extends AbstractCollection<MArray> implements ArrayInterface,
     // Constructors
     //---------------------------------------------
 
+    // Construct a new array with the passed content
+    protected Array(@NonNull MArray array) { super(array); }
+
     // Construct a new empty Array
     protected Array() { this(new MArray()); }
 
     // Slot(??) constructor
     Array(@NonNull MValue val, @Nullable MCollection parent) { this(new MArray(val, parent)); }
-
-    // Construct a new array with the passed content
-    protected Array(@NonNull MArray array) { super(array); }
 
     //---------------------------------------------
     // API - public methods
@@ -79,68 +79,20 @@ public class Array extends AbstractCollection<MArray> implements ArrayInterface,
      *
      * @return the MutableArray instance
      */
+    @Override
     @NonNull
     public MutableArray toMutable() {
         synchronized (lock) { return new MutableArray(this); }
     }
 
     /**
-     * Gets value at the given index as an object. The object types are Blob,
-     * Array, Dictionary, Number, or String based on the underlying
-     * data type; or null if the value is nil.
-     *
-     * @param index the index. This value must be 0 &lt;= index &lt; count().
-     * @return the Object or null.
-     */
-    @Nullable
-    @Override
-    public Object getValue(int index) {
-        synchronized (lock) { return getMValue(contents, index).asNative(contents); }
-    }
-
-    /**
-     * Gets value at the given index as an object. The object types are Blob,
-     * Array, Dictionary, Number, or String based on the underlying
-     * data type; or null if the value is nil.
-     *
-     * @param index the index. This value must be 0 &lt;= index &lt; count().
-     * @return the array value at the index.
-     * @throws ClassCastException if the value is not of the passed class.
-     */
-    @Nullable
-    public <T> T getValue(@NonNull Class<T> klass, int index) {
-        final Object val = getValue(index);
-        return (val == null) ? null : klass.cast(val);
-    }
-
-    /**
-     * Gets value at the given index as a String. Returns null if the value doesn't exist, or its value is not a String.
+     * Gets value at the given index as a boolean.
      *
      * @param index the index. This value must not exceed the bounds of the array.
-     * @return the String or null.
+     * @return the boolean value.
      */
-    @Nullable
     @Override
-    public String getString(int index) {
-        synchronized (lock) {
-            final Object obj = getMValue(contents, index).asNative(contents);
-            return !(obj instanceof String) ? null : (String) obj;
-        }
-    }
-
-    /**
-     * Gets value at the given index as a Number. Returns null if the value doesn't exist, or its value is not a Number.
-     *
-     * @param index the index. This value must not exceed the bounds of the array.
-     * @return the Number or nil.
-     */
-    @Nullable
-    @Override
-    public Number getNumber(int index) {
-        synchronized (lock) {
-            return CBLConverter.asNumber(getMValue(contents, index).asNative(contents));
-        }
-    }
+    public boolean getBoolean(int index) { return asBoolean(getJFleeceAt(index)); }
 
     /**
      * Gets value at the given index as an int.
@@ -151,9 +103,7 @@ public class Array extends AbstractCollection<MArray> implements ArrayInterface,
      * @return the int value.
      */
     @Override
-    public int getInt(int index) {
-        synchronized (lock) { return CBLConverter.asInteger(getMValue(contents, index), contents); }
-    }
+    public int getInt(int index) { return toInteger(getMValueAt(index), contents); }
 
     /**
      * Gets value at the given index as an long.
@@ -164,9 +114,7 @@ public class Array extends AbstractCollection<MArray> implements ArrayInterface,
      * @return the long value.
      */
     @Override
-    public long getLong(int index) {
-        synchronized (lock) { return CBLConverter.asLong(getMValue(contents, index), contents); }
-    }
+    public long getLong(int index) { return toLong(getMValueAt(index), contents); }
 
     /**
      * Gets value at the given index as an float.
@@ -177,9 +125,7 @@ public class Array extends AbstractCollection<MArray> implements ArrayInterface,
      * @return the float value.
      */
     @Override
-    public float getFloat(int index) {
-        synchronized (lock) { return CBLConverter.asFloat(getMValue(contents, index), contents); }
-    }
+    public float getFloat(int index) { return toFloat(getMValueAt(index), contents); }
 
     /**
      * Gets value at the given index as an double.
@@ -190,38 +136,27 @@ public class Array extends AbstractCollection<MArray> implements ArrayInterface,
      * @return the double value.
      */
     @Override
-    public double getDouble(int index) {
-        synchronized (lock) { return CBLConverter.asDouble(getMValue(contents, index), contents); }
-    }
+    public double getDouble(int index) { return toDouble(getMValueAt(index), contents); }
 
     /**
-     * Gets value at the given index as a boolean.
+     * Gets value at the given index as a Number. Returns null if the value doesn't exist, or its value is not a Number.
      *
      * @param index the index. This value must not exceed the bounds of the array.
-     * @return the boolean value.
-     */
-    @Override
-    public boolean getBoolean(int index) {
-        synchronized (lock) {
-            return CBLConverter.asBoolean(getMValue(contents, index).asNative(contents));
-        }
-    }
-
-    /**
-     * Gets value at the given index as a Blob.
-     * Returns null if the value doesn't exist, or its value is not a Blob.
-     *
-     * @param index the index. This value must not exceed the bounds of the array.
-     * @return the Blob value or null.
+     * @return the Number or nil.
      */
     @Nullable
     @Override
-    public Blob getBlob(int index) {
-        synchronized (lock) {
-            final Object obj = getMValue(contents, index).asNative(contents);
-            return !(obj instanceof Blob) ? null : (Blob) obj;
-        }
-    }
+    public Number getNumber(int index) { return asNumber(getJFleeceAt(index)); }
+
+    /**
+     * Gets value at the given index as a String. Returns null if the value doesn't exist, or its value is not a String.
+     *
+     * @param index the index. This value must not exceed the bounds of the array.
+     * @return the String or null.
+     */
+    @Nullable
+    @Override
+    public String getString(int index) { return asString(getJFleeceAt(index)); }
 
     /**
      * Gets value at the given index as a Date.
@@ -239,6 +174,17 @@ public class Array extends AbstractCollection<MArray> implements ArrayInterface,
     public Date getDate(int index) { return JSONUtils.toDate(getString(index)); }
 
     /**
+     * Gets value at the given index as a Blob.
+     * Returns null if the value doesn't exist, or its value is not a Blob.
+     *
+     * @param index the index. This value must not exceed the bounds of the array.
+     * @return the Blob value or null.
+     */
+    @Nullable
+    @Override
+    public Blob getBlob(int index) { return asBlob(getJFleeceAt(index)); }
+
+    /**
      * Gets value at the given index as an Array.
      * Returns null if the value doesn't exist, or its value is not an Array.
      *
@@ -247,12 +193,7 @@ public class Array extends AbstractCollection<MArray> implements ArrayInterface,
      */
     @Nullable
     @Override
-    public Array getArray(int index) {
-        synchronized (lock) {
-            final Object obj = getMValue(contents, index).asNative(contents);
-            return !(obj instanceof Array) ? null : (Array) obj;
-        }
-    }
+    public Array getArray(int index) { return asArray(getJFleeceAt(index)); }
 
     /**
      * Gets a Dictionary at the given index. Return null if the value is not an dictionary.
@@ -262,12 +203,31 @@ public class Array extends AbstractCollection<MArray> implements ArrayInterface,
      */
     @Nullable
     @Override
-    public Dictionary getDictionary(int index) {
-        synchronized (lock) {
-            final Object obj = getMValue(contents, index).asNative(contents);
-            return !(obj instanceof Dictionary) ? null : (Dictionary) obj;
-        }
-    }
+    public Dictionary getDictionary(int index) { return asDictionary(getJFleeceAt(index)); }
+
+    /**
+     * Gets value at the given index as an object. The object types are Blob,
+     * Array, Dictionary, Number, or String based on the underlying
+     * data type; or null if the value is nil.
+     *
+     * @param index the index. This value must be 0 &lt;= index &lt; count().
+     * @return the Object or null.
+     */
+    @Nullable
+    @Override
+    public Object getValue(int index) { return getJFleeceAt(index); }
+
+    /**
+     * Gets value at the given index as an object. The object types are Blob,
+     * Array, Dictionary, Number, or String based on the underlying
+     * data type; or null if the value is nil.
+     *
+     * @param index the index. This value must be 0 &lt;= index &lt; count().
+     * @param klass the class of the object.
+     * @return the value at the index, or null if the value doesn't exist or is not of the given class.
+     */
+    @Nullable
+    public <T> T getValue(@NonNull Class<T> klass, int index) { return asValue(klass, getValue(index)); }
 
     /**
      * Gets content of the current object as an List. The values contained in the returned
@@ -279,12 +239,16 @@ public class Array extends AbstractCollection<MArray> implements ArrayInterface,
     @Override
     public List<Object> toList() {
         synchronized (lock) {
-            final int count = contents.count();
-            final List<Object> result = new ArrayList<>(count);
-            for (int index = 0; index < count; index++) {
-                result.add(Fleece.toObject(getMValue(contents, index).asNative(contents)));
+            final int n = count();
+            final List<Object> list = new ArrayList<>(n);
+            for (int i = 0; i < n; i++) {
+                Object obj = getJFleeceAt(i);
+                if (obj instanceof AbstractJFleeceCollection<?>) {
+                    obj = toJFleeceCollection((AbstractJFleeceCollection<?>) obj);
+                }
+                list.add(obj);
             }
-            return result;
+            return list;
         }
     }
 
@@ -349,9 +313,13 @@ public class Array extends AbstractCollection<MArray> implements ArrayInterface,
     // Private
     //-------------------------------------------------------------------------
 
+    @Nullable
+    private Object getJFleeceAt(int index) { return getMValueAt(index).toJFleece(contents); }
+
     @NonNull
-    private MValue getMValue(@NonNull MArray array, int index) {
-        final MValue value = array.get(index);
+    private MValue getMValueAt(int index) {
+        final MValue value;
+        synchronized (lock) { value = contents.get(index); }
         if (value.isEmpty()) {
             throw new ArrayIndexOutOfBoundsException("index " + index + " is not 0 <= index < " + count());
         }

@@ -79,17 +79,16 @@ public class FLDict {
 
         final long hValue = impl.nGet(peer, key.getBytes(StandardCharsets.UTF_8));
 
-        return hValue != 0L ? FLValue.getFLValue(hValue) : null;
+        return hValue == 0L ? null : FLValue.getFLValue(hValue);
     }
 
     @NonNull
-    public Map<String, Object> asDict() {
-        final Map<String, Object> results = new HashMap<>();
+    public <K, V> Map<K, V> asMap(@NonNull Class<K> keyClass, @NonNull Class<V> valueClass) {
+        final Map<K, V> results = new HashMap<>();
         try (FLDictIterator itr = iterator()) {
             String key;
             while ((key = itr.getKey()) != null) {
-                final FLValue val = itr.getValue();
-                results.put(key, val.asObject());
+                results.put(keyClass.cast(key), valueClass.cast(itr.getValue().toJava()));
                 itr.next();
             }
         }
@@ -104,5 +103,5 @@ public class FLDict {
     //-------------------------------------------------------------------------
 
     @Nullable
-    <T> T withContent(@NonNull Fn.Function<Long, T> fn) { return fn.apply(peer); }
+    <T> T withContent(@NonNull Fn.NullableFunction<Long, T> fn) { return fn.apply(peer); }
 }

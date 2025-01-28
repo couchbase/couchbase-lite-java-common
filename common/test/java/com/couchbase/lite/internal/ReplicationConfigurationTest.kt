@@ -80,7 +80,8 @@ class ReplicationConfigurationTest : BaseDbTest() {
         val config = CollectionConfiguration()
         config.channels = listOf("x", "y", "z")
         val colls = mapOf(testDatabase.createCollection("rockwell_plates") to config)
-        val opts = FLValue.fromData(ReplicationCollection.createAll(colls)[0].options!!).asDict()
+        val opts = FLValue.fromData(ReplicationCollection.createAll(colls)[0].options!!)
+            .asMap(String::class.java, Object::class.java)
         assertEquals(1, opts.size)
         assertEquals(listOf("x", "y", "z"), opts[C4Replicator.REPLICATOR_OPTION_CHANNELS])
     }
@@ -90,7 +91,8 @@ class ReplicationConfigurationTest : BaseDbTest() {
         val config = CollectionConfiguration()
         config.documentIDs = listOf("x", "y", "z")
         val colls = mapOf(testDatabase.createCollection("porcelain_dolls") to config)
-        val opts = FLValue.fromData(ReplicationCollection.createAll(colls)[0].options!!).asDict()
+        val opts = FLValue.fromData(ReplicationCollection.createAll(colls)[0].options!!)
+            .asMap(String::class.java, Object::class.java)
         assertEquals(1, opts.size)
         assertEquals(listOf("x", "y", "z"), opts[C4Replicator.REPLICATOR_OPTION_DOC_IDS])
     }

@@ -22,6 +22,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.couchbase.lite.internal.BaseJFleeceCollection;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.utils.Preconditions;
@@ -30,7 +31,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
 /**
  * A Parameters object used for setting values to the query parameters defined in the query.
  */
-public class Parameters {
+public class Parameters extends BaseJFleeceCollection {
     private static final class ImmutableParameters extends Parameters {
         private ImmutableParameters(@Nullable Parameters parameters) { super(parameters); }
 
@@ -222,7 +223,7 @@ public class Parameters {
     @NonNull
     public Parameters setValue(@NonNull String name, @Nullable Object value) {
         Preconditions.assertNotNull(name, "name");
-        map.put(name, Fleece.toCBLObject(value));
+        map.put(name, toJFleece(value));
         return this;
     }
 

@@ -171,7 +171,7 @@ abstract class AbstractQuery implements Listenable<QueryChange, QueryChangeListe
                     }
                 }
             }
-            return new ResultSet(getDatabase(), c4enum, new HashMap<>(colNames));
+            return new ResultSet(getDatabase(), c4enum, colNames);
         }
         catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
     }

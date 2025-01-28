@@ -808,7 +808,7 @@ public final class Collection extends BaseCollection
 
         final List<Map<String, ?>> info = new ArrayList<>();
 
-        final Object indexesInfo = flIndexInfo.asObject();
+        final Object indexesInfo = flIndexInfo.toJava();
         if (!(indexesInfo instanceof List<?>)) { return info; }
 
         for (Object idxInfo: (List<?>) indexesInfo) {
