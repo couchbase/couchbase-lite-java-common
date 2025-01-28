@@ -86,7 +86,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
     public MutableArray setData(@NonNull List<?> data) {
         synchronized (lock) {
             contents.clear();
-            for (Object obj: data) { contents.append(toFleece(obj)); }
+            for (Object obj: data) { contents.append(toJFleece(obj)); }
         }
         return this;
     }
@@ -122,9 +122,9 @@ public final class MutableArray extends Array implements MutableArrayInterface {
     @NonNull
     @Override
     public MutableArray setValue(int index, @Nullable Object value) {
-        final Object val = toFleece(value);
+        final Object val = toJFleece(value);
         synchronized (lock) {
-            if (Fleece.willMutate(val, contents.get(index), contents)
+            if (willMutate(val, contents.get(index), contents)
                 && (!contents.set(index, val))) {
                 throw new IndexOutOfBoundsException("Array index " + index + " is out of range");
             }
@@ -262,7 +262,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
     @NonNull
     @Override
     public MutableArray addValue(@Nullable Object value) {
-        final Object val = toFleece(value);
+        final Object val = toJFleece(value);
         synchronized (lock) { contents.append(val); }
         return this;
     }
@@ -387,7 +387,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
     @NonNull
     @Override
     public MutableArray insertValue(int index, @Nullable Object value) {
-        final Object val = toFleece(value);
+        final Object val = toJFleece(value);
         synchronized (lock) {
             if (!contents.insert(index, val)) {
                 throw new IndexOutOfBoundsException("Array index " + index + " is out of range");
@@ -557,12 +557,5 @@ public final class MutableArray extends Array implements MutableArrayInterface {
     @NonNull
     @Override
     public String toJSON() { throw new CouchbaseLiteError("Mutable objects may not be encoded as JSON"); }
-
-    @Nullable
-    private Object toFleece(@Nullable Object value) {
-        return (value == this)
-            ? ((Array) value).toMutable()
-            : Fleece.toCBLObject(value);
-    }
 }
 

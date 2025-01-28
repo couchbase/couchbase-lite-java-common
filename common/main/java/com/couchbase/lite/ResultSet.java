@@ -21,6 +21,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -83,7 +85,7 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
         @Nullable AbstractDatabase database,
         @Nullable C4QueryEnumerator c4enum,
         @NonNull Map<String, Integer> cols) {
-        this.columnNames = Preconditions.assertNotNull(cols, "columns");
+        this.columnNames = Collections.unmodifiableMap(new HashMap<>(Preconditions.assertNotNull(cols, "columns")));
         this.context = new ResultContext(database, this);
         this.c4enum = c4enum;
     }

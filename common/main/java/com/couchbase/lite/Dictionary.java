@@ -35,7 +35,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
 /**
  * Dictionary provides readonly access to dictionary data.
  */
-public class Dictionary extends AbstractCollection<MDict> implements DictionaryInterface, Iterable<String> {
+public class Dictionary extends AbstractJFleeceCollection<MDict> implements DictionaryInterface, Iterable<String> {
     //---------------------------------------------
     // Types
     //---------------------------------------------
@@ -65,14 +65,14 @@ public class Dictionary extends AbstractCollection<MDict> implements DictionaryI
     // Constructors
     //-------------------------------------------------------------------------
 
+    // Construct a new dictionary with the passed content
+    protected Dictionary(@NonNull MDict dict) { super(dict); }
+
     // Construct a new empty Dictionary
     Dictionary() { this(new MDict()); }
 
     // Slot(??) constructor
     Dictionary(@NonNull MValue val, @Nullable MCollection parent) { this(new MDict(val, parent)); }
-
-    // Construct a new dictionary with the passed content
-    protected Dictionary(@NonNull MDict dict) { super(dict); }
 
     //-------------------------------------------------------------------------
     // API - public methods
@@ -83,6 +83,7 @@ public class Dictionary extends AbstractCollection<MDict> implements DictionaryI
      *
      * @return the MutableDictionary instance
      */
+    @Override
     @NonNull
     public MutableDictionary toMutable() {
         synchronized (lock) { return new MutableDictionary(this); }
@@ -97,130 +98,13 @@ public class Dictionary extends AbstractCollection<MDict> implements DictionaryI
      * @return the boolean value representing whether a property exists or not.
      */
     @Override
-    public boolean contains(@NonNull String key) {
-        Preconditions.assertNotNull(key, "key");
-        synchronized (lock) { return !contents.get(key).isEmpty(); }
-    }
+    public boolean contains(@NonNull String key) { return !getMValueAt(key).isEmpty(); }
+
 
     @NonNull
     @Override
     public List<String> getKeys() {
         synchronized (lock) { return contents.getKeys(); }
-    }
-
-    /**
-     * Gets a property's value as an object. The object types are Blob, Array,
-     * Dictionary, Number, or String based on the underlying data type; or nil if the
-     * property value is null or the property doesn't exist.
-     *
-     * @param key the key.
-     * @return the object value or null.
-     */
-    @Nullable
-    @Override
-    public Object getValue(@NonNull String key) {
-        Preconditions.assertNotNull(key, "key");
-        synchronized (lock) { return contents.get(key).asNative(contents); }
-    }
-
-    /**
-     * Gets a property's value as an object. The object types are Blob, Array,
-     * Dictionary, Number, or String based on the underlying data type; or nil if the
-     * property value is null or the property doesn't exist.
-     *
-     * @param key the key.
-     * @return The value in the dictionary at the key (or null).
-     * @throws ClassCastException if the value is not of the passed class.
-     */
-    @Nullable
-    public <T> T getValue(@NonNull Class<T> klass, @NonNull String key) {
-        final Object val = getValue(key);
-        return (val == null) ? null : klass.cast(val);
-    }
-
-    /**
-     * Gets a property's value as a String. Returns null if the value doesn't exist, or its value is not a String.
-     *
-     * @param key the key
-     * @return the String or null.
-     */
-    @Nullable
-    @Override
-    public String getString(@NonNull String key) {
-        Preconditions.assertNotNull(key, "key");
-        synchronized (lock) {
-            final Object obj = contents.get(key).asNative(contents);
-            return obj instanceof String ? (String) obj : null;
-        }
-    }
-
-    /**
-     * Gets a property's value as a Number. Returns null if the value doesn't exist, or its value is not a Number.
-     *
-     * @param key the key
-     * @return the Number or nil.
-     */
-    @Nullable
-    @Override
-    public Number getNumber(@NonNull String key) {
-        Preconditions.assertNotEmpty(key, "key");
-        synchronized (lock) { return CBLConverter.asNumber(contents.get(key).asNative(contents)); }
-    }
-
-    /**
-     * Gets a property's value as an int.
-     * Floating point values will be rounded. The value `true` is returned as 1, `false` as 0.
-     * Returns 0 if the value doesn't exist or does not have a numeric value.
-     *
-     * @param key the key
-     * @return the int value.
-     */
-    @Override
-    public int getInt(@NonNull String key) {
-        Preconditions.assertNotNull(key, "key");
-        synchronized (lock) { return CBLConverter.asInteger(contents.get(key), contents); }
-    }
-
-    /**
-     * Gets a property's value as an long.
-     * Floating point values will be rounded. The value `true` is returned as 1, `false` as 0.
-     * Returns 0 if the value doesn't exist or does not have a numeric value.
-     *
-     * @param key the key
-     * @return the long value.
-     */
-    @Override
-    public long getLong(@NonNull String key) {
-        Preconditions.assertNotNull(key, "key");
-        synchronized (lock) { return CBLConverter.asLong(contents.get(key), contents); }
-    }
-
-    /**
-     * Gets a property's value as an float.
-     * Integers will be converted to float. The value `true` is returned as 1.0, `false` as 0.0.
-     * Returns 0.0 if the value doesn't exist or does not have a numeric value.
-     *
-     * @param key the key
-     * @return the float value.
-     */
-    @Override
-    public float getFloat(@NonNull String key) {
-        Preconditions.assertNotNull(key, "key");
-        synchronized (lock) { return CBLConverter.asFloat(contents.get(key), contents); }
-    }
-
-    /**
-     * Gets a property's value as an double.
-     * Integers will be converted to double. The value `true` is returned as 1.0, `false` as 0.0.
-     * Returns 0.0 if the property doesn't exist or does not have a numeric value.
-     *
-     * @param key the key
-     * @return the double value.
-     */
-    @Override
-    public double getDouble(@NonNull String key) {
-        Preconditions.assertNotNull(key, "key");
-        synchronized (lock) { return CBLConverter.asDouble(contents.get(key), contents); }
     }
 
     /**
@@ -231,27 +115,72 @@ public class Dictionary extends AbstractCollection<MDict> implements DictionaryI
      * @return the boolean value.
      */
     @Override
-    public boolean getBoolean(@NonNull String key) {
-        Preconditions.assertNotNull(key, "key");
-        synchronized (lock) { return CBLConverter.asBoolean(contents.get(key).asNative(contents)); }
-    }
+    public boolean getBoolean(@NonNull String key) { return asBoolean(getJFleeceAt(key)); }
+
 
     /**
-     * Gets a property's value as a Blob.
-     * Returns null if the value doesn't exist, or its value is not a Blob.
+     * Gets a property's value as an int.
+     * Floating point values will be rounded. The value `true` is returned as 1, `false` as 0.
+     * Returns 0 if the value doesn't exist or does not have a numeric value.
      *
      * @param key the key
-     * @return the Blob value or null.
+     * @return the int value.
+     */
+    @Override
+    public int getInt(@NonNull String key) { return toInteger(getMValueAt(key), contents); }
+
+    /**
+     * Gets a property's value as an long.
+     * Floating point values will be rounded. The value `true` is returned as 1, `false` as 0.
+     * Returns 0 if the value doesn't exist or does not have a numeric value.
+     *
+     * @param key the key
+     * @return the long value.
+     */
+    @Override
+    public long getLong(@NonNull String key) { return toLong(getMValueAt(key), contents); }
+
+    /**
+     * Gets a property's value as an float.
+     * Integers will be converted to float. The value `true` is returned as 1.0, `false` as 0.0.
+     * Returns 0.0 if the value doesn't exist or does not have a numeric value.
+     *
+     * @param key the key
+     * @return the float value.
+     */
+    @Override
+    public float getFloat(@NonNull String key) { return toFloat(getMValueAt(key), contents); }
+
+    /**
+     * Gets a property's value as an double.
+     * Integers will be converted to double. The value `true` is returned as 1.0, `false` as 0.0.
+     * Returns 0.0 if the property doesn't exist or does not have a numeric value.
+     *
+     * @param key the key
+     * @return the double value.
+     */
+    @Override
+    public double getDouble(@NonNull String key) { return toDouble(getMValueAt(key), contents); }
+
+    /**
+     * Gets a property's value as a Number. Returns null if the value doesn't exist, or its value is not a Number.
+     *
+     * @param key the key
+     * @return the Number or nil.
      */
     @Nullable
     @Override
-    public Blob getBlob(@NonNull String key) {
-        Preconditions.assertNotNull(key, "key");
-        synchronized (lock) {
-            final Object obj = contents.get(key).asNative(contents);
-            return obj instanceof Blob ? (Blob) obj : null;
-        }
-    }
+    public Number getNumber(@NonNull String key) { return asNumber(getJFleeceAt(key)); }
+
+    /**
+     * Gets a property's value as a String. Returns null if the value doesn't exist, or its value is not a String.
+     *
+     * @param key the key
+     * @return the String or null.
+     */
+    @Nullable
+    @Override
+    public String getString(@NonNull String key) { return asString(getJFleeceAt(key)); }
 
     /**
      * Gets a property's value as a Date.
@@ -266,9 +195,18 @@ public class Dictionary extends AbstractCollection<MDict> implements DictionaryI
      */
     @Nullable
     @Override
-    public Date getDate(@NonNull String key) {
-        return JSONUtils.toDate(getString(Preconditions.assertNotNull(key, "key")));
-    }
+    public Date getDate(@NonNull String key) { return JSONUtils.toDate(getString(key)); }
+
+    /**
+     * Gets a property's value as a Blob.
+     * Returns null if the value doesn't exist, or its value is not a Blob.
+     *
+     * @param key the key
+     * @return the Blob value or null.
+     */
+    @Nullable
+    @Override
+    public Blob getBlob(@NonNull String key) { return asBlob(getJFleeceAt(key)); }
 
     /**
      * Get a property's value as an Array.
@@ -279,13 +217,7 @@ public class Dictionary extends AbstractCollection<MDict> implements DictionaryI
      */
     @Nullable
     @Override
-    public Array getArray(@NonNull String key) {
-        Preconditions.assertNotNull(key, "key");
-        synchronized (lock) {
-            final Object obj = contents.get(key).asNative(contents);
-            return (obj instanceof Array) ? (Array) obj : null;
-        }
-    }
+    public Array getArray(@NonNull String key) { return asArray(getJFleeceAt(key)); }
 
     /**
      * Get a property's value as a Dictionary.
@@ -296,13 +228,30 @@ public class Dictionary extends AbstractCollection<MDict> implements DictionaryI
      */
     @Nullable
     @Override
-    public Dictionary getDictionary(@NonNull String key) {
-        Preconditions.assertNotNull(key, "key");
-        synchronized (lock) {
-            final Object obj = contents.get(key).asNative(contents);
-            return (obj instanceof Dictionary) ? (Dictionary) obj : null;
-        }
-    }
+    public Dictionary getDictionary(@NonNull String key) { return asDictionary(getJFleeceAt(key)); }
+
+    /**
+     * Gets a property's value as an object. The object types are Blob, Array,
+     * Dictionary, Number, or String based on the underlying data type; or nil if the
+     * property value is null or the property doesn't exist.
+     *
+     * @param key the key.
+     * @return the object value or null.
+     */
+    @Nullable
+    @Override
+    public Object getValue(@NonNull String key) { return getJFleeceAt(key); }
+
+    /**
+     * Gets a property's value as an object. The object types are Blob, Array,
+     * Dictionary, Number, or String based on the underlying data type; or nil if the
+     * property value is null or the property doesn't exist.
+     *
+     * @param key the key.
+     * @return the value at the index, or null if the value doesn't exist or is not of the given class.
+     */
+    @Nullable
+    public <T> T getValue(@NonNull Class<T> klass, @NonNull String key) { return asValue(klass, getValue(key)); }
 
     /**
      * Gets content of the current object as an Map. The values contained in the returned
@@ -313,19 +262,22 @@ public class Dictionary extends AbstractCollection<MDict> implements DictionaryI
     @NonNull
     @Override
     public Map<String, Object> toMap() {
-        final Map<String, Object> result = new HashMap<>();
+        final Map<String, Object> map = new HashMap<>();
         synchronized (lock) {
             for (String key: contents.getKeys()) {
-                result.put(key, Fleece.toObject(contents.get(key).asNative(contents)));
+                Object obj = contents.get(key).toJFleece(contents);
+                if (obj instanceof AbstractJFleeceCollection<?>) {
+                    obj = toJFleeceCollection((AbstractJFleeceCollection<?>) obj);
+                }
+                map.put(key, obj);
             }
         }
-        return result;
+        return map;
     }
 
     //---------------------------------------------
     // Iterable implementation
     //---------------------------------------------
-
 
     /**
      * An iterator over keys of this Dictionary.
@@ -390,5 +342,18 @@ public class Dictionary extends AbstractCollection<MDict> implements DictionaryI
         }
 
         return buf.append('}').toString();
+    }
+
+    //-------------------------------------------------------------------------
+    // Private
+    //-------------------------------------------------------------------------
+
+    @Nullable
+    private Object getJFleeceAt(@NonNull String key) { return getMValueAt(key).toJFleece(contents); }
+
+    @NonNull
+    private MValue getMValueAt(@NonNull String key) {
+        Preconditions.assertNotNull(key, "key");
+        synchronized (lock) { return contents.get(key); }
     }
 }

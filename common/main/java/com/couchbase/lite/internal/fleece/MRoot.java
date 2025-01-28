@@ -18,32 +18,26 @@ package com.couchbase.lite.internal.fleece;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.couchbase.lite.internal.utils.Preconditions;
+
 
 public final class MRoot extends MCollection {
-    @NonNull
-    private final MValue content;
-
-    //---------------------------------------------
-    // Constructor
-    //---------------------------------------------
-    public MRoot(@Nullable MContext context, @Nullable FLValue value, boolean isMutable) {
-        super(context, isMutable);
-        content = new MValue(value);
+    public MRoot(@Nullable MContext context, @Nullable FLValue flValue, boolean isMutable) {
+        super(new MValue(flValue), null, context, isMutable);
     }
-
-    //---------------------------------------------
-    // Public Methods
-    //---------------------------------------------
 
     @Override
     public int count() { return 0; }
 
     @Override
-    public void encodeTo(@NonNull FLEncoder enc) { content.encodeTo(enc); }
+    public void encodeTo(@NonNull FLEncoder enc) { content().encodeTo(enc); }
 
     @Override
-    public boolean isMutated() { return content.isMutated(); }
+    public boolean isMutated() { return content().isMutated(); }
 
     @Nullable
-    public Object asNative() { return content.asNative(this); }
+    public Object toJFleece() { return content().toJFleece(this); }
+
+    @NonNull
+    private MValue content() { return Preconditions.assertNotNull(getSlot(), "slot"); }
 }

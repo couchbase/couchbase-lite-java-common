@@ -352,7 +352,9 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
         // Despite best practice, this may deserialize a password as a String.
         // It's there in LiteCore, too. :shrug:
         // see setupBasicAuthenticator
-        this.options = (opts == null) ? null : Collections.unmodifiableMap(FLValue.fromData(opts).asDict());
+        this.options = (opts == null)
+            ? null
+            : Collections.unmodifiableMap(FLValue.fromData(opts).asMap(String.class, Object.class));
     }
 
     @Override

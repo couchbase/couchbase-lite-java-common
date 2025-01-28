@@ -34,8 +34,9 @@ import com.couchbase.lite.internal.core.C4BlobKey;
 import com.couchbase.lite.internal.core.C4BlobReadStream;
 import com.couchbase.lite.internal.core.C4BlobStore;
 import com.couchbase.lite.internal.core.C4BlobWriteStream;
-import com.couchbase.lite.internal.fleece.Encodable;
 import com.couchbase.lite.internal.fleece.FLEncoder;
+import com.couchbase.lite.internal.fleece.FleeceEncodable;
+import com.couchbase.lite.internal.fleece.JSONEncodable;
 import com.couchbase.lite.internal.logging.Log;
 import com.couchbase.lite.internal.utils.ClassUtils;
 import com.couchbase.lite.internal.utils.JSONUtils;
@@ -54,7 +55,7 @@ import com.couchbase.lite.internal.utils.Volatile;
 // This class should be re-implemented as a wrapper that delegates to one of three internal implementations:
 // content in memory, content in stream, content in DB.
 @SuppressWarnings("PMD.CyclomaticComplexity")
-public final class Blob implements Encodable {
+public final class Blob implements FleeceEncodable, JSONEncodable {
 
     //---------------------------------------------
     // Constants
@@ -64,12 +65,14 @@ public final class Blob implements Encodable {
     public static final String ENCODER_ARG_DB = "BLOB.db";
     public static final String ENCODER_ARG_QUERY_PARAM = "BLOB.queryParam";
 
-    /**
-     * The sub-document property that identifies it as a special type of object.
-     * For example, a blob is represented as `{"@type":"blob", "digest":"xxxx", ...}`
-     */
+    // The sub-document property that identifies it as a special type of object.
+    // For example, a blob is represented as `{"@type":"blob", "digest":"xxxx", ...}`
     static final String META_PROP_TYPE = "@type";
     static final String TYPE_BLOB = "blob";
+
+    // This is the top-level key that the SG uses to store blobs in a document.
+    // It is part of the API
+    static final String DOC_ATTACHMENTS = "_attachments";
 
     static final String PROP_DIGEST = "digest";
     static final String PROP_LENGTH = "length";
@@ -406,6 +409,7 @@ public final class Blob implements Encodable {
     @NonNull
     public String getContentType() { return contentType; }
 
+    @Override
     @NonNull
     public String toJSON() {
         if (blobDigest == null) {

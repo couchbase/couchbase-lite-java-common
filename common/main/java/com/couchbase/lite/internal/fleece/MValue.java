@@ -18,8 +18,10 @@ package com.couchbase.lite.internal.fleece;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.couchbase.lite.BaseMValue;
+import com.couchbase.lite.Blob;
 import com.couchbase.lite.CouchbaseLiteError;
-import com.couchbase.lite.MValueConverter;
+import com.couchbase.lite.internal.DbContext;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
@@ -37,22 +39,24 @@ import com.couchbase.lite.internal.utils.Preconditions;
  * In 9/2020 (CBL-246), I tried to convert this code to use LiteCore's MutableFleece package
  * (that's Jens' second implementations). Both Jim and Jens warned me, without specifics,
  * that doing so might be more trouble than it was worth. Although the LiteCore
- * implementation of Mutable Fleece is relatively clear, this Java code is just plain
- * bizarre. It works, though. I don't think I have ever seen a problem that could be traced
- * to it. I've cleaned it up just bit but other than that, I'm leaving it alone.  I suggest
+ * implementation of Mutable Fleece is relatively clear, this existing Java code is just
+ * plain bizarre. It seems to work, though. I have seen very few problems that could be traced
+ * to it. I've cleaned it up a bit but other than that, I'm leaving it alone.  I suggest
  * you do the same, unless something changes to make the benefit side of the C/B fraction
  * more interesting.
  * <p>
- * The regrettable upside-down dependency on MValueConverter provides access to package
+ * The regrettable upside-down dependency on BaseMValue provides access to package
  * visible symbols in com.couchbase.lite.
  * <p>
- * It worries me that this isn't thread safe... but, as I say, I've never seen it be a problem.
+ * It worries me that this isn't thread safe... but, as I say, it hasn't been a significant issue.
  * <p>
  * 3/2024 (CBL-5486): I've seen a problem!
  * If the parent, the object holding the Fleece reference, is closed, the Fleece object backing
- * all of the contained objects, is freed.
+ * all the contained objects, is freed.
+ * <p>
+ * There are more notes on my attempts to tame this code in &lt;root&gt;/docs/FixFleece.md
  */
-public class MValue extends MValueConverter implements Encodable {
+public class MValue extends BaseMValue implements FleeceEncodable {
 
     //-------------------------------------------------------------------------
     // Static members
@@ -70,7 +74,7 @@ public class MValue extends MValueConverter implements Encodable {
     @Nullable
     private FLValue flValue;
     @Nullable
-    private Object value;
+    private Object cachedValue;
 
     //-------------------------------------------------------------------------
     // Constructors
@@ -81,41 +85,85 @@ public class MValue extends MValueConverter implements Encodable {
     MValue(@Nullable FLValue val) { this(null, val); }
 
     private MValue(@Nullable Object obj, @Nullable FLValue val) {
-        value = obj;
-        this.flValue = val;
+        cachedValue = obj;
+        flValue = val;
     }
 
     //-------------------------------------------------------------------------
     // Public methods
     //-------------------------------------------------------------------------
 
-    @Override
-    public void encodeTo(@NonNull FLEncoder enc) {
-        if (isEmpty()) { throw new CouchbaseLiteError("MValue is empty."); }
-
-        if (flValue != null) { enc.writeValue(flValue); }
-        else if (value != null) { enc.writeValue(value); }
-        else { enc.writeNull(); }
-    }
+    @Nullable
+    public FLValue getFLValue() { return flValue; }
 
     public boolean isEmpty() { return false; }
 
     public boolean isMutated() { return flValue == null; }
 
-    @Nullable
-    public FLValue getValue() { return flValue; }
-
     public void mutate() {
-        Preconditions.assertNotNull(value, "Native object");
+        Preconditions.assertNotNull(cachedValue, "Native object");
         flValue = null;
     }
 
-    @Nullable
-    public Object asNative(@Nullable MCollection parent) {
-        if ((value != null) || (flValue == null)) { return value; }
+    @Override
+    public void encodeTo(@NonNull FLEncoder enc) {
+        if (isEmpty()) { throw new CouchbaseLiteError("MValue is empty."); }
 
-        final NativeValue<?> val = toNative(this, parent);
-        if (val.cacheIt) { value = val.nVal; }
-        return val.nVal;
+        if (flValue != null) { enc.writeValue(flValue); }
+        else if (cachedValue != null) { enc.writeValue(cachedValue); }
+        else { enc.writeNull(); }
+    }
+
+    @Nullable
+    public Object toJFleece(@Nullable MCollection parent) {
+        if ((cachedValue != null) || (flValue == null)) { return cachedValue; }
+
+        switch (flValue.getType()) {
+            case FLValue.DICT:
+                cachedValue = toDictionary(parent);
+                return cachedValue;
+            case FLValue.ARRAY:
+                cachedValue = getArray(this, parent);
+                return cachedValue;
+            case FLValue.DATA:
+                return new Blob("application/octet-stream", flValue.asByteArray());
+            default:
+                return flValue.toJava();
+        }
+    }
+
+    //-------------------------------------------------------------------------
+    // Private methods
+    //-------------------------------------------------------------------------
+
+    @NonNull
+    private Object toDictionary(@Nullable MCollection parent) {
+        final FLDict flDict = Preconditions.assertNotNull(flValue, "MValue").asFLDict();
+
+        final FLValue flType = flDict.get(META_PROP_TYPE);
+        final String type = (flType == null) ? null : flType.asString();
+
+        if (TYPE_BLOB.equals(type) || isOldAttachment(type, flDict)) {
+            final MContext ctxt = Preconditions.assertNotNull(parent, "parent").getContext();
+            if (!(ctxt instanceof DbContext)) { throw new CouchbaseLiteError("Context is not DbContext: " + ctxt); }
+            return getBlob((DbContext) ctxt, flDict);
+        }
+
+        return getDictionary(this, parent);
+    }
+
+    // This is a really, really ugly hack.
+    // It is necessary because blobs are stored in two different ways in a document.
+    // LiteCore store them as dictionaries with the meta-type "blob" ("@type": "blob")
+    // at the path at which they were inserted into the document.
+    // The SG stores them as dictionaries at the top level of the document in a dictionary
+    // at the key "_attachments".  We, apparently,support clients use of either method of
+    // managing their blobs.  Feh.  There is an extended discussion in <root>/docs/FixFleece.md
+    private boolean isOldAttachment(@Nullable String type, @NonNull FLDict flDict) {
+        return (type == null)
+            && (flDict.get(PROP_DIGEST) != null)
+            && (flDict.get(PROP_LENGTH) != null)
+            && (flDict.get(PROP_STUB) != null)
+            && (flDict.get(PROP_REVPOS) != null);
     }
 }

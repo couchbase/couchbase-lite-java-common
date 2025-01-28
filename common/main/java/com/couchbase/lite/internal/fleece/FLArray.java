@@ -93,15 +93,12 @@ public final class FLArray {
     public FLValue get(long index) { return FLValue.getFLValue(impl.nGet(peer, index)); }
 
     @NonNull
-    public List<Object> asArray() { return asTypedArray(Object.class); }
-
-    @NonNull
-    public <T> List<T> asTypedArray(@NonNull Class<T> klass) {
+    public <T> List<T> asList(@NonNull Class<T> klass) {
         final List<T> results = new ArrayList<>();
         try (FLArrayIterator itr = iterator()) {
             FLValue value;
             while ((value = itr.getValue()) != null) {
-                final Object val = value.asObject();
+                final Object val = value.toJava();
                 try { results.add(klass.cast(val)); }
                 catch (ClassCastException e) {
                     Log.w(
@@ -126,5 +123,5 @@ public final class FLArray {
     //-------------------------------------------------------------------------
 
     @Nullable
-    <T> T withContent(@NonNull Fn.Function<Long, T> fn) { return fn.apply(peer); }
+    <T> T withContent(@NonNull Fn.NullableFunction<Long, T> fn) { return fn.apply(peer); }
 }

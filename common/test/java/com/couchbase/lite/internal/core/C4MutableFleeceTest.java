@@ -64,8 +64,8 @@ public class C4MutableFleeceTest extends C4BaseTest {
     @Test
     public void testMValue() {
         MValue val = new MValue("hi");
-        assertEquals("hi", val.asNative(null));
-        assertNull(val.getValue());
+        assertEquals("hi", val.toJFleece(null));
+        assertNull(val.getFLValue());
     }
 
     @Test
@@ -83,7 +83,7 @@ public class C4MutableFleeceTest extends C4BaseTest {
             MRoot root = new MRoot(new TestContext(data), FLValue.fromData(data), true);
 
             assertFalse(root.isMutated());
-            Object dict = root.asNative();
+            Object dict = root.toJFleece();
             assertNotNull(dict);
             assertTrue(dict instanceof MutableDictionary);
             MutableDictionary mDict = (MutableDictionary) dict;
@@ -118,7 +118,7 @@ public class C4MutableFleeceTest extends C4BaseTest {
             MRoot root = new MRoot(new TestContext(data), FLValue.fromData(data), true);
 
             assertFalse(root.isMutated());
-            Object dict = root.asNative();
+            Object dict = root.toJFleece();
             assertNotNull(dict);
             assertTrue(dict instanceof MutableDictionary);
             MutableDictionary mDict = (MutableDictionary) dict;
@@ -139,7 +139,7 @@ public class C4MutableFleeceTest extends C4BaseTest {
 
             String expected = "{greeting:\"hi\",hello:\"world\"}";
             assertEquals(expected, fleece2JSON(encodeObj(dict)));
-            assertEquals(expected, fleece2JSON(encodeObj(root.asNative())));
+            assertEquals(expected, fleece2JSON(encodeObj(root.toJFleece())));
             assertEquals(expected, fleece2JSON(encodeCollection(root)));
             try (FLSliceResult encodedRoot = encodeCollection(root)) {
                 assertEquals(expected, fleece2JSON(encodedRoot));
@@ -162,7 +162,7 @@ public class C4MutableFleeceTest extends C4BaseTest {
         try (FLSliceResult data = encodeObj(map)) {
             MRoot root = new MRoot(new TestContext(data), FLValue.fromData(data), true);
 
-            Object dict = root.asNative();
+            Object dict = root.toJFleece();
             assertNotNull(dict);
             assertTrue(dict instanceof MutableDictionary);
             MutableDictionary mDict = (MutableDictionary) dict;
@@ -232,7 +232,7 @@ public class C4MutableFleeceTest extends C4BaseTest {
             MRoot root = new MRoot(new TestContext(data), FLValue.fromData(data), true);
 
             assertFalse(root.isMutated());
-            Object array = root.asNative();
+            Object array = root.toJFleece();
             assertNotNull(array);
             assertTrue(array instanceof MutableArray);
             MutableArray mArray = (MutableArray) array;
@@ -290,7 +290,7 @@ public class C4MutableFleeceTest extends C4BaseTest {
             MRoot root = new MRoot(new TestContext(data), FLValue.fromData(data), true);
 
             assertFalse(root.isMutated());
-            Object dict = root.asNative();
+            Object dict = root.toJFleece();
             assertNotNull(dict);
             assertTrue(dict instanceof MutableDictionary);
             MutableDictionary mDict = (MutableDictionary) dict;
@@ -322,7 +322,7 @@ public class C4MutableFleeceTest extends C4BaseTest {
         try (FLSliceResult data = encodeObj(expected)) {
             MRoot root = new MRoot(new TestContext(data), FLValue.fromData(data), true);
 
-            Object array = root.asNative();
+            Object array = root.toJFleece();
             assertNotNull(array);
             assertTrue(array instanceof MutableArray);
 

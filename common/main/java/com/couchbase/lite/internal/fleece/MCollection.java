@@ -27,7 +27,7 @@ import com.couchbase.lite.CouchbaseLiteError;
 /**
  * Please see the comments in MValue
  */
-public abstract class MCollection implements Encodable {
+public abstract class MCollection implements FleeceEncodable {
     @Nullable
     private final MValue slot;
     @Nullable
@@ -54,11 +54,11 @@ public abstract class MCollection implements Encodable {
 
     // Slot constructor
     protected MCollection(@NonNull MValue slot, @Nullable MCollection parent, boolean isMutable) {
-        this(slot, parent, ((slot.getValue() == null) || (parent == null)) ? null : parent.getContext(), isMutable);
+        this(slot, parent, ((slot.getFLValue() == null) || (parent == null)) ? null : parent.getContext(), isMutable);
         if (slot.isMutated()) { mutated.set(true); }
     }
 
-    private MCollection(
+    protected MCollection(
         @Nullable MValue slot,
         @Nullable MCollection parent,
         @Nullable MContext context,
@@ -94,11 +94,8 @@ public abstract class MCollection implements Encodable {
     // Protected Methods
     //---------------------------------------------
 
-    protected void assertOpen() {
-        if ((context != null) && context.isClosed()) {
-            throw new CouchbaseLiteError("Cannot use a Fleece object after its parent has been closed");
-        }
-    }
+    @Nullable
+    protected final MValue getSlot() { return slot; }
 
     protected final void mutate() { mutate(true); }
 
@@ -109,5 +106,11 @@ public abstract class MCollection implements Encodable {
 
         if (slot != null) { slot.mutate(); }
         if (parent != null) { parent.mutate(false); }
+    }
+
+    protected final void assertOpen() {
+        if ((context != null) && context.isClosed()) {
+            throw new CouchbaseLiteError("Cannot use a Fleece object after its parent has been closed");
+        }
     }
 }
