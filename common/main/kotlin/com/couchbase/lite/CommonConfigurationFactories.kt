@@ -135,7 +135,7 @@ fun ArrayIndexConfiguration?.newConfig(path: String?, vararg expressions: String
  * Usage:
  *      val logFileConfig = LogFileConfigurationFactory.install(...)
  */
-val fileLogSinkFactory: FileLogSink? = null
+val FileLogSinkFactory: FileLogSink? = null
 
 /**
  * Install a new file logger
@@ -152,8 +152,8 @@ val fileLogSinkFactory: FileLogSink? = null
 fun FileLogSink?.install(
     directory: String? = null,
     level: LogLevel? = null,
-    maxSize: Long? = null,
-    maxRotateCount: Int? = null,
+    maxFileSize: Long? = null,
+    maxKeptFiles: Int? = null,
     isPlainText: Boolean? = null
 ) {
     val builder = FileLogSink.Builder()
@@ -162,8 +162,8 @@ fun FileLogSink?.install(
         ?: throw IllegalArgumentException("A LogFileSink must have a directory")
 
     (level ?: this?.level)?.let { builder.level = it }
-    (maxSize ?: this?.maxFileSize)?.let { builder.maxFileSize = it }
-    (maxRotateCount ?: this?.maxKeptFiles)?.let { builder.maxKeptFiles = it }
+    (maxFileSize ?: this?.maxFileSize)?.let { builder.maxFileSize = it }
+    (maxKeptFiles ?: this?.maxKeptFiles)?.let { builder.maxKeptFiles = it }
     (isPlainText ?: this?.isPlainText)?.let { builder.isPlainText = it }
 
     LogSinks.get().file = builder.build()

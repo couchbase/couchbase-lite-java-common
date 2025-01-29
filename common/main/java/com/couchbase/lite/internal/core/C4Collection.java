@@ -53,26 +53,35 @@ public final class C4Collection extends C4Peer {
 
         // Indexes
         @GuardedBy("dbLock")
-        void nCreateValueIndex(long peer, String name, int queryLanguage, String indexSpec) throws LiteCoreException;
+        void nCreateValueIndex(
+            long peer,
+            @NonNull String name,
+            int queryLanguage,
+            @NonNull String indexSpec,
+            @Nullable String where)
+            throws LiteCoreException;
         @GuardedBy("dbLock")
-        void nCreateArrayIndex(long peer, String name, String path, String indexSpec) throws LiteCoreException;
+        void nCreateArrayIndex(long peer, @NonNull String name, @NonNull String path, @NonNull String indexSpec)
+            throws LiteCoreException;
         @GuardedBy("dbLock")
-        void nCreatePredictiveIndex(long peer, String name, String indexSpec) throws LiteCoreException;
+        void nCreatePredictiveIndex(long peer, @NonNull String name, @NonNull String indexSpec)
+            throws LiteCoreException;
         @GuardedBy("dbLock")
         void nCreateFullTextIndex(
             long peer,
-            String name,
+            @NonNull String name,
             int queryLanguage,
-            String indexSpec,
-            String language,
-            boolean ignoreDiacritics)
+            @NonNull String indexSpec,
+            @Nullable String language,
+            boolean ignoreDiacritics,
+            @Nullable String where)
             throws LiteCoreException;
         @GuardedBy("dbLock")
         @SuppressWarnings("PMD.ExcessiveParameterList")
         void nCreateVectorIndex(
             long peer,
-            String name,
-            String queryExpressions,
+            @NonNull String name,
+            @NonNull String queryExpressions,
             long dimensions,
             int metric,
             long centroids,
@@ -240,19 +249,19 @@ public final class C4Collection extends C4Peer {
         return C4Document.create(this, docID, body, flags);
     }
 
-    public long getDocumentExpiration(String docID) throws LiteCoreException {
+    public long getDocumentExpiration(@NonNull String docID) throws LiteCoreException {
         return withPeerOrDefault(0L, peer -> {
             synchronized (dbLock) { return impl.nGetDocExpiration(peer, docID); }
         });
     }
 
-    public void setDocumentExpiration(String docID, long timeStamp) throws LiteCoreException {
+    public void setDocumentExpiration(@NonNull String docID, long timeStamp) throws LiteCoreException {
         voidWithPeerOrWarn(peer -> {
             synchronized (dbLock) { impl.nSetDocExpiration(peer, docID, timeStamp); }
         });
     }
 
-    public void purgeDocument(String docID) throws LiteCoreException {
+    public void purgeDocument(@NonNull String docID) throws LiteCoreException {
         voidWithPeerOrWarn(peer -> {
             synchronized (dbLock) { impl.nPurgeDoc(peer, docID); }
         });
@@ -278,30 +287,37 @@ public final class C4Collection extends C4Peer {
     // These all call the same underlying LiteCore method but the call interface gets
     // completely polluted if we try to combine them into a single call.
 
-    public void createValueIndex(String name, int queryLanguage, String indexSpec) throws LiteCoreException {
+    public void createValueIndex(
+        @NonNull String name,
+        int queryLanguage,
+        @NonNull String indexSpec,
+        @Nullable String where)
+        throws LiteCoreException {
         voidWithPeerOrWarn(peer -> {
-            synchronized (dbLock) { impl.nCreateValueIndex(peer, name, queryLanguage, indexSpec); }
+            synchronized (dbLock) { impl.nCreateValueIndex(peer, name, queryLanguage, indexSpec, where); }
         });
     }
 
-    public void createArrayIndex(String name, String path, String indexSpec) throws LiteCoreException {
+    public void createArrayIndex(@NonNull String name, @NonNull String path, @NonNull String indexSpec)
+        throws LiteCoreException {
         voidWithPeerOrWarn(peer -> {
             synchronized (dbLock) { impl.nCreateArrayIndex(peer, name, path, indexSpec); }
         });
     }
 
-    public void createPredictiveIndex(String name, String indexSpec) throws LiteCoreException {
+    public void createPredictiveIndex(@NonNull String name, @NonNull String indexSpec) throws LiteCoreException {
         voidWithPeerOrWarn(peer -> {
             synchronized (dbLock) { impl.nCreatePredictiveIndex(peer, name, indexSpec); }
         });
     }
 
     public void createFullTextIndex(
-        String name,
+        @NonNull String name,
         int queryLanguage,
-        String indexSpec,
-        String language,
-        boolean ignoreDiacritics)
+        @NonNull String indexSpec,
+        @Nullable String language,
+        boolean ignoreDiacritics,
+        @Nullable String where)
         throws LiteCoreException {
         voidWithPeerOrWarn(peer -> {
             synchronized (dbLock) {
@@ -311,15 +327,16 @@ public final class C4Collection extends C4Peer {
                     queryLanguage,
                     indexSpec,
                     language,
-                    ignoreDiacritics);
+                    ignoreDiacritics,
+                    where);
             }
         });
     }
 
     @SuppressWarnings("PMD.ExcessiveParameterList")
     public void createVectorIndex(
-        String name,
-        String queryExpressions,
+        @NonNull String name,
+        @NonNull String queryExpressions,
         long dimensions,
         int metric,
         long centroids,
@@ -366,7 +383,7 @@ public final class C4Collection extends C4Peer {
         return (idx == 0L) ? null : C4Index.create(idx);
     }
 
-    public void deleteIndex(String name) throws LiteCoreException {
+    public void deleteIndex(@NonNull String name) throws LiteCoreException {
         voidWithPeerOrWarn(peer -> {
             synchronized (dbLock) { impl.nDeleteIndex(peer, name); }
         });

@@ -45,6 +45,6 @@ public final class ValueIndex extends Index {
     @Override
     void createIndex(@NonNull String name, @NonNull C4Collection c4Collection)
         throws LiteCoreException, CouchbaseLiteException {
-        c4Collection.createValueIndex(name, QueryLanguage.JSON.getCode(), getIndexSpec());
+        c4Collection.createValueIndex(name, QueryLanguage.JSON.getCode(), getIndexSpec(), null);
     }
 }
