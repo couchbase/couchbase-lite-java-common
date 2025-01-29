@@ -34,7 +34,6 @@ import com.couchbase.lite.internal.fleece.FLValue;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 
@@ -230,7 +229,8 @@ public class C4QueryTest extends C4QueryBaseTest {
         c4Collection.createValueIndex(
             "length",
             QueryLanguage.JSON.getCode(),
-            json5("[['length()', ['.name.first']]]"));
+            json5("[['length()', ['.name.first']]]"),
+            null);
         compile("['=', ['length()', ['.name.first']], 9]");
         assertEquals(Arrays.asList("0000015", "0000099"), run());
     }
@@ -242,7 +242,8 @@ public class C4QueryTest extends C4QueryBaseTest {
         c4Collection.createValueIndex(
             "length",
             QueryLanguage.JSON.getCode(),
-            json5("[['length()', ['.name.first']]]"));
+            json5("[['length()', ['.name.first']]]"),
+            null);
 
         // Delete doc "0000015":
         {
@@ -300,7 +301,8 @@ public class C4QueryTest extends C4QueryBaseTest {
             QueryLanguage.JSON.getCode(),
             "[[\".contact.address.street\"]]",
             null,
-            true);
+            true,
+            null);
         compile("['MATCH()', 'byStreet', 'Hwy']");
         assertEquals(
             Arrays.asList(
@@ -321,7 +323,8 @@ public class C4QueryTest extends C4QueryBaseTest {
             QueryLanguage.JSON.getCode(),
             "[[\".contact.address.street\"], [\".contact.address.city\"], [\".contact.address.state\"]]",
             null,
-            true);
+            true,
+            null);
 
         // Some docs match 'Santa' in the street name, some in the city name
         compile("['MATCH()', 'byAddress', 'Santa']");
@@ -376,13 +379,15 @@ public class C4QueryTest extends C4QueryBaseTest {
             QueryLanguage.JSON.getCode(),
             "[[\".contact.address.street\"]]",
             null,
-            true);
+            true,
+            null);
         c4Collection.createFullTextIndex(
             "byCity",
             QueryLanguage.JSON.getCode(),
             "[[\".contact.address.city\"]]",
             null,
-            true);
+            true,
+            null);
         compile("['AND', ['MATCH()', 'byStreet', 'Hwy'], ['MATCH()', 'byCity',   'Santa']]");
         assertEquals(Collections.singletonList("0000015"), run());
         assertEquals(
@@ -398,13 +403,15 @@ public class C4QueryTest extends C4QueryBaseTest {
             QueryLanguage.JSON.getCode(),
             "[[\".contact.address.street\"]]",
             null,
-            true);
+            true,
+            null);
         c4Collection.createFullTextIndex(
             "byCity",
             QueryLanguage.JSON.getCode(),
             "[[\".contact.address.city\"]]",
             null,
-            true);
+            true,
+            null);
         compile("['AND',['AND',['=',['.gender'],'male'],"
             + "['MATCH()','byCity','Santa']],['=',['.name.first'],'Cleveland']]");
         assertEquals(Collections.singletonList("0000015"), run());
@@ -422,7 +429,8 @@ public class C4QueryTest extends C4QueryBaseTest {
             QueryLanguage.JSON.getCode(),
             "[[\".contact.address.street\"]]",
             null,
-            true);
+            true,
+            null);
         try {
             c4Database.createJsonQuery(
                 "['AND', ['MATCH()', 'byStreet', 'Hwy'], ['MATCH()', 'byStreet', 'Blvd']]");
@@ -442,7 +450,8 @@ public class C4QueryTest extends C4QueryBaseTest {
             QueryLanguage.JSON.getCode(),
             "[[\".contact.address.street\"]]",
             null,
-            true);
+            true,
+            null);
         try {
             c4Database.createJsonQuery(
                 "['OR', ['MATCH()', 'byStreet', 'Hwy'], ['=', ['.', 'contact', 'address', 'state'], 'CA']]");
