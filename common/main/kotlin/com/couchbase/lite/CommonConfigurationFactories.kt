@@ -110,7 +110,7 @@ fun ValueIndexConfiguration?.newConfig(vararg expressions: String = emptyArray()
  * Usage:
  *     val arrayIndexConfig = arrayIndexConfigurationFactory.newConfig(...)
  */
-val arrayIndexConfigurationFactory: ArrayIndexConfiguration? = null
+val ArrayIndexConfigurationFactory: ArrayIndexConfiguration? = null
 
 /**
  * Create a ArrayIndexConfiguration, overriding the receiver's
@@ -142,8 +142,8 @@ val FileLogSinkFactory: FileLogSink? = null
  *
  * @param directory (required) the directory in which the logs files are stored.
  * @param level (required) the minimum level for log messages pushed to the file log.
- * @param maxSize the max size of the log file in bytes.
- * @param maxRotateCount the number of rotated logs that are saved.
+ * @param maxFileSize the max size of the log file in bytes.
+ * @param maxKeptFiles the number of rotated logs that are saved.
  * @param isPlainText whether or not to log in plaintext.
  *
  * @see com.couchbase.lite.logging.FileLogSink
