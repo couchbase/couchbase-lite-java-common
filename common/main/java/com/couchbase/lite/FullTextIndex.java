@@ -79,6 +79,7 @@ public final class FullTextIndex extends Index {
     @Override
     void createIndex(@NonNull String name, @NonNull C4Collection c4Collection)
         throws LiteCoreException, CouchbaseLiteException {
-        c4Collection.createFullTextIndex(name, QueryLanguage.JSON.getCode(), getIndexSpec(), language, ignoreDiacrits);
+        c4Collection
+            .createFullTextIndex(name, QueryLanguage.JSON.getCode(), getIndexSpec(), language, ignoreDiacrits, null);
     }
 }

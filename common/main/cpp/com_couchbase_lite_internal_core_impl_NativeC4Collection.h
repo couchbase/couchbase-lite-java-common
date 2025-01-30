@@ -102,11 +102,11 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getIndexes
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
  * Method:    createValueIndex
- * Signature: (JLjava/lang/String;ILjava/lang/String;)V
+ * Signature: (JLjava/lang/String;ILjava/lang/String;Ljava/lang/String;)V
  */
 JNIEXPORT void
 JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createValueIndex
-        (JNIEnv *, jclass, jlong, jstring, jint, jstring);
+        (JNIEnv *, jclass, jlong, jstring, jint, jstring, jstring);
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
@@ -120,11 +120,11 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createArrayIndex
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
  * Method:    createFullTextIndex
- * Signature: (JLjava/lang/String;ILjava/lang/String;Ljava/lang/String;B)V
+ * Signature: (JLjava/lang/String;ILjava/lang/String;Ljava/lang/String;BLjava/lang/String;)V
  */
 JNIEXPORT void
 JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createFullTextIndex
-        (JNIEnv *, jclass, jlong, jstring, jint, jstring, jstring, jboolean);
+        (JNIEnv *, jclass, jlong, jstring, jint, jstring, jstring, jboolean, jstring);
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection

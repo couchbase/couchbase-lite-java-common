@@ -251,7 +251,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getIndexesInfo(
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
  * Method:    createValueIndex
- * Signature: (JLjava/lang/String;ILjava/lang/String;)V
+ * Signature: (JLjava/lang/String;ILjava/lang/String;Ljava/lang/String;)V
  */
 JNIEXPORT void JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createValueIndex(
@@ -260,8 +260,13 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createValueIndex(
         jlong coll,
         jstring jName,
         jint qLanguage,
-        jstring jqueryExpressions) {
+        jstring jqueryExpressions,
+        jstring where) {
     C4IndexOptions options = {};
+
+    jstringSlice whereSlice(env, where);
+    options.where = whereSlice.c_str();
+
     createIndex(env, coll, kC4ValueIndex, jName, (C4QueryLanguage) qLanguage, jqueryExpressions, options);
 }
 
@@ -289,7 +294,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createArrayIndex(
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
  * Method:    createFullTextIndex
- * Signature: (JLjava/lang/String;ILjava/lang/String;Ljava/lang/String;B)V
+ * Signature: (JLjava/lang/String;ILjava/lang/String;Ljava/lang/String;BLjava/lang/String;)V
  */
 JNIEXPORT void JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createFullTextIndex(
@@ -300,13 +305,16 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createFullTextInde
         jint qLanguage,
         jstring jqueryExpressions,
         jstring jlanguage,
-        jboolean ignoreDiacritics) {
+        jboolean ignoreDiacritics,
+        jstring where) {
     C4IndexOptions options = {};
 
     jstringSlice language(env, jlanguage);
+    jstringSlice whereSlice(env, where);
 
     options.language = language.c_str();
     options.ignoreDiacritics = ignoreDiacritics == JNI_TRUE;
+    options.where = whereSlice.c_str();
 
     createIndex(env, coll, kC4FullTextIndex, jName, (C4QueryLanguage) qLanguage, jqueryExpressions, options);
 }

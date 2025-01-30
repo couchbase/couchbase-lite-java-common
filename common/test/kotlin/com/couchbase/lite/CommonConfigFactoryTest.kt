@@ -103,7 +103,7 @@ class CommonConfigFactoryTest : BaseTest() {
     @Test
     fun testFileLogSinkFactory() {
         val dir = getScratchDirectoryPath(getUniqueName("sink-dir"))
-        fileLogSinkFactory.install(directory = dir, maxSize = 4096L)
+        FileLogSinkFactory.install(directory = dir, maxFileSize = 4096L)
         LogSinks.get().file?.let {
             assertEquals(dir, it.directory)
             assertEquals(4096L, it.maxFileSize)
@@ -112,13 +112,13 @@ class CommonConfigFactoryTest : BaseTest() {
 
     @Test
     fun testFileLogSinkactoryNullDir() {
-        assertThrows(IllegalArgumentException::class.java) { fileLogSinkFactory.install() }
+        assertThrows(IllegalArgumentException::class.java) { FileLogSinkFactory.install() }
     }
 
     @Test
     fun testFileLogSinkCopy() {
         val dir1 = getScratchDirectoryPath(getUniqueName("sink-dir1"))
-        fileLogSinkFactory.install(directory = dir1, maxSize = 4096L)
+        FileLogSinkFactory.install(directory = dir1, maxFileSize = 4096L)
         val sink = LogSinks.get().file
         sink?.let {
             assertEquals(dir1, it.directory)
@@ -126,7 +126,7 @@ class CommonConfigFactoryTest : BaseTest() {
         }
 
         val dir2 = getScratchDirectoryPath(getUniqueName("sink-dir2"))
-        sink.install(directory = dir2, maxSize = 8192L)
+        sink.install(directory = dir2, maxFileSize = 8192L)
         LogSinks.get().file?.let {
             assertNotEquals(sink, it)
             assertEquals(dir2, it.directory)
