@@ -36,6 +36,9 @@ public final class FullTextIndexConfiguration extends IndexConfiguration {
     private String language = Locale.getDefault().getLanguage();
     private boolean ignoreDiacrits = Defaults.FullTextIndex.IGNORE_ACCENTS;
 
+    @Nullable
+    private String where;
+
     public FullTextIndexConfiguration(@NonNull String... expressions) { this(Arrays.asList(expressions)); }
 
     public FullTextIndexConfiguration(@NonNull List<String> expressions) { super(expressions); }
@@ -66,8 +69,18 @@ public final class FullTextIndexConfiguration extends IndexConfiguration {
 
     public boolean isIgnoringAccents() { return ignoreDiacrits; }
 
+    @Nullable
+    public String getWhere() { return where; }
+
+    @NonNull
+    public FullTextIndexConfiguration setWhere(@Nullable String where) {
+        this.where = where;
+        return this;
+    }
+
     @Override
     void createIndex(@NonNull String name, @NonNull C4Collection c4Collection) throws LiteCoreException {
-        c4Collection.createFullTextIndex(name, QueryLanguage.N1QL.getCode(), getIndexSpec(), language, ignoreDiacrits);
+        c4Collection
+            .createFullTextIndex(name, QueryLanguage.N1QL.getCode(), getIndexSpec(), language, ignoreDiacrits, where);
     }
 }

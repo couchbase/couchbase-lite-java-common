@@ -16,6 +16,7 @@
 package com.couchbase.lite;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import java.util.Arrays;
 import java.util.List;
@@ -28,12 +29,24 @@ import com.couchbase.lite.internal.core.C4Collection;
  * Configuration for a standard database index.
  */
 public final class ValueIndexConfiguration extends IndexConfiguration {
+    @Nullable
+    private String where;
+
     public ValueIndexConfiguration(@NonNull String... expressions) { this(Arrays.asList(expressions)); }
 
     public ValueIndexConfiguration(@NonNull List<String> expressions) { super(expressions); }
 
+    @Nullable
+    public String getWhere() { return where; }
+
+    @NonNull
+    public ValueIndexConfiguration setWhere(@Nullable String where) {
+        this.where = where;
+        return this;
+    }
+
     @Override
     void createIndex(@NonNull String name, @NonNull C4Collection c4Collection) throws LiteCoreException {
-        c4Collection.createValueIndex(name, QueryLanguage.N1QL.getCode(), getIndexSpec());
+        c4Collection.createValueIndex(name, QueryLanguage.N1QL.getCode(), getIndexSpec(), where);
     }
 }

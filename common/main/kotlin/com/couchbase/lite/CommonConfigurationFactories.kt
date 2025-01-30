@@ -110,7 +110,7 @@ fun ValueIndexConfiguration?.newConfig(vararg expressions: String = emptyArray()
  * Usage:
  *     val arrayIndexConfig = arrayIndexConfigurationFactory.newConfig(...)
  */
-val arrayIndexConfigurationFactory: ArrayIndexConfiguration? = null
+val ArrayIndexConfigurationFactory: ArrayIndexConfiguration? = null
 
 /**
  * Create a ArrayIndexConfiguration, overriding the receiver's
@@ -135,15 +135,15 @@ fun ArrayIndexConfiguration?.newConfig(path: String?, vararg expressions: String
  * Usage:
  *      val logFileConfig = LogFileConfigurationFactory.install(...)
  */
-val fileLogSinkFactory: FileLogSink? = null
+val FileLogSinkFactory: FileLogSink? = null
 
 /**
  * Install a new file logger
  *
  * @param directory (required) the directory in which the logs files are stored.
  * @param level (required) the minimum level for log messages pushed to the file log.
- * @param maxSize the max size of the log file in bytes.
- * @param maxRotateCount the number of rotated logs that are saved.
+ * @param maxFileSize the max size of the log file in bytes.
+ * @param maxKeptFiles the number of rotated logs that are saved.
  * @param isPlainText whether or not to log in plaintext.
  *
  * @see com.couchbase.lite.logging.FileLogSink
@@ -152,8 +152,8 @@ val fileLogSinkFactory: FileLogSink? = null
 fun FileLogSink?.install(
     directory: String? = null,
     level: LogLevel? = null,
-    maxSize: Long? = null,
-    maxRotateCount: Int? = null,
+    maxFileSize: Long? = null,
+    maxKeptFiles: Int? = null,
     isPlainText: Boolean? = null
 ) {
     val builder = FileLogSink.Builder()
@@ -162,8 +162,8 @@ fun FileLogSink?.install(
         ?: throw IllegalArgumentException("A LogFileSink must have a directory")
 
     (level ?: this?.level)?.let { builder.level = it }
-    (maxSize ?: this?.maxFileSize)?.let { builder.maxFileSize = it }
-    (maxRotateCount ?: this?.maxKeptFiles)?.let { builder.maxKeptFiles = it }
+    (maxFileSize ?: this?.maxFileSize)?.let { builder.maxFileSize = it }
+    (maxKeptFiles ?: this?.maxKeptFiles)?.let { builder.maxKeptFiles = it }
     (isPlainText ?: this?.isPlainText)?.let { builder.isPlainText = it }
 
     LogSinks.get().file = builder.build()

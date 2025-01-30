@@ -78,19 +78,27 @@ public final class NativeC4Collection implements C4Collection.NativeImpl {
 
     @GuardedBy("dbLock")
     @Override
-    public void nCreateValueIndex(long peer, String name, int qLanguage, String indexSpec) throws LiteCoreException {
-        createValueIndex(peer, name, qLanguage, indexSpec);
+    public void nCreateValueIndex(
+        long peer,
+        @NonNull String name,
+        int qLanguage,
+        @NonNull String indexSpec,
+        @Nullable String where)
+        throws LiteCoreException {
+        createValueIndex(peer, name, qLanguage, indexSpec, where);
     }
 
     @GuardedBy("dbLock")
     @Override
-    public void nCreateArrayIndex(long peer, String name, String path, String indexSpec) throws LiteCoreException {
+    public void nCreateArrayIndex(long peer, @NonNull String name, @NonNull String path, @NonNull String indexSpec)
+        throws LiteCoreException {
         createArrayIndex(peer, name, path, indexSpec);
     }
 
     @GuardedBy("dbLock")
     @Override
-    public void nCreatePredictiveIndex(long peer, String name, String indexSpec) throws LiteCoreException {
+    public void nCreatePredictiveIndex(long peer, @NonNull String name, @NonNull String indexSpec)
+        throws LiteCoreException {
         createPredictiveIndex(peer, name, indexSpec);
     }
 
@@ -98,13 +106,14 @@ public final class NativeC4Collection implements C4Collection.NativeImpl {
     @Override
     public void nCreateFullTextIndex(
         long peer,
-        String name,
+        @NonNull String name,
         int qLanguage,
-        String indexSpec,
-        String language,
-        boolean ignoreDiacritics)
+        @NonNull String indexSpec,
+        @Nullable String language,
+        boolean ignoreDiacritics,
+        @Nullable String where)
         throws LiteCoreException {
-        createFullTextIndex(peer, name, qLanguage, indexSpec, language, ignoreDiacritics);
+        createFullTextIndex(peer, name, qLanguage, indexSpec, language, ignoreDiacritics, where);
     }
 
     @SuppressWarnings("PMD.ExcessiveParameterList")
@@ -112,8 +121,8 @@ public final class NativeC4Collection implements C4Collection.NativeImpl {
     @Override
     public void nCreateVectorIndex(
         long peer,
-        String name,
-        String queryExpressions,
+        @NonNull String name,
+        @NonNull String queryExpressions,
         long dimensions,
         int metric,
         long centroids,
@@ -201,33 +210,43 @@ public final class NativeC4Collection implements C4Collection.NativeImpl {
     // Indexes
 
     @GuardedBy("dbLock")
-    private static native void createValueIndex(long peer, String name, int qLanguage, String indexSpec)
+    private static native void createValueIndex(
+        long peer,
+        @NonNull String name,
+        int qLanguage,
+        @NonNull String indexSpec,
+        @Nullable String where)
         throws LiteCoreException;
 
     @GuardedBy("dbLock")
-    private static native void createArrayIndex(long peer, String name, String path, String indexSpec)
+    private static native void createArrayIndex(
+        long peer,
+        @NonNull String name,
+        @NonNull String path,
+        @NonNull String indexSpec)
         throws LiteCoreException;
 
     @GuardedBy("dbLock")
-    private static native void createPredictiveIndex(long peer, String name, String indexSpec)
+    private static native void createPredictiveIndex(long peer, @NonNull String name, @NonNull String indexSpec)
         throws LiteCoreException;
 
     @GuardedBy("dbLock")
     private static native void createFullTextIndex(
         long peer,
-        String name,
+        @NonNull String name,
         int qLanguage,
-        String indexSpec,
-        String language,
-        boolean ignoreDiacritics)
+        @NonNull String indexSpec,
+        @Nullable String language,
+        boolean ignoreDiacritics,
+        @Nullable String where)
         throws LiteCoreException;
 
     @SuppressWarnings("PMD.ExcessiveParameterList")
     @GuardedBy("dbLock")
     private static native void createVectorIndex(
         long peer,
-        String name,
-        String queryExpressions,
+        @NonNull String name,
+        @NonNull String queryExpressions,
         long dimensions,
         int metric,
         long centroids,
