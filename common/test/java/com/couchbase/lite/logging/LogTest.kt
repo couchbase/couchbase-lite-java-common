@@ -13,6 +13,7 @@ import com.couchbase.lite.SelectResult
 import com.couchbase.lite.internal.core.CBLVersion
 import com.couchbase.lite.internal.logging.Log
 import com.couchbase.lite.internal.logging.LogSinksImpl
+import com.couchbase.lite.internal.utils.FileUtils
 import org.junit.After
 import org.junit.Assert
 import org.junit.Before
@@ -138,7 +139,6 @@ class LogTest : BaseDbTest() {
 
         val message = "11223344556677889900" // ~43 bytes
         // 24 * 43 = 1032
-        // ... should cause each level to roll over once
         for (i in 0..23) {
             c4Log.logToCore(LogDomain.DATABASE, LogLevel.DEBUG, message)
             c4Log.logToCore(LogDomain.DATABASE, LogLevel.VERBOSE, message)
@@ -147,7 +147,10 @@ class LogTest : BaseDbTest() {
             c4Log.logToCore(LogDomain.DATABASE, LogLevel.ERROR, message)
         }
 
-        Assert.assertEquals((2 * 5), logFiles.size)
+        // each level should have rolled over once
+        // and there may have been a few extra things logged as well.
+        val n = logFiles.size
+        Assert.assertTrue((n >= (2 * 5)) && (n < (3 * 5)), )
     }
 
     @Test
