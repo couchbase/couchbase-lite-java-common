@@ -24,7 +24,7 @@ public final class NativeFLSliceResult implements FLSliceResult.NativeImpl {
 
     @Override
     @Nullable
-    public byte[]  nGetBuf(long base, long size) { return getBuf(base, size); }
+    public byte[] nGetBuf(long base, long size) { return getBuf(base, size); }
 
     @Override
     public void nRelease(long base, long size) { release(base, size); }

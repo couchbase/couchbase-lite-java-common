@@ -62,8 +62,6 @@ public abstract class FLEncoder extends C4NativePeer {
         @NonNull
         FLSliceResult nFinish2(long peer) throws LiteCoreException;
         @NonNull
-        FLSliceResult nFinish3(long peer) throws LiteCoreException;
-        @NonNull
         String nFinishJSON(long peer) throws LiteCoreException;
         void nFree(long peer);
     }
@@ -342,9 +340,4 @@ public abstract class FLEncoder extends C4NativePeer {
     // NOTE: the FLSliceResult returned by this method must be released by the caller
     @NonNull
     public FLSliceResult finish2() throws LiteCoreException { return impl.nFinish2(getPeer()); }
-
-    // NOTE: We expect the FLSliceResult returned by this method to be handed, immediately,
-    // to someone else (LiteCore) who will release it.  Java does release the memory.
-    @NonNull
-    public FLSliceResult finish3() throws LiteCoreException { return impl.nFinish3(getPeer()); }
 }
