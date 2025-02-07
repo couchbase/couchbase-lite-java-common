@@ -193,7 +193,6 @@ CBL {
         Java_com_couchbase_lite_internal_fleece_impl_NativeFLEncoder_endDict;
         Java_com_couchbase_lite_internal_fleece_impl_NativeFLEncoder_finish;
         Java_com_couchbase_lite_internal_fleece_impl_NativeFLEncoder_finish2;
-        Java_com_couchbase_lite_internal_fleece_impl_NativeFLEncoder_finish3;
         Java_com_couchbase_lite_internal_fleece_impl_NativeFLEncoder_finishJSON;
         Java_com_couchbase_lite_internal_fleece_impl_NativeFLEncoder_free;
         Java_com_couchbase_lite_internal_fleece_impl_NativeFLEncoder_newFleeceEncoder;
