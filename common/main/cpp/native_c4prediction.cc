@@ -65,6 +65,7 @@ static C4SliceResult prediction(void *token, FLDict input, C4Database *c4db, C4E
                 (jlong) c4db);
         if (sliceResult != nullptr) {
             res = fromJavaFLSliceResult(env, sliceResult);
+            unbindJavaFLSliceResult(env, sliceResult);
             env->DeleteLocalRef(sliceResult);
         }
     } else if (getEnvStat == JNI_EDETACHED) {
@@ -75,8 +76,10 @@ static C4SliceResult prediction(void *token, FLDict input, C4Database *c4db, C4E
                     (jlong) token,
                     (jlong) input,
                     (jlong) c4db);
-            if (sliceResult != nullptr)
+            if (sliceResult != nullptr) {
                 res = fromJavaFLSliceResult(env, sliceResult);
+                unbindJavaFLSliceResult(env, sliceResult);
+            }
             if (gJVM->DetachCurrentThread() != 0)
                 C4Warn("doRequestClose(): Failed to detach the current thread from a Java VM");
         } else {

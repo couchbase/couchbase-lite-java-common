@@ -48,6 +48,7 @@ namespace litecore {
         bool initC4Socket(JNIEnv *);     // Implemented in native_c4socket.cc
 
 #ifdef COUCHBASE_ENTERPRISE
+
         bool initC4Prediction(JNIEnv *); // Implemented in native_c4prediction.cc
         bool initC4Listener(JNIEnv *);   // Implemented in native_c4listener.cc
 #endif
@@ -66,6 +67,7 @@ namespace litecore {
         std::string JstringToUTF8(JNIEnv *env, jstring jstr);
 
         jstring UTF8ToJstring(JNIEnv *env, const char *s, size_t size);
+
         jstring UTF8ToJstring(JNIEnv *env, const char *s);
 
         std::string JcharsToUTF8(const jchar *jchars, jsize len);
@@ -78,7 +80,7 @@ namespace litecore {
             jstringSlice(JNIEnv *env, jcharArray jchars);
 
             jstringSlice(jstringSlice &&s) noexcept
-                : _str(std::move(s._str)), _slice(s._slice) { s._slice = kFLSliceNull; }
+                    : _str(std::move(s._str)), _slice(s._slice) { s._slice = kFLSliceNull; }
 
             operator FLSlice() { return _slice; }
 
@@ -138,14 +140,13 @@ namespace litecore {
         // Copy a FLMutableArray of strings to a Java HashSet<String>
         jobject toStringSet(JNIEnv *env, FLMutableArray array);
 
-        // Copy a native FLSliceResult to a Managed Java FLSliceResult
+        // Copy a native FLSliceResult to a Java FLSliceResult
         jobject toJavaFLSliceResult(JNIEnv *const env, const FLSliceResult &sr);
-
-        // Copy a native FLSliceResult to an Unmanaged Java FLSliceResult
-        jobject toJavaUnmanagedFLSliceResult(JNIEnv *const env, const FLSliceResult &sr);
 
         // Copy a Java FLSliceResult to a native FLSliceResult
         FLSliceResult fromJavaFLSliceResult(JNIEnv *const env, jobject jsr);
+
+        void unbindJavaFLSliceResult(JNIEnv *const env, jobject jsr);
 
         // Copies an encryption key to a C4EncryptionKey. Returns false on exception.
         bool getEncryptionKey(
