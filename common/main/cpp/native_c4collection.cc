@@ -247,6 +247,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getIndexesInfo(
         throwError(env, error);
         return 0;
     }
+    // !!! If this slice is freed while the FLValue is being used,
+    // it will cause a crash! So who is freeing it???
     return (jlong) FLValue_FromData({data.buf, data.size}, kFLTrusted);
 }
 

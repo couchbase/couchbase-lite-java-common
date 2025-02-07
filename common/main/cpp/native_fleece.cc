@@ -498,7 +498,7 @@ Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_toJSON5(
 }
 
 // ----------------------------------------------------------------------------
-// FLSliceResult
+// NativeFLSliceResult
 // ----------------------------------------------------------------------------
 
 /*

@@ -20,72 +20,42 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
+import com.couchbase.lite.CouchbaseLiteError;
 import com.couchbase.lite.internal.fleece.impl.NativeFLSliceResult;
 import com.couchbase.lite.internal.utils.ClassUtils;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
 /**
- * This object a frames a piece of native memory for which the recipient (caller) is responsible.
+ * This object a frames a piece of native memory for which Java is responsible.
  * `base` points at the start of the block, base + size is its end. The JNI just creates one of these
  * whenever LiteCore returns a native FLSliceResult (or its alias, C4SliceResult).
  */
-public abstract class FLSliceResult implements AutoCloseable {
+public final class FLSliceResult implements AutoCloseable {
     public interface NativeImpl {
         @Nullable
         byte[] nGetBuf(long base, long size);
         void nRelease(long base, long size);
     }
 
-    // We manage the FLSliceResult in almost all cases.
-    // We own the block of memory it frames and must release it.
-    private static final class ManagedFLSliceResult extends FLSliceResult {
-        ManagedFLSliceResult(@NonNull NativeImpl impl, long base, long size) { super(impl, base, size); }
-
-        @Override
-        protected void release(@NonNull NativeImpl impl) { impl.nRelease(base, size); }
-
-        @SuppressWarnings("NoFinalizer")
-        @Override
-        protected void finalize() throws Throwable {
-            try { close(); }
-            finally { super.finalize(); }
-        }
-    }
-
-    // If we are going to return this FLSliceResult to someone else (LiteCore),
-    // though, it will belong to *them* and we must not release it.
-    private static final class UnmanagedFLSliceResult extends FLSliceResult {
-        UnmanagedFLSliceResult(@NonNull NativeImpl impl, long base, long size) { super(impl, base, size); }
-
-        @Override
-        protected void release(@NonNull NativeImpl impl) { }
-    }
-
     private static final FLSliceResult.NativeImpl NATIVE_IMPL = new NativeFLSliceResult();
 
     // This method is used by reflection.  Don't change its signature.
     @NonNull
-    public static FLSliceResult createManagedSlice(long base, long size) {
-        return new ManagedFLSliceResult(NATIVE_IMPL, base, size);
-    }
-
-    @NonNull
-    public static FLSliceResult createUnmanagedSlice(long base, long size) {
-        return new UnmanagedFLSliceResult(NATIVE_IMPL, base, size);
-    }
+    public static FLSliceResult create(long base, long size) { return new FLSliceResult(NATIVE_IMPL, base, size); }
 
     @VisibleForTesting
     @NonNull
-    public static FLSliceResult createTestSlice() { return createManagedSlice(0, 0); }
+    public static FLSliceResult createTestSlice() { return create(0, 0); }
 
 
     // These fields are used by reflection.  Don't change them.
-    final long base;
-    final long size;
+    private final long base;
+    private final long size;
 
-    // Not using an AtomicBoolean here because the Android VM
-    // will GC an object's data members before finalizing the object
+    // Not using an AtomicBoolean here because the Android VM can
+    // GC an object's data members before finalizing the object
+    @Nullable
     @GuardedBy("this")
     private NativeImpl impl;
 
@@ -99,24 +69,33 @@ public abstract class FLSliceResult implements AutoCloseable {
     // Public methods
     //-------------------------------------------------------------------------
 
+    // Exposes a native pointer!
+    // There is a race: this object could become invalid between the time the this method returns
+    // and the time the caller uses the return value.  There's not much point in synchronizing the method.
+    public long getBase() {
+        getValidImpl();
+        return base;
+    }
+
+    // There is a race: this object could become invalid between the time the this method returns
+    // and the time the caller uses the return value.  There's not much point in synchronizing the method.
+    public long getSize() {
+        getValidImpl();
+        return size;
+    }
+
+    // This returns a *copy* of the data
+    // !!! This is a bad idea:  we should just pass this object around
+    // instead of copying the slice into Java memory.
+    @Nullable
+    public byte[] getContent() {
+        synchronized (this) { return getValidImpl().nGetBuf(base, size); }
+    }
+
     @NonNull
     @Override
     public String toString() {
         return "SliceResult{" + ClassUtils.objId(this) + " @0x0" + Long.toHexString(base) + ", " + size + "}";
-    }
-
-    // ??? Exposes a native pointer
-    public long getBase() { return base; }
-
-    public long getSize() { return size; }
-
-    // this returns a *copy* of the data
-    @Nullable
-    public byte[] getContent() {
-        synchronized (this) {
-            if (impl == null) { throw new IllegalStateException("Attempt to use a closed slice"); }
-            return impl.nGetBuf(base, size);
-        }
     }
 
     @Override
@@ -127,8 +106,27 @@ public abstract class FLSliceResult implements AutoCloseable {
             impl = null;
         }
 
-        if (ni != null) { release(ni); }
+        if (ni != null) { ni.nRelease(base, size); }
     }
 
-    protected abstract void release(@NonNull NativeImpl ni);
+    // The memory framed by this object no longer belongs to us:
+    // Probably we gave it to someone else.
+    public void unbind() {
+        synchronized (this) { impl = null; }
+    }
+
+    @SuppressWarnings("NoFinalizer")
+    @Override
+    protected void finalize() throws Throwable {
+        try { close(); }
+        finally { super.finalize(); }
+    }
+
+    @NonNull
+    private NativeImpl getValidImpl() {
+        synchronized (this) {
+            if (impl == null) { throw new CouchbaseLiteError("Attempt to use an invalid slice"); }
+            return impl;
+        }
+    }
 }
