@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.LogLevel;
@@ -130,9 +131,14 @@ public final class C4Log {
         m.put(LogDomain.LISTENER, C4Constants.LogDomain.LISTENER);
         LOGGING_DOMAIN_TO_CANONICAL_C4 = Collections.unmodifiableMap(m);
     }
+
+    private static final AtomicBoolean IN_CALLBACK = new AtomicBoolean(false);
+
     // This method is used by reflection.  Don't change its signature.
     public static void logCallback(@Nullable String c4Domain, int c4Level, @Nullable String message) {
+        IN_CALLBACK.set(true);
         LogSinksImpl.logFromCore(getLogLevelForC4Level(c4Level), getLoggingDomainForC4Domain(c4Domain), message);
+        IN_CALLBACK.set(false);
     }
 
     @NonNull
@@ -157,6 +163,12 @@ public final class C4Log {
     private C4Log(@NonNull NativeImpl impl) { this.impl = impl; }
 
     public void logToCore(@NonNull LogDomain domain, @NonNull LogLevel level, @NonNull String message) {
+        if (IN_CALLBACK.get()) {
+            final LogSinksImpl sinks = LogSinksImpl.getLogSinks();
+            if (sinks != null) { sinks.logFailure("Platform", null); }
+            return;
+        }
+        // Yes, there is a small race here...
         impl.nLog(getCanonicalC4DomainForLoggingDomain(domain), getC4LevelForLogLevel(level), message);
     }
 
