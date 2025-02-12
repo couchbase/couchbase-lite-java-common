@@ -265,7 +265,7 @@ public final class Log {
 
         // only generate logs >= current priority.
         final LogSinksImpl logSinks = LogSinksImpl.getLogSinks();
-        if (!logSinks.shouldLog(level, domain)) { return; }
+        if ((logSinks == null) || (!logSinks.shouldLog(level, domain))) { return; }
 
         String message;
         if (msg == null) { message = ""; }
