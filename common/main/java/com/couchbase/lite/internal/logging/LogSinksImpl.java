@@ -34,7 +34,6 @@ import com.couchbase.lite.LogLevel;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.core.C4Log;
 import com.couchbase.lite.internal.core.CBLVersion;
-import com.couchbase.lite.internal.utils.Preconditions;
 import com.couchbase.lite.logging.BaseLogSink;
 import com.couchbase.lite.logging.ConsoleLogSink;
 import com.couchbase.lite.logging.FileLogSink;
@@ -48,8 +47,8 @@ public final class LogSinksImpl implements LogSinks {
     @NonNull
     private static final AtomicReference<LogSinksImpl> LOG_SINKS = new AtomicReference<>();
 
-    @NonNull
-    public static LogSinksImpl getLogSinks() { return Preconditions.assertNotNull(LOG_SINKS.get(), "log sink impl"); }
+    @Nullable
+    public static LogSinksImpl getLogSinks() { return LOG_SINKS.get(); }
 
     // The center of log system initialization.
     public static void initLogging() {
@@ -214,6 +213,25 @@ public final class LogSinksImpl implements LogSinks {
         catch (Exception e) { logFailure("Custom", e); }
     }
 
+    // Something in the Logging system has failed.
+    // Try to log the failure to the console.
+    // If that doesn't wor, log to System err
+    @SuppressWarnings({"RegexpSinglelineJava", "PMD.SystemPrintln"})
+    public void logFailure(@NonNull String name, @Nullable Exception err) {
+        String msg = name + " log failure";
+        if (err != null) { msg += "\n" + Log.formatStackTrace(err); }
+
+        final ConsoleLogSink console = consoleLogSink;
+        if (console != null) {
+            try {
+                console.log(LogLevel.WARNING, LogDomain.DATABASE, msg);
+                return;
+            }
+            catch (Exception ignore) { }
+        }
+        System.err.println("WARNING: " + msg);
+    }
+
     public boolean shouldLog(@NonNull LogLevel level, @NonNull LogDomain domain) {
         return (logLevel.get().compareTo(level) <= 0) && logDomains.get().contains(domain);
     }
@@ -273,22 +291,6 @@ public final class LogSinksImpl implements LogSinks {
             LogDomain.DATABASE,
             "Database.log.getFile().getConfig() is now null: logging is disabled.  "
                 + "Log files required for product support are not being generated.");
-    }
-
-    // One of the loggers has failed.  Try to log the failure to the console.
-    // If that fails, log to System err
-    @SuppressWarnings({"RegexpSinglelineJava", "PMD.SystemPrintln"})
-    private void logFailure(@NonNull String name, @NonNull Exception err) {
-        final String msg = name + " log failure" + Log.formatStackTrace(err);
-        final ConsoleLogSink console = consoleLogSink;
-        if (console != null) {
-            try {
-                console.log(LogLevel.WARNING, LogDomain.DATABASE, msg);
-                return;
-            }
-            catch (Exception ignore) { }
-        }
-        System.err.println("WARNING: " + msg);
     }
 
     // Log to a non-null sink
