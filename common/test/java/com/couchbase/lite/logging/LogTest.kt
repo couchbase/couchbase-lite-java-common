@@ -3,21 +3,19 @@ package com.couchbase.lite.logging
 import com.couchbase.lite.BaseDbTest
 import com.couchbase.lite.CBLError
 import com.couchbase.lite.CouchbaseLiteException
-import com.couchbase.lite.DataSource
 import com.couchbase.lite.Defaults
 import com.couchbase.lite.LogDomain
 import com.couchbase.lite.LogLevel
-import com.couchbase.lite.MutableDocument
-import com.couchbase.lite.QueryBuilder
-import com.couchbase.lite.SelectResult
+import com.couchbase.lite.getC4Db
+import com.couchbase.lite.internal.QueryLanguage
+import com.couchbase.lite.internal.core.C4Query
+import com.couchbase.lite.internal.core.C4TestUtils
 import com.couchbase.lite.internal.core.CBLVersion
 import com.couchbase.lite.internal.logging.Log
 import com.couchbase.lite.internal.logging.LogSinksImpl
-import com.couchbase.lite.internal.utils.FileUtils
 import org.junit.After
 import org.junit.Assert
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Test
 import java.io.BufferedReader
 import java.io.File
@@ -50,7 +48,7 @@ private class SingleLineLogSink(private val prefix: String? = null) : BaseLogSin
 
     override fun writeLog(level: LogLevel, domain: LogDomain, message: String) {
         // ignore extraneous logs
-        if ((prefix != null) && (!message.startsWith(Log.LOG_HEADER + prefix))) {
+        if ((prefix != null) && (!message.startsWith(prefix))) {
             return
         }
 
@@ -150,7 +148,7 @@ class LogTest : BaseDbTest() {
         // each level should have rolled over once
         // and there may have been a few extra things logged as well.
         val n = logFiles.size
-        Assert.assertTrue((n >= (2 * 5)) && (n < (3 * 5)), )
+        Assert.assertTrue((n >= (2 * 5)) && (n < (3 * 5)))
     }
 
     @Test
@@ -429,7 +427,7 @@ class LogTest : BaseDbTest() {
     fun testBasicLogFormatting() {
         val nl = System.lineSeparator()
 
-        val sink = SingleLineLogSink("$$\$TEST")
+        val sink = SingleLineLogSink(Log.LOG_HEADER + "$$\$TEST")
         LogSinks.get().custom = sink
 
         Log.d(LogDomain.DATABASE, "$$\$TEST DEBUG")
@@ -505,7 +503,7 @@ class LogTest : BaseDbTest() {
 
         Log.setStandardErrorMessages(mapOf("FOO" to "$$\$TEST DEBUG %2\$s %1\$d %3$.2f"))
 
-        val logger = SingleLineLogSink("$$\$TEST DEBUG")
+        val logger = SingleLineLogSink(Log.LOG_HEADER + "$$\$TEST DEBUG")
         LogSinks.get().custom = logger
 
         // After initLogging, log level is WARN
@@ -547,33 +545,80 @@ class LogTest : BaseDbTest() {
         Assert.assertTrue(msg.contains("bork"))
     }
 
-    // Verify that we can handle non-ascii content.
-    @Ignore("Need a way to coax LiteCore into logging a non-ascii string")
+    // There was a bug that caused an attempt to log a message from within the
+    // LiteCore logging callback to hang the callback thread
+    //
+    // If there is a file logger, an attempt to log a message from within the
+    // callback will forward the log message to LiteCore.  That, in turn, will
+    // call c4log_getDomain.  If c4log_getDomain attempts to seize the same
+    // lock that is already held by the LiteCore thread, the thread will hang
+    @Test
+    fun testRecursiveLogging() {
+        val logSinks = assertNonNull(LogSinksImpl.getLogSinks())
+        logSinks.file = FileLogSink.Builder().setDirectory(scratchDirPath!!).build()
+
+        testInCallback { Log.e(LogDomain.DATABASE, "BANG!!!") }
+    }
+
+    // There was a bug caused when the destructor for a subclass of LiteCore's Logging
+    // class was run during the LiteCore log callback.  If the destructor attempted to
+    // seize the same lock that was already held by LiteCore during the callback, the
+    // thread attempting to run the destructor would hang.
+    //
+    // A C4Query's native peer is a subclass of LiteCore's Logging class.
+    // Closing it will release the native peer and cause its destructor to be run
+    @Test
+    fun testDeleteLiteCoreLoggerInCallback() {
+        val query = C4Query.create(testDatabase.getC4Db, QueryLanguage.N1QL, "SELECT 1 FROM _")
+        testInCallback { query.close() }
+    }
+
     @Test
     fun testNonASCII() {
+        val prefix = "HEBREW: "
         val hebrew = "מזג האוויר נחמד היום" // The weather is nice today.
 
-        val customLogger = object : BaseLogSink(LogLevel.DEBUG, LogDomain.ALL) {
-            var text: String = ""
+        val sink = SingleLineLogSink(prefix)
+        LogSinks.get().custom = sink
 
-            override fun writeLog(level: LogLevel, domain: LogDomain, message: String) {
-                text += "\n $message"
-            }
+        C4TestUtils.forceLog("DB", 3, "$prefix $hebrew")
+
+        val msg = sink.awaitMessage()
+        Assert.assertTrue(msg!!.contains(hebrew))
+    }
+
+    // Test running some task from within the LiteCore logging callback
+    private fun testInCallback(test: () -> Unit) {
+        val startLatch = CountDownLatch(1)
+        val finishLatch = CountDownLatch(1)
+
+        val testThread = Thread {
+            startLatch.countDown()
+            test.invoke()
+            finishLatch.countDown()
         }
 
-        LogSinks.get().custom = customLogger
-
-
-        val doc = MutableDocument()
-        doc.setString("hebrew", hebrew)
-        testCollection.save(doc)
-
-        // This used to cause LiteCore to log the content of the document.  It doesn't anymore.
-        QueryBuilder.select(SelectResult.all()).from(DataSource.collection(testCollection)).execute().use {
-            Assert.assertEquals(1, it.allResults().size)
+        val logSinks = assertNonNull(LogSinksImpl.getLogSinks())
+        assertNonNull(logSinks.c4Log).setCallbackInstrumentation { _: String?, _: Int, _: String? ->
+            testThread.start()
+            finishLatch.await(30, TimeUnit.SECONDS)
         }
 
-        Assert.assertTrue(customLogger.text.contains("[{\"hebrew\":\"$hebrew\"}]"))
+        // This is the thread on which the callback will run
+        // it will hang awaiting the finishLatch
+        Thread { C4TestUtils.forceLog("DB", 3, "BOOM!!!") }.start()
+
+        // Wait for the callback to start the thread
+        Assert.assertTrue(startLatch.await(10, TimeUnit.SECONDS))
+
+        // ... it should complete almost instantly
+        val success = finishLatch.await(2, TimeUnit.SECONDS)
+
+        // If it didn't, the test will be hung here: clean up
+        logSinks.c4Log.setCallbackInstrumentation(null)
+        finishLatch.countDown()
+
+        Assert.assertTrue(success)
     }
 
     private fun testWithConfiguration(level: LogLevel, builder: FileLogSink.Builder, task: Runnable) {
