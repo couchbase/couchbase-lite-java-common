@@ -25,6 +25,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.LogLevel;
@@ -45,6 +46,11 @@ public final class C4Log {
             long maxSize,
             boolean usePlaintext,
             String header);
+    }
+
+    @VisibleForTesting
+    public interface CallbackInstrumentation {
+        void onCallback(@Nullable String c4Domain, int c4Level, @Nullable String message);
     }
 
     @NonNull
@@ -134,10 +140,18 @@ public final class C4Log {
 
     private static final AtomicBoolean IN_CALLBACK = new AtomicBoolean(false);
 
+    private static final AtomicReference<CallbackInstrumentation> CALLBACK_INSTRUMENTATION
+        = new AtomicReference<>(null);
+
     // This method is used by reflection.  Don't change its signature.
     public static void logCallback(@Nullable String c4Domain, int c4Level, @Nullable String message) {
         IN_CALLBACK.set(true);
+
+        final CallbackInstrumentation instrumentation = CALLBACK_INSTRUMENTATION.get();
+        if (instrumentation != null) { instrumentation.onCallback(c4Domain, c4Level, message); }
+
         LogSinksImpl.logFromCore(getLogLevelForC4Level(c4Level), getLoggingDomainForC4Domain(c4Domain), message);
+
         IN_CALLBACK.set(false);
     }
 
@@ -164,8 +178,7 @@ public final class C4Log {
 
     public void logToCore(@NonNull LogDomain domain, @NonNull LogLevel level, @NonNull String message) {
         if (IN_CALLBACK.get()) {
-            final LogSinksImpl sinks = LogSinksImpl.getLogSinks();
-            if (sinks != null) { sinks.logFailure("Platform", null); }
+            LogSinksImpl.logFailure("Recursive logging", null);
             return;
         }
         // Yes, there is a small race here...
@@ -216,11 +229,23 @@ public final class C4Log {
         setLogLevel(getCanonicalC4DomainForLoggingDomain(domain), getC4LevelForLogLevel(level));
     }
 
+    @VisibleForTesting
+    public void setCallbackInstrumentation(@Nullable CallbackInstrumentation instrumentation) {
+        CALLBACK_INSTRUMENTATION.set(instrumentation);
+    }
+
     private void setLogLevel(@NonNull String domain, @NonNull LogLevel level) {
         setLogLevel(domain, getC4LevelForLogLevel(level));
     }
 
-    private void setLogLevel(@NonNull String domain, int level) { impl.nSetLevel(domain, level); }
+    private void setLogLevel(@NonNull String domain, int level) {
+        if (IN_CALLBACK.get()) {
+            LogSinksImpl.logFailure("Log Level", null);
+            return;
+        }
+        // Yes, there is a small race here...
+        impl.nSetLevel(domain, level);
+    }
 
     @NonNull
     private Set<String> getC4DomainsForLoggingDomains(@NonNull Set<LogDomain> domains) {

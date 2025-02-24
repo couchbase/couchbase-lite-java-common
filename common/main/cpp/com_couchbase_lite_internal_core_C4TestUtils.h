@@ -232,6 +232,19 @@ JNIEXPORT jint
 JNICALL Java_com_couchbase_lite_internal_core_C4TestUtils_getLevel
         (JNIEnv *, jclass, jstring);
 
+/*
+ * Class:     com_couchbase_lite_internal_core_C4TestUtils
+ * Method:    log
+ * Signature: (Ljava/lang/String;I;Ljava/lang/String)V
+ */
+JNIEXPORT void JNICALL
+Java_com_couchbase_lite_internal_core_C4TestUtils_log(
+        JNIEnv *env,
+        jclass ignore,
+        jstring jdomain,
+        jint level,
+        jstring jmessage);
+
 // C4Collection
 
 /*
@@ -253,6 +266,7 @@ Java_com_couchbase_lite_internal_core_C4TestUtils_isIndexTrained(
  */
 JNIEXPORT jobject JNICALL
 Java_com_couchbase_lite_internal_core_C4TestUtils_getIndexOptions(JNIEnv *, jclass, jlong);
+
 
 #ifdef __cplusplus
 }
