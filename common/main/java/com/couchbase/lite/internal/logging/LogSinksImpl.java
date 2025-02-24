@@ -91,6 +91,29 @@ public final class LogSinksImpl implements LogSinks {
         sinks.warnIfNoFileLogSink();
     }
 
+    // Something in the Logging system has failed.
+    // Try to log the failure to the console.
+    // If that doesn't work, log to System err
+    @SuppressWarnings({"RegexpSinglelineJava", "PMD.SystemPrintln"})
+    public static void logFailure(@NonNull String name, @Nullable Exception err) {
+        String msg = "Log failure: " + name;
+        if (err != null) { msg += "\n" + Log.formatStackTrace(err); }
+
+        final LogSinksImpl sinks = LOG_SINKS.get();
+        if (sinks != null) {
+            final ConsoleLogSink console = sinks.consoleLogSink;
+            if (console != null) {
+                try {
+                    console.log(LogLevel.WARNING, LogDomain.DATABASE, msg);
+                    return;
+                }
+                catch (Exception ignore) { }
+            }
+        }
+
+        System.err.println("WARNING: " + msg);
+    }
+
 
     // The current level at which logs are generated
     @NonNull
@@ -216,25 +239,6 @@ public final class LogSinksImpl implements LogSinks {
             });
         }
         catch (Exception e) { logFailure("Custom", e); }
-    }
-
-    // Something in the Logging system has failed.
-    // Try to log the failure to the console.
-    // If that doesn't wor, log to System err
-    @SuppressWarnings({"RegexpSinglelineJava", "PMD.SystemPrintln"})
-    public void logFailure(@NonNull String name, @Nullable Exception err) {
-        String msg = name + " log failure";
-        if (err != null) { msg += "\n" + Log.formatStackTrace(err); }
-
-        final ConsoleLogSink console = consoleLogSink;
-        if (console != null) {
-            try {
-                console.log(LogLevel.WARNING, LogDomain.DATABASE, msg);
-                return;
-            }
-            catch (Exception ignore) { }
-        }
-        System.err.println("WARNING: " + msg);
     }
 
     public boolean shouldLog(@NonNull LogLevel level, @NonNull LogDomain domain) {

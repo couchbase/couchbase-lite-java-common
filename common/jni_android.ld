@@ -21,6 +21,7 @@ CBL {
         Java_com_couchbase_lite_internal_core_C4TestUtils_getLevel;
         Java_com_couchbase_lite_internal_core_C4TestUtils_getPrivateUUID;
         Java_com_couchbase_lite_internal_core_C4TestUtils_isIndexTrained;
+        Java_com_couchbase_lite_internal_core_C4TestUtils_log;
         Java_com_couchbase_lite_internal_core_C4TestUtils_next;
         Java_com_couchbase_lite_internal_core_C4TestUtils_openStore;
         Java_com_couchbase_lite_internal_core_C4TestUtils_put;

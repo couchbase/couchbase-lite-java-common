@@ -386,6 +386,20 @@ Java_com_couchbase_lite_internal_core_C4TestUtils_getLevel(JNIEnv *env, jclass i
     return (!logDomain) ? -1 : (jint) c4log_getLevel(logDomain);
 }
 
+JNIEXPORT void JNICALL
+Java_com_couchbase_lite_internal_core_C4TestUtils_log(
+        JNIEnv *env,
+        jclass ignore,
+        jstring jdomain,
+        jint level,
+        jstring jmessage) {
+    jstringSlice domain(env, jdomain);
+    jstringSlice message(env, jmessage);
+    C4LogDomain logDomain = c4log_getDomain(domain.c_str(), true);
+    if (logDomain != nullptr)
+        c4log(logDomain, (C4LogLevel) level, "%s", message.c_str());
+}
+
 // C4Index
 
 /*
@@ -437,4 +451,4 @@ Java_com_couchbase_lite_internal_core_C4TestUtils_getIndexOptions(JNIEnv *env, j
             UTF8ToJstring(env, opts.stopWords),
             UTF8ToJstring(env, opts.unnestPath));
 }
-}
+} // extern "C"
