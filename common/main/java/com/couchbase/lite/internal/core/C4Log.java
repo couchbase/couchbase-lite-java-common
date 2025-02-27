@@ -24,7 +24,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.couchbase.lite.LogDomain;
@@ -51,6 +50,35 @@ public final class C4Log {
     @VisibleForTesting
     public interface CallbackInstrumentation {
         void onCallback(@Nullable String c4Domain, int c4Level, @Nullable String message);
+    }
+
+    // Prevent the LiteCore thread that invokes the logging callback,
+    // from making a direct recursive call to the LiteCore logger.
+    // Note that this actually leaves a couple of big holes:
+    // - Before the logging thread ever gets here, it has to attach the JVM. That will probably cause allocation
+    //   which may, in turn run GC code on the calling thread, which may attempt to free a LiteCore object... which
+    //   may cause logging
+    // - Anything this thread does that causes a call into LiteCore (allocation, like the above case, or
+    //   a call to some rando LiteCore function) may cause LiteCore to try to log something.  Boom.
+    private static final class CallbackGuard extends ThreadLocal<Boolean> {
+        @NonNull
+        @Override
+        protected Boolean initialValue() { return Boolean.FALSE; }
+
+        public boolean isInUse() {
+            final Boolean val = super.get();
+            return (val != null) && val;
+        }
+
+        public void setInUse(boolean val) { super.set(val); }
+
+        // Just being careful....
+        @Override
+        public void set(@Nullable Boolean value) { throw new UnsupportedOperationException("set not supported"); }
+
+        @Nullable
+        @Override
+        public Boolean get() { throw new UnsupportedOperationException("get not supported"); }
     }
 
     @NonNull
@@ -138,21 +166,21 @@ public final class C4Log {
         LOGGING_DOMAIN_TO_CANONICAL_C4 = Collections.unmodifiableMap(m);
     }
 
-    private static final AtomicBoolean IN_CALLBACK = new AtomicBoolean(false);
+    private static final CallbackGuard CALLBACK = new CallbackGuard();
 
     private static final AtomicReference<CallbackInstrumentation> CALLBACK_INSTRUMENTATION
         = new AtomicReference<>(null);
 
     // This method is used by reflection.  Don't change its signature.
     public static void logCallback(@Nullable String c4Domain, int c4Level, @Nullable String message) {
-        IN_CALLBACK.set(true);
+        CALLBACK.setInUse(true);
 
         final CallbackInstrumentation instrumentation = CALLBACK_INSTRUMENTATION.get();
         if (instrumentation != null) { instrumentation.onCallback(c4Domain, c4Level, message); }
 
         LogSinksImpl.logFromCore(getLogLevelForC4Level(c4Level), getLoggingDomainForC4Domain(c4Domain), message);
 
-        IN_CALLBACK.set(false);
+        CALLBACK.setInUse(false);
     }
 
     @NonNull
@@ -177,8 +205,8 @@ public final class C4Log {
     private C4Log(@NonNull NativeImpl impl) { this.impl = impl; }
 
     public void logToCore(@NonNull LogDomain domain, @NonNull LogLevel level, @NonNull String message) {
-        if (IN_CALLBACK.get()) {
-            LogSinksImpl.logFailure("Recursive logging", null);
+        if (CALLBACK.isInUse()) {
+            LogSinksImpl.logFailure("logToCore", message, null);
             return;
         }
         // Yes, there is a small race here...
@@ -239,8 +267,8 @@ public final class C4Log {
     }
 
     private void setLogLevel(@NonNull String domain, int level) {
-        if (IN_CALLBACK.get()) {
-            LogSinksImpl.logFailure("Log Level", null);
+        if (CALLBACK.isInUse()) {
+            LogSinksImpl.logFailure("setLogLevel", null, null);
             return;
         }
         // Yes, there is a small race here...
