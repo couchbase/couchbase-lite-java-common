@@ -290,8 +290,7 @@ public final class Cleaner {
         void clean(boolean finalizing);
     }
 
-    @VisibleForTesting
-    public static class Stats {
+    public static final class Stats {
         public final long timeIn;
         public final int minSize;
         public final int maxSize;
@@ -302,6 +301,12 @@ public final class Cleaner {
             this.minSize = minSize;
             this.maxSize = maxSize;
             this.alive = alive;
+        }
+
+        @Override
+        @NonNull
+        public String toString() {
+            return "CleanerStats{" + timeIn + ", " + minSize + ", " + maxSize + ", " + alive + "}";
         }
     }
 
@@ -315,7 +320,7 @@ public final class Cleaner {
     Cleaner(@NonNull String name, int timeoutMs) {
         // WARNING: Don't "fix" this to assign to this.impl!
         // If the lambda holds a reference to this.impl this Cleaner object will forever be reachable.
-        final CleanerImpl impl = new CleanerImpl(name + "-cleaner", timeoutMs);
+        final CleanerImpl impl = new CleanerImpl(name + "-clean", timeoutMs);
         impl.register(this, ignore -> impl.stopCleaner());
 
         this.impl = impl;
@@ -331,13 +336,13 @@ public final class Cleaner {
     @NonNull
     public Cleanable register(@NonNull Object obj, @NonNull Cleanable cleaner) { return impl.register(obj, cleaner); }
 
+    // This is quite expensive: don't use it in production.
+    @NonNull
+    public Stats getStats() { return impl.getStats(); }
+
     @VisibleForTesting
     void stop() { impl.stopCleaner(); }
 
     @VisibleForTesting
     boolean isStopped() { return impl.isStopped(); }
-
-    @VisibleForTesting
-    @NonNull
-    public Stats getStats() { return impl.getStats(); }
 }

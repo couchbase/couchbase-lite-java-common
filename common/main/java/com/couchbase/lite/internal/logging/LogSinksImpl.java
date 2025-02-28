@@ -95,23 +95,27 @@ public final class LogSinksImpl implements LogSinks {
     // Try to log the failure to the console.
     // If that doesn't work, log to System err
     @SuppressWarnings({"RegexpSinglelineJava", "PMD.SystemPrintln"})
-    public static void logFailure(@NonNull String name, @Nullable Exception err) {
-        String msg = "Log failure: " + name;
-        if (err != null) { msg += "\n" + Log.formatStackTrace(err); }
+    public static void logFailure(@NonNull String loc, @Nullable String msg, @Nullable Exception err) {
+        String message = "Logging failure in " + loc;
+
+        if (msg != null) { message += ": " + msg; }
+
+        // Only log the exception when debugging:
+        if ((err != null) && CouchbaseLiteInternal.debugging()) { message += "\n" + Log.formatStackTrace(err); }
 
         final LogSinksImpl sinks = LOG_SINKS.get();
         if (sinks != null) {
             final ConsoleLogSink console = sinks.consoleLogSink;
             if (console != null) {
                 try {
-                    console.log(LogLevel.WARNING, LogDomain.DATABASE, msg);
+                    console.log(LogLevel.WARNING, LogDomain.DATABASE, message);
                     return;
                 }
                 catch (Exception ignore) { }
             }
         }
 
-        System.err.println("WARNING: " + msg);
+        System.err.println("WARNING: " + message);
     }
 
 
@@ -214,7 +218,7 @@ public final class LogSinksImpl implements LogSinks {
     @SuppressWarnings("PMD.GuardLogStatement")
     public void writeToSinks(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String msg) {
         try { log(fileLogSink, level, domain, msg); }
-        catch (Exception e) { logFailure("File", e); }
+        catch (Exception e) { logFailure("FileSink", msg, e); }
         writeToLocalLogSinks(level, domain, msg);
     }
 
@@ -226,7 +230,7 @@ public final class LogSinksImpl implements LogSinks {
 
         final ConsoleLogSink console = consoleLogSink;
         try { log(console, level, domain, msg); }
-        catch (Exception e) { logFailure("Console", e); }
+        catch (Exception e) { logFailure("ConsoleSink", msg, e); }
 
         final Executor logQueue = this.customLogQueue.get();
         final BaseLogSink custom = customLogSink;
@@ -235,10 +239,10 @@ public final class LogSinksImpl implements LogSinks {
         try {
             logQueue.execute(() -> {
                 try { custom.log(level, domain, msg); }
-                catch (Exception e) { logFailure("Custom", e); }
+                catch (Exception e) { logFailure("CustomSink", msg, e); }
             });
         }
-        catch (Exception e) { logFailure("Custom", e); }
+        catch (Exception e) { logFailure("CustomSinkQueue", msg, e); }
     }
 
     public boolean shouldLog(@NonNull LogLevel level, @NonNull LogDomain domain) {
