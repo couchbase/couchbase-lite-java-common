@@ -84,7 +84,7 @@ public abstract class C4Peer implements AutoCloseable {
             final C4Peer.PeerCleaner disposer = cleaner;
             if (disposer != null) {
                 if (!finalizing) { disposeRef(disposer); }
-                else { CORE_CLEANER.execute(() -> disposeRef(disposer)); }
+                else { PEER_DISPOSER.execute(() -> disposeRef(disposer)); }
             }
 
             final Exception origin = lifecycle.get();
@@ -99,7 +99,7 @@ public abstract class C4Peer implements AutoCloseable {
             // Keep this at the debug level and only do it if debugging.  It frightens the children.
             // Apparently this call is bizarrely expensive: just don't do it unless you really need it.
             // Definitely don't do it on the cleaner thread
-            CORE_CLEANER.execute(() -> Log.d(LogDomain.DATABASE, "Peer %s not explicitly closed", createdAt, name));
+            PEER_DISPOSER.execute(() -> Log.d(LogDomain.DATABASE, "Peer %s not explicitly closed", createdAt, name));
         }
 
         @NonNull
@@ -149,7 +149,11 @@ public abstract class C4Peer implements AutoCloseable {
         }
     }
 
-    private static final CBLExecutor CORE_CLEANER = new CBLExecutor("CoreCleaner", 3, 3, new LinkedBlockingQueue<>());
+    // Executor holds 3 threads that expire after 5 minutes
+    // Java Executors make it difficult to do what I'd really like to do, here:
+    // always have 1 thread available but grow to 3 threads before enqueuing anything.
+    @VisibleForTesting
+    static final CBLExecutor PEER_DISPOSER = new CBLExecutor("peer-free", 3, 3, 60 * 5, new LinkedBlockingQueue<>());
 
     private static final AtomicReference<Cleaner> CLEANER = new AtomicReference<>();
 
@@ -209,6 +213,12 @@ public abstract class C4Peer implements AutoCloseable {
     @Override
     @CallSuper
     public void close() { cleaner.clean(false); }
+
+    // WARNING!! This method is absurdly expensive.  Don't use it in production code!
+    public final void dumpStats() {
+        Log.w(LogDomain.DATABASE, CLEANER.getStats().toString());
+        PEER_DISPOSER.dumpState();
+    }
 
     protected final <E extends Exception> void voidWithPeerOrWarn(@NonNull Fn.ConsumerThrows<Long, E> fn) throws E {
         synchronized (getPeerLock()) {
