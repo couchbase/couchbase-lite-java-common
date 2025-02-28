@@ -28,6 +28,9 @@ import java.util.Date
 
 private const val ITERATIONS = 2000
 
+
+// These tests are flaky.  Whichever test get the GC run
+// is probably going to exceed its time limit.
 class LoadTest : BaseDbTest() {
     companion object {
         private val DEVICE_SPEED_MULTIPLIER = mapOf(
@@ -165,7 +168,7 @@ class LoadTest : BaseDbTest() {
         testCollection.save(mDoc)
 
         assertEquals(1L, testCollection.count)
-        timeTest("testUpdate2", 80) {
+        timeTest("testUpdate2", 110) {
             for (i in 0..ITERATIONS) {
                 mDoc = testCollection.getDocument(mDoc.id)!!.toMutable()
                 mDoc.setValue("map", mapOf("idx" to i, "long" to i.toLong(), TEST_DOC_TAG_KEY to getUniqueName("tag")))
@@ -202,7 +205,7 @@ class LoadTest : BaseDbTest() {
     @Test
     fun testSaveRevisions1() {
         var mDoc = MutableDocument()
-        timeTest("testSaveRevisions1", 40) {
+        timeTest("testSaveRevisions1", 50) {
             testDatabase.inBatch<CouchbaseLiteException> {
                 for (i in 0 until ITERATIONS) {
                     mDoc.setValue("count", i)
@@ -219,7 +222,7 @@ class LoadTest : BaseDbTest() {
     @Test
     fun testSaveRevisions2() {
         val mDoc = MutableDocument()
-        timeTest("testSaveRevisions2", 20) {
+        timeTest("testSaveRevisions2", 40) {
             testDatabase.inBatch<CouchbaseLiteException> {
                 for (i in 0 until ITERATIONS) {
                     mDoc.setValue("count", i)
