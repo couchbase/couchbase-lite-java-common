@@ -48,8 +48,9 @@ public final class C4Log {
     }
 
     @VisibleForTesting
-    public interface CallbackInstrumentation {
-        void onCallback(@Nullable String c4Domain, int c4Level, @Nullable String message);
+    public interface Instrumentation {
+        boolean onCallback(@Nullable String c4Domain, int c4Level, @Nullable String message);
+        boolean onLogToCore(@NonNull LogDomain domain, @NonNull LogLevel level, @NonNull String message);
     }
 
     // Prevent the LiteCore thread that invokes the logging callback,
@@ -168,17 +169,17 @@ public final class C4Log {
 
     private static final CallbackGuard CALLBACK = new CallbackGuard();
 
-    private static final AtomicReference<CallbackInstrumentation> CALLBACK_INSTRUMENTATION
+    private static final AtomicReference<Instrumentation> CALLBACK_INSTRUMENTATION
         = new AtomicReference<>(null);
 
     // This method is used by reflection.  Don't change its signature.
     public static void logCallback(@Nullable String c4Domain, int c4Level, @Nullable String message) {
         CALLBACK.setInUse(true);
 
-        final CallbackInstrumentation instrumentation = CALLBACK_INSTRUMENTATION.get();
-        if (instrumentation != null) { instrumentation.onCallback(c4Domain, c4Level, message); }
-
-        LogSinksImpl.logFromCore(getLogLevelForC4Level(c4Level), getLoggingDomainForC4Domain(c4Domain), message);
+        final Instrumentation instrumentation = CALLBACK_INSTRUMENTATION.get();
+        if ((instrumentation == null) || instrumentation.onCallback(c4Domain, c4Level, message)) {
+            LogSinksImpl.logFromCore(getLogLevelForC4Level(c4Level), getLoggingDomainForC4Domain(c4Domain), message);
+        }
 
         CALLBACK.setInUse(false);
     }
@@ -209,8 +210,12 @@ public final class C4Log {
             LogSinksImpl.logFailure("logToCore", message, null);
             return;
         }
-        // Yes, there is a small race here...
-        impl.nLog(getCanonicalC4DomainForLoggingDomain(domain), getC4LevelForLogLevel(level), message);
+
+        final Instrumentation instrumentation = CALLBACK_INSTRUMENTATION.get();
+        if ((instrumentation == null) || instrumentation.onLogToCore(domain, level, message)) {
+            // Yes, there is a small race here...
+            impl.nLog(getCanonicalC4DomainForLoggingDomain(domain), getC4LevelForLogLevel(level), message);
+        }
     }
 
     public void initFileLogging(
@@ -258,7 +263,7 @@ public final class C4Log {
     }
 
     @VisibleForTesting
-    public void setCallbackInstrumentation(@Nullable CallbackInstrumentation instrumentation) {
+    public void setCallbackInstrumentation(@Nullable Instrumentation instrumentation) {
         CALLBACK_INSTRUMENTATION.set(instrumentation);
     }
 
