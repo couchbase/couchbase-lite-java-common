@@ -8,6 +8,7 @@ import com.couchbase.lite.LogDomain
 import com.couchbase.lite.LogLevel
 import com.couchbase.lite.getC4Db
 import com.couchbase.lite.internal.QueryLanguage
+import com.couchbase.lite.internal.core.C4Log
 import com.couchbase.lite.internal.core.C4Query
 import com.couchbase.lite.internal.core.C4TestUtils
 import com.couchbase.lite.internal.core.CBLVersion
@@ -548,29 +549,119 @@ class LogTest : BaseDbTest() {
     // There was a bug that caused an attempt to log a message from within the
     // LiteCore logging callback to hang the callback thread
     //
-    // If there is a file logger, an attempt to log a message from within the
-    // callback will forward the log message to LiteCore.  That, in turn, will
-    // call c4log_getDomain.  If c4log_getDomain attempts to seize the same
-    // lock that is already held by the LiteCore thread, the thread will hang
+    // If there is a file logger, when the platform logs a message it will forwarded
+    // to LiteCore.  That, in turn, will call c4log_getDomain.  If c4log_getDomain
+    // attempts to re-acquire the same non-reentrant lock that the thread already holds,
+    // it will deadlock
+    //
+    // Since CBL-6800, this test must test only that the platfrom cannot generate recursive
+    // log from the LiteCore callback thread.  A an attempt to log from some other thread
+    // during the callback, will be blocked until the callback returns but cannot, directly,
+    // deadlock.
     @Test
     fun testRecursiveLogging() {
         val logSinks = assertNonNull(LogSinksImpl.getLogSinks())
         logSinks.file = FileLogSink.Builder().setDirectory(scratchDirPath!!).build()
 
-        testInCallback { Log.e(LogDomain.DATABASE, "BANG!!!") }
+        val startLatch = CountDownLatch(1)
+        val finishLatch = CountDownLatch(1)
+
+        var success: Boolean? = null
+
+        assertNonNull(logSinks.c4Log).setCallbackInstrumentation(object : C4Log.Instrumentation {
+            override fun onLogToCore(domain: LogDomain, level: LogLevel, message: String): Boolean {
+                success = false
+                return false // do not allow a recursive call!!  It will deadlock!
+            }
+
+            override fun onCallback(c4Domain: String?, c4Level: Int, message: String?): Boolean {
+                startLatch.countDown()
+
+                // Try to generate a recursive call to LiteCore logging
+                Log.e(LogDomain.DATABASE, "BANG!!!")
+
+                // This happens after the call logToCore returns: if Instrumentation.onLogToCore
+                // was called, success will be false.  If it was not called, success will be null
+                success = success ?: true
+                finishLatch.countDown()
+                return true
+            }
+        })
+
+        // This will cause a LiteCore log callback.
+        // The instrumentation (above) will attempt to log a message
+        // from the callback thread: a recursive call on the same thread.
+        // If that call makes it to the instrumentation's onLogToCore method
+        // "success" will be false and the test will fail.
+        C4TestUtils.forceLog("DB", 3, "BOOM!!!")
+
+        // Wait for the callback to start the thread
+        Assert.assertTrue(startLatch.await(10, TimeUnit.SECONDS))
+
+        // Now wait for the callback, including the recursive call, to complete
+        val done = finishLatch.await(30, TimeUnit.SECONDS)
+
+        // clean up
+        logSinks.c4Log.setCallbackInstrumentation(null)
+
+        Assert.assertTrue(done && (success ?: false))
     }
 
-    // There was a bug caused when the destructor for a subclass of LiteCore's Logging
-    // class was run during the LiteCore log callback.  If the destructor attempted to
-    // seize the same lock that was already held by LiteCore during the callback, the
-    // thread attempting to run the destructor would hang.
+    // There may have been a bug caused when the destructor for a subclass of LiteCore's Logging
+    // class was called from the LiteCore log callback thread. This appeared to happen when, during
+    // the callback, the thread attached the JVM (in the JNI code) and attempted to allocate a Thread object.
+    // This might cause a garbage collection and the garbage collector appeared to wait for the
+    // finalizer/Cleaners to run, freeing the LiteCore native peers (totally a guess). If the destructor
+    // for one of the peers attempted to seize the same lock that was already held by LiteCore during
+    // the callback, it would deadlock.
     //
     // A C4Query's native peer is a subclass of LiteCore's Logging class.
     // Closing it will release the native peer and cause its destructor to be run
+    //
+    // This test verifies that the destructor will run to completion, even while a callback is taking place.
+    // This is a stronger guarantee than the re-entrant case.  This guarantees that running the destructor
+    // cannot cause a deadlock even if the thread calling it blocks the LiteCore logging callback thread.
     @Test
     fun testDeleteLiteCoreLoggerInCallback() {
         val query = C4Query.create(testDatabase.getC4Db, QueryLanguage.N1QL, "SELECT 1 FROM _")
-        testInCallback { query.close() }
+
+        val startLatch = CountDownLatch(1)
+        val finishLatch = CountDownLatch(1)
+
+        val testThread = Thread {
+            startLatch.countDown()
+            query.close()
+            finishLatch.countDown()
+        }
+
+        val logSinks = assertNonNull(LogSinksImpl.getLogSinks())
+        assertNonNull(logSinks.c4Log).setCallbackInstrumentation(object : C4Log.Instrumentation {
+            override fun onLogToCore(domain: LogDomain, level: LogLevel, message: String) = true
+            override fun onCallback(c4Domain: String?, c4Level: Int, message: String?): Boolean {
+                testThread.start()
+
+                // don't return from the callback until the query.close() has run
+                finishLatch.await(30, TimeUnit.SECONDS)
+                return true
+            }
+        })
+
+        // This is the thread on which the callback will run
+        // it will hang awaiting the finishLatch
+        Thread { C4TestUtils.forceLog("DB", 3, "BOOM!!!") }.start()
+
+        // Wait for the callback to start the thread
+        Assert.assertTrue(startLatch.await(10, TimeUnit.SECONDS))
+
+        // now wait for the query.close() to complete
+        // it should be done very quickly
+        val success = finishLatch.await(2, TimeUnit.SECONDS)
+
+        // Clean up
+        logSinks.c4Log.setCallbackInstrumentation(null)
+        finishLatch.countDown()
+
+        Assert.assertTrue(success)
     }
 
     @Test
@@ -585,40 +676,6 @@ class LogTest : BaseDbTest() {
 
         val msg = sink.awaitMessage()
         Assert.assertTrue(msg!!.contains(hebrew))
-    }
-
-    // Test running some task from within the LiteCore logging callback
-    private fun testInCallback(test: () -> Unit) {
-        val startLatch = CountDownLatch(1)
-        val finishLatch = CountDownLatch(1)
-
-        val testThread = Thread {
-            startLatch.countDown()
-            test.invoke()
-            finishLatch.countDown()
-        }
-
-        val logSinks = assertNonNull(LogSinksImpl.getLogSinks())
-        assertNonNull(logSinks.c4Log).setCallbackInstrumentation { _: String?, _: Int, _: String? ->
-            testThread.start()
-            finishLatch.await(30, TimeUnit.SECONDS)
-        }
-
-        // This is the thread on which the callback will run
-        // it will hang awaiting the finishLatch
-        Thread { C4TestUtils.forceLog("DB", 3, "BOOM!!!") }.start()
-
-        // Wait for the callback to start the thread
-        Assert.assertTrue(startLatch.await(10, TimeUnit.SECONDS))
-
-        // ... it should complete almost instantly
-        val success = finishLatch.await(2, TimeUnit.SECONDS)
-
-        // If it didn't, the test will be hung here: clean up
-        logSinks.c4Log.setCallbackInstrumentation(null)
-        finishLatch.countDown()
-
-        Assert.assertTrue(success)
     }
 
     private fun testWithConfiguration(level: LogLevel, builder: FileLogSink.Builder, task: Runnable) {
