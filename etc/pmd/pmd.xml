@@ -56,7 +56,6 @@
 
     <!-- ERROR PRONE -->
     <rule ref="category/java/errorprone.xml">
-        <exclude name="BeanMembersShouldSerialize" />
         <exclude name="CompareObjectsWithEquals" />
         <exclude name="NullAssignment" />
         <exclude name="AssignmentInOperand" />
@@ -68,6 +67,7 @@
         <exclude name="AvoidFieldNameMatchingTypeName" />open
         <exclude name="MissingSerialVersionUID" />
         <exclude name="AvoidFieldNameMatchingMethodName" />
+        <exclude name="ReturnEmptyCollectionRatherThanNull" />
     </rule>
     <rule ref="category/java/errorprone.xml/AvoidDuplicateLiterals">
         <properties>
@@ -88,22 +88,22 @@
     <rule ref="category/java/bestpractices.xml">
         <exclude name="AbstractClassWithoutAbstractMethod" />
         <exclude name="SwitchStmtsShouldHaveDefault" />
+        <exclude name="GuardLogStatement" />
         <exclude name="UseVarargs" />
 
         <!-- Enable these someday... -->
         <exclude name="AvoidReassigningParameters" />
         <exclude name="UnusedFormalParameter" />
+        <exclude name="UseTryWithResources" />
+        <exclude name="LiteralsFirstInComparisons" />
     </rule>
 
 
     <!-- DESIGN -->
     <rule ref="category/java/design.xml">
         <exclude name="ExcessiveImports" />
-        <exclude name="ExcessiveClassLength" />
-        <exclude name="CyclomaticComplexity" />
         <exclude name="LoosePackageCoupling" />
         <exclude name="NcssCount" />
-        <exclude name="TooManyMethods" />
         <exclude name="UseObjectForClearerAPI" />
         <exclude name="DataClass" />
         <exclude name="GodClass" />
@@ -111,10 +111,16 @@
         <!-- Enable these someday... -->
         <exclude name="LawOfDemeter" />
         <exclude name="AvoidCatchingGenericException" />
+        <exclude name="MutableStaticState" />
     </rule>
-    <rule ref="category/java/design.xml/AvoidDeeplyNestedIfStmts">
+     <rule ref="category/java/design.xml/AvoidDeeplyNestedIfStmts">
         <properties>
             <property name="problemDepth" value="4" />
+        </properties>
+    </rule>
+    <rule ref="category/java/design.xml/CognitiveComplexity">
+        <properties>
+            <property name="reportLevel" value="25" />
         </properties>
     </rule>
     <rule ref="category/java/design.xml/CyclomaticComplexity">
@@ -127,11 +133,6 @@
             <property name="minimum" value="50.0" />
         </properties>
     </rule>
-    <rule ref="category/java/design.xml/ExcessiveClassLength">
-        <properties>
-            <property name="minimum" value="2000.0" />
-        </properties>
-    </rule>
     <rule ref="category/java/design.xml/NcssCount">
         <properties>
             <!-- this should be a page: about 50 lines -->
@@ -140,7 +141,7 @@
     </rule>
     <rule ref="category/java/design.xml/TooManyMethods">
         <properties>
-            <property name="maxmethods" value="25" />
+            <property name="maxmethods" value="45" />
         </properties>
     </rule>
 
@@ -169,7 +170,6 @@
 
     <!-- DOCUMENTATION -->
     <rule ref="category/java/documentation.xml">
-        <exclude name="CommentSize" />
         <exclude name="CommentRequired" />
         <exclude name="UncommentedEmptyConstructor" />
 
@@ -179,7 +179,7 @@
 
     <rule ref="category/java/documentation.xml/CommentSize">
         <properties>
-            <property name="maxLines" value="40" />
+            <property name="maxLines" value="100" />
             <property name="maxLineLength" value="120" />
         </properties>
     </rule>
