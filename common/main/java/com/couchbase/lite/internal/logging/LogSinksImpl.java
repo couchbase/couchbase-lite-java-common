@@ -148,10 +148,7 @@ public final class LogSinksImpl implements LogSinks {
     @Nullable
     private BaseLogSink customLogSink;
 
-    private LogSinksImpl(@NonNull C4Log c4Log) {
-        this.c4Log = c4Log;
-        customLogQueue = CouchbaseLiteInternal.getExecutionService().getSerialExecutor();
-    }
+    private LogSinksImpl(@NonNull C4Log c4Log) { this.c4Log = c4Log; }
 
     @Override
     @Nullable

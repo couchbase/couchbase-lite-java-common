@@ -46,7 +46,7 @@ import com.couchbase.lite.internal.sockets.MessageFraming;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
-@SuppressWarnings("PMD.ExcessivePublicCount")
+@SuppressWarnings({"PMD.ExcessivePublicCount", "PMD.TooManyMethods"})
 public abstract class C4Database extends C4Peer {
     @VisibleForTesting
     public static final String DB_EXTENSION = ".cblite2";

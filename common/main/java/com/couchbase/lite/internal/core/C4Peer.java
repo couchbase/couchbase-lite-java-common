@@ -153,8 +153,8 @@ public abstract class C4Peer implements AutoCloseable {
     // Java Executors make it difficult to do what I'd really like to do, here:
     // always have 1 thread available but grow to 3 threads before enqueuing anything.
     // Note that allowCoreThreadTimeOut is set on the pool threads so they *will* timeout
-    @VisibleForTesting
-    static final CBLExecutor PEER_DISPOSER = new CBLExecutor("peer-free", 3, 3, 60 * 5, new LinkedBlockingQueue<>());
+    private static final CBLExecutor PEER_DISPOSER
+        = new CBLExecutor("peer-free", 3, 3, 60 * 5, new LinkedBlockingQueue<>());
 
     private static final AtomicReference<Cleaner> CLEANER = new AtomicReference<>();
 
@@ -162,11 +162,10 @@ public abstract class C4Peer implements AutoCloseable {
     // allowing us to log from the cleaner
     @NonNull
     private static Cleaner getCleaner() {
-        Cleaner cleaner = CLEANER.get();
+        final Cleaner cleaner = CLEANER.get();
         if (cleaner != null) { return cleaner; }
 
-        cleaner = new Cleaner("c4peer");
-        CLEANER.compareAndSet(null, cleaner);
+        CLEANER.compareAndSet(null, new Cleaner("peer"));
         return CLEANER.get();
     }
 
@@ -217,7 +216,8 @@ public abstract class C4Peer implements AutoCloseable {
 
     // WARNING!! This method is absurdly expensive.  Don't use it in production code!
     public final void dumpStats() {
-        Log.w(LogDomain.DATABASE, CLEANER.getStats().toString());
+        final Cleaner cleaner = CLEANER.get();
+        if (cleaner != null) { Log.w(LogDomain.DATABASE, cleaner.getStats().toString()); }
         PEER_DISPOSER.dumpState();
     }
 

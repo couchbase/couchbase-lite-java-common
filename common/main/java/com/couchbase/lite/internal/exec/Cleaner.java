@@ -266,7 +266,6 @@ class CleanerImpl {
 
 
     // Instrumentation
-    @VisibleForTesting
     @NonNull
     final Cleaner.Stats getStats() {
         synchronized (alive) {
