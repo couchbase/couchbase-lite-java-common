@@ -152,6 +152,7 @@ public abstract class C4Peer implements AutoCloseable {
     // Executor holds 3 threads that expire after 5 minutes
     // Java Executors make it difficult to do what I'd really like to do, here:
     // always have 1 thread available but grow to 3 threads before enqueuing anything.
+    // Note that allowCoreThreadTimeOut is set on the pool threads so they *will* timeout
     @VisibleForTesting
     static final CBLExecutor PEER_DISPOSER = new CBLExecutor("peer-free", 3, 3, 60 * 5, new LinkedBlockingQueue<>());
 

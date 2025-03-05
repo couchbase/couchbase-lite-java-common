@@ -24,6 +24,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -133,7 +134,7 @@ public final class LogSinksImpl implements LogSinks {
     private final AtomicBoolean warned = new AtomicBoolean();
 
     @NonNull
-    private final AtomicReference<Executor> customLogQueue = new AtomicReference<>();
+    private final AtomicReference<ExecutorService> customLogQueue = new AtomicReference<>();
 
     @NonNull
     private final C4Log c4Log;
@@ -202,9 +203,14 @@ public final class LogSinksImpl implements LogSinks {
     @Override
     public void setCustom(@Nullable BaseLogSink newSink) {
         customLogSink = newSink;
-        if ((newSink != null) && (customLogQueue.get() == null)) {
+        if (newSink == null) {
+            final ExecutorService execSvc = customLogQueue.getAndSet(null);
+            if (execSvc != null) { execSvc.shutdown(); }
+        }
+        else if (customLogQueue.get() == null) {
             customLogQueue.compareAndSet(
                 null,
+                // allowCoreThreadTimeOut not set, so these threads will not timeout
                 new ThreadPoolExecutor(1, 1, 0L, TimeUnit.SECONDS, new ArrayBlockingQueue<>(LOG_QUEUE_MAX)));
         }
         setLogFilter();
