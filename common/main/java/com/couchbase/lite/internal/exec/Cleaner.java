@@ -264,9 +264,8 @@ class CleanerImpl {
 
 
     // Instrumentation
-    @VisibleForTesting
     @NonNull
-    final Cleaner.Stats getStats() {
+    Cleaner.Stats getStats() {
         synchronized (alive) {
             final Cleaner.Stats stats = new Cleaner.Stats(
                 (cleanerThread == null) ? 0 : cleanerThread.getRuntimeNanos(),

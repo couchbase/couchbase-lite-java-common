@@ -51,7 +51,6 @@ import com.couchbase.lite.internal.utils.Fn;
  * <li>Support the <b>second</b> override of checkServerTrusted.  It will be called after one failed call.
  * CBL validation takes precedence, if configured
  * </ul>
- *
  */
 public final class CBLTrustManager extends AbstractCBLTrustManager {
     public CBLTrustManager(

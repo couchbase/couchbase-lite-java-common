@@ -70,6 +70,7 @@ public final class C4Constants {
     // C4DatabaseFlags
     public static final class DatabaseFlags {
         private DatabaseFlags() { }
+
         // @formatter:off
         static final int CREATE = 0x01;                 // Create the file if it doesn't exist
         @VisibleForTesting
@@ -79,7 +80,6 @@ public final class C4Constants {
         public static final int DISABLE_MMAP = 0x10;    // Disable MMAP in SQLite.
         private static final int NO_UPGRADE = 0x20;     // Disable upgrading an older-version database
         private static final int NON_OBSERVABLE = 0x40; // Disable database/collection observers, for slightly faster writes
-        @VisibleForTesting
         public static final int DISC_FULL_SYNC = 0x80;  // Flush to disk after each transaction
         @VisibleForTesting
         static final int FAKE_CLOCK = 0x100;            // Use counters instead of timestamps in version vectors (TESTS ONLY)

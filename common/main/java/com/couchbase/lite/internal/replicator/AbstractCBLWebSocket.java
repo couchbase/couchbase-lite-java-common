@@ -126,7 +126,11 @@ import com.couchbase.lite.internal.utils.StringUtils;
  * While the state machine makes a best effort at preventing out-of-state events, there are several
  * races would allow rogues.
  */
-@SuppressWarnings({"PMD.CyclomaticComplexity", "PMD.ExcessiveImports"})
+@SuppressWarnings({
+    "PMD.ExcessivePublicCount",
+    "PMD.TooManyMethods",
+    "PMD.CyclomaticComplexity",
+    "PMD.ExcessiveImports"})
 public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFromRemote, AutoCloseable {
     //-------------------------------------------------------------------------
     // Constants

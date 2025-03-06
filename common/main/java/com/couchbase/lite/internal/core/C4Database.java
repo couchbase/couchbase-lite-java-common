@@ -42,7 +42,7 @@ import com.couchbase.lite.internal.fleece.FLSharedKeys;
 import com.couchbase.lite.internal.sockets.MessageFraming;
 
 
-@SuppressWarnings("PMD.ExcessivePublicCount")
+@SuppressWarnings({"PMD.ExcessivePublicCount", "PMD.TooManyMethods"})
 public abstract class C4Database extends C4Peer {
     public static final boolean VERSION_VECTORS_ENABLED = false;
 
