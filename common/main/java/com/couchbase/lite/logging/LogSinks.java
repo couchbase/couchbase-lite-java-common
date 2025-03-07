@@ -25,20 +25,38 @@ import com.couchbase.lite.internal.utils.Preconditions;
 
 
 public interface LogSinks {
+    /**
+     * @return the singleton holder for the three log sinks.
+     */
     @NonNull
     static LogSinks get() {
         CouchbaseLiteInternal.requireInit("Logging not initialized");
         return Preconditions.assertNotNull(LogSinksImpl.getLogSinks(), "loggers");
     }
 
+    /**
+     * The File Log Sink: a sink that writes log messages to the
+     * Couchbase Lite Mobile File logger.
+     */
     @Nullable
     FileLogSink getFile();
     void setFile(@Nullable FileLogSink newLogger);
 
+    /**
+     * The Console Log Sink: a sink that writes log messages to system console.
+     */
     @Nullable
     ConsoleLogSink getConsole();
     void setConsole(@Nullable ConsoleLogSink newLogger);
 
+    /**
+     * The Custom Log Sink: a user-defined log sink that can forward log messages
+     * to a custom destination.
+     * <p>
+     * Note that logging to the Custom Logger is asynchronous.
+     * A logger may receive several log messages after it has been removed
+     * or replaced as the current logger.
+     */
     @Nullable
     BaseLogSink getCustom();
     void setCustom(@Nullable BaseLogSink newLogger);
