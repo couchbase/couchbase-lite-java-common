@@ -17,6 +17,8 @@ package com.couchbase.lite;
 
 import androidx.annotation.NonNull;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -71,7 +73,10 @@ public final class ProxyAuthenticator extends BaseAuthenticator {
         if (this == o) { return true; }
         if (!(o instanceof ProxyAuthenticator)) { return false; }
         final ProxyAuthenticator other = (ProxyAuthenticator) o;
-        return username.equals(other.username) && Arrays.equals(password, other.password);
+        return username.equals(other.username)
+            && MessageDigest.isEqual(
+            new String(password).getBytes(StandardCharsets.UTF_8),
+            new String(other.password).getBytes(StandardCharsets.UTF_8));
     }
 
 

@@ -286,6 +286,10 @@ public class C4TestUtils {
 
     public static int getLogLevel(String domain) { return getLevel(domain); }
 
+    public static void forceLog(@NonNull String domain, int level, @NonNull String message) {
+        log(domain, level, message);
+    }
+
     // C4Index
 
     public static boolean isIndexTrained(C4Collection collection, @NonNull String name) throws LiteCoreException {
@@ -402,6 +406,8 @@ public class C4TestUtils {
     // C4Log
 
     private static native int getLevel(@NonNull String domain);
+
+    private static native void log(@NonNull String domain, int level, @NonNull String message);
 
     // C4Index
 

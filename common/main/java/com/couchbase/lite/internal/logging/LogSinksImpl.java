@@ -22,6 +22,11 @@ import androidx.annotation.VisibleForTesting;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -31,8 +36,6 @@ import com.couchbase.lite.LogLevel;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.core.C4Log;
 import com.couchbase.lite.internal.core.CBLVersion;
-import com.couchbase.lite.internal.exec.ExecutionService;
-import com.couchbase.lite.internal.utils.Preconditions;
 import com.couchbase.lite.logging.BaseLogSink;
 import com.couchbase.lite.logging.ConsoleLogSink;
 import com.couchbase.lite.logging.FileLogSink;
@@ -40,14 +43,14 @@ import com.couchbase.lite.logging.LogSinks;
 
 
 public final class LogSinksImpl implements LogSinks {
-    private static final int LOG_QUEUE_MAX = 8;
+    private static final int LOG_QUEUE_MAX = 16;
 
     // the singleton implementation of LogSinks
     @NonNull
     private static final AtomicReference<LogSinksImpl> LOG_SINKS = new AtomicReference<>();
 
-    @NonNull
-    public static LogSinksImpl getLogSinks() { return Preconditions.assertNotNull(LOG_SINKS.get(), "log sink impl"); }
+    @Nullable
+    public static LogSinksImpl getLogSinks() { return LOG_SINKS.get(); }
 
     // The center of log system initialization.
     public static void initLogging() {
@@ -75,6 +78,8 @@ public final class LogSinksImpl implements LogSinks {
         sinks.c4Log.logToCore(domain, level, message);
     }
 
+    // CAUTION: generating a log messages that will go to LiteCore
+    // in or below this method will cause a deadlock.
     public static void logFromCore(@NonNull LogLevel level, @NonNull LogDomain domain, @Nullable String message) {
         final LogSinksImpl sinks = LOG_SINKS.get();
         if (sinks == null) { return; }
@@ -85,6 +90,33 @@ public final class LogSinksImpl implements LogSinks {
         final LogSinksImpl sinks = LOG_SINKS.get();
         if (sinks == null) { return; }
         sinks.warnIfNoFileLogSink();
+    }
+
+    // Something in the Logging system has failed.
+    // Try to log the failure to the console.
+    // If that doesn't work, log to System err
+    @SuppressWarnings({"RegexpSinglelineJava", "PMD.SystemPrintln"})
+    public static void logFailure(@NonNull String loc, @Nullable String msg, @Nullable Exception err) {
+        String message = "Logging failure in " + loc;
+
+        if (msg != null) { message += ": " + msg; }
+
+        // Only log the exception when debugging:
+        if ((err != null) && CouchbaseLiteInternal.debugging()) { message += "\n" + Log.formatStackTrace(err); }
+
+        final LogSinksImpl sinks = LOG_SINKS.get();
+        if (sinks != null) {
+            final ConsoleLogSink console = sinks.consoleLogSink;
+            if (console != null) {
+                try {
+                    console.log(LogLevel.WARNING, LogDomain.DATABASE, message);
+                    return;
+                }
+                catch (Exception ignore) { }
+            }
+        }
+
+        System.err.println("WARNING: " + message);
     }
 
 
@@ -105,7 +137,7 @@ public final class LogSinksImpl implements LogSinks {
     private final AtomicBoolean warned = new AtomicBoolean();
 
     @NonNull
-    private final ExecutionService.CloseableExecutor customLogQueue;
+    private final AtomicReference<ExecutorService> customLogQueue = new AtomicReference<>();
 
     @NonNull
     private final C4Log c4Log;
@@ -121,10 +153,7 @@ public final class LogSinksImpl implements LogSinks {
 
     private Boolean usedLegacyLogging;
 
-    private LogSinksImpl(@NonNull C4Log c4Log) {
-        this.c4Log = c4Log;
-        customLogQueue = CouchbaseLiteInternal.getExecutionService().getSerialExecutor();
-    }
+    private LogSinksImpl(@NonNull C4Log c4Log) { this.c4Log = c4Log; }
 
     @Override
     @Nullable
@@ -179,46 +208,47 @@ public final class LogSinksImpl implements LogSinks {
     public void setCustom(@Nullable BaseLogSink newSink) {
         forbidNewAndLegacyLogging(newSink);
         customLogSink = newSink;
+        if (newSink == null) {
+            final ExecutorService execSvc = customLogQueue.getAndSet(null);
+            if (execSvc != null) { execSvc.shutdown(); }
+        }
+        else if (customLogQueue.get() == null) {
+            customLogQueue.compareAndSet(
+                null,
+                // allowCoreThreadTimeOut not set, so these threads will not timeout
+                new ThreadPoolExecutor(1, 1, 0L, TimeUnit.SECONDS, new ArrayBlockingQueue<>(LOG_QUEUE_MAX)));
+        }
         setLogFilter();
     }
 
     @SuppressWarnings("PMD.GuardLogStatement")
     public void writeToSinks(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String msg) {
         try { log(fileLogSink, level, domain, msg); }
-        catch (Exception e) {
-            log(
-                consoleLogSink,
-                LogLevel.WARNING,
-                LogDomain.DATABASE,
-                "File log sinc failure: " + Log.formatStackTrace(e));
-        }
-
+        catch (Exception e) { logFailure("FileSink", msg, e); }
         writeToLocalLogSinks(level, domain, msg);
     }
 
-    @SuppressWarnings({"RegexpSinglelineJava", "PMD.SystemPrintln", "PMD.GuardLogStatement"})
+    // CAUTION: generating a log messages that will go to LiteCore
+    // in or below this method will cause a deadlock.
+    @SuppressWarnings({"RegexpSinglelineJava", "PMD.GuardLogStatement"})
     public void writeToLocalLogSinks(@NonNull LogLevel level, @NonNull LogDomain domain, @Nullable String message) {
         final String msg = (message == null) ? "" : message;
 
         final ConsoleLogSink console = consoleLogSink;
         try { log(console, level, domain, msg); }
-        catch (Exception e) { System.err.println("Console log sink failure" + Log.formatStackTrace(e)); }
+        catch (Exception e) { logFailure("ConsoleSink", msg, e); }
 
-        // A custom log sink is client code: give it 1 second on a safe thread
+        final Executor logQueue = this.customLogQueue.get();
         final BaseLogSink custom = customLogSink;
-        if ((custom != null) && ((custom.getLevel().compareTo(level) <= 0))) {
-            if (customLogQueue.getPending() > LOG_QUEUE_MAX) {
-                log(console, LogLevel.WARNING, LogDomain.DATABASE, "Log queue overflow: Logs dropped");
-                return;
-            }
+        if ((logQueue == null) || (custom == null) || ((custom.getLevel().compareTo(level) > 0))) { return; }
 
-            customLogQueue.execute(() -> {
+        try {
+            logQueue.execute(() -> {
                 try { custom.log(level, domain, msg); }
-                catch (Exception e) {
-                    log(console, LogLevel.WARNING, LogDomain.DATABASE, "Custom log failure" + Log.formatStackTrace(e));
-                }
+                catch (Exception e) { logFailure("CustomSink", msg, e); }
             });
         }
+        catch (Exception e) { logFailure("CustomSinkQueue", msg, e); }
     }
 
     public boolean shouldLog(@NonNull LogLevel level, @NonNull LogDomain domain) {
@@ -295,6 +325,7 @@ public final class LogSinksImpl implements LogSinks {
                 + "Log files required for product support are not being generated.");
     }
 
+    // Log to a non-null sink
     private void log(
         @Nullable AbstractLogSink sink,
         @NonNull LogLevel level,

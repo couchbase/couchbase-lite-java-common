@@ -56,7 +56,6 @@
 
     <!-- ERROR PRONE -->
     <rule ref="category/java/errorprone.xml">
-        <exclude name="BeanMembersShouldSerialize" />
         <exclude name="CompareObjectsWithEquals" />
         <exclude name="NullAssignment" />
         <exclude name="AssignmentInOperand" />
@@ -101,7 +100,6 @@
     <!-- DESIGN -->
     <rule ref="category/java/design.xml">
         <exclude name="ExcessiveImports" />
-        <exclude name="ExcessiveClassLength" />
         <exclude name="LoosePackageCoupling" />
         <exclude name="NcssCount" />
         <exclude name="TooManyMethods" />
@@ -131,11 +129,6 @@
     <rule ref="category/java/design.xml/ExcessiveImports">
         <properties>
             <property name="minimum" value="50.0" />
-        </properties>
-    </rule>
-    <rule ref="category/java/design.xml/ExcessiveClassLength">
-        <properties>
-            <property name="minimum" value="2000.0" />
         </properties>
     </rule>
     <rule ref="category/java/design.xml/NcssCount">
