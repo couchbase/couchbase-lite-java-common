@@ -29,6 +29,8 @@ import com.couchbase.lite.internal.logging.Log;
 /**
  * Misfortune: The little fox gets its tail wet.
  */
+// There is no reason, ever, for client code to be able to create one of these.
+// I have no idea why the static methods, here, are in the public API.
 public final class CouchbaseLiteException extends Exception {
 
     @NonNull
@@ -59,7 +61,7 @@ public final class CouchbaseLiteException extends Exception {
         @Nullable String msg,
         @Nullable Exception e) {
         // log a LiteCoreException in case the client swallows it.
-        if (e instanceof LiteCoreException) { Log.w(LogDomain.DATABASE, "Lite Core exception", e); }
+        if (e instanceof LiteCoreException) { Log.d(LogDomain.DATABASE, "Lite Core exception", e); }
 
         int code = statusCode;
         String domain = CBLError.Domain.CBLITE;
@@ -129,6 +131,7 @@ public final class CouchbaseLiteException extends Exception {
     /**
      * Constructs a new exception with the specified cause
      *
+     * @param message the detail message.
      * @param cause the cause
      */
     public CouchbaseLiteException(@NonNull String message, @NonNull Exception cause) {

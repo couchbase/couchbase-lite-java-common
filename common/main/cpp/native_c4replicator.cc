@@ -285,25 +285,17 @@ static int fromJavaReplColls(
  */
 static void statusChangedCallback(C4Replicator *ignored, C4ReplicatorStatus status, void *token) {
     JNIEnv *env = nullptr;
-    jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
-    if (getEnvStat == JNI_OK) {
-        jobject _status = toJavaReplStatus(env, status);
-        env->CallStaticVoidMethod(cls_C4Replicator, m_C4Replicator_statusChangedCallback, (jlong) token, _status);
-        if (_status != nullptr) env->DeleteLocalRef(_status);
-    } else if (getEnvStat == JNI_EDETACHED) {
-        if (attachCurrentThread(&env) == 0) {
-            env->CallStaticVoidMethod(
-                    cls_C4Replicator,
-                    m_C4Replicator_statusChangedCallback,
-                    (jlong) token,
-                    toJavaReplStatus(env, status));
-            if (gJVM->DetachCurrentThread() != 0)
-                C4Warn("doRequestClose(): Failed to detach the current thread from a Java VM");
-        } else {
-            C4Warn("doRequestClose(): Failed to attaches the current thread to a Java VM");
-        }
+    jint envState = attachJVM(&env, "statusChanged");
+    if ((envState != JNI_OK) && (envState != JNI_EDETACHED))
+        return;
+
+    jobject _status = toJavaReplStatus(env, status);
+    env->CallStaticVoidMethod(cls_C4Replicator, m_C4Replicator_statusChangedCallback, (jlong) token, _status);
+
+    if (envState == JNI_EDETACHED) {
+        detachJVM("statusChanged");
     } else {
-        C4Warn("doClose(): Failed to get the environment: getEnvStat -> %d", getEnvStat);
+        if (_status != nullptr) env->DeleteLocalRef(_status);
     }
 }
 
@@ -326,27 +318,17 @@ static void documentEndedCallback(
     int nDocs = (int) numDocs;
 
     JNIEnv *env = nullptr;
-    jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
-    if (getEnvStat == JNI_OK) {
-        jobjectArray docs = toJavaDocumentEndedArray(env, nDocs, documentEnded);
-        env->CallStaticVoidMethod(cls_C4Replicator, m_C4Replicator_documentEndedCallback, (jlong) token, pushing, docs);
-        if (docs != nullptr) env->DeleteLocalRef(docs);
-    } else if (getEnvStat == JNI_EDETACHED) {
-        if (attachCurrentThread(&env) == 0) {
-            env->CallStaticVoidMethod(
-                    cls_C4Replicator,
-                    m_C4Replicator_documentEndedCallback,
-                    (jlong) token,
-                    pushing,
-                    toJavaDocumentEndedArray(env, nDocs, documentEnded));
-            if (gJVM->DetachCurrentThread() != 0) {
-                C4Warn("Failed to detach the current thread from a Java VM");
-            }
-        } else {
-            C4Warn("Failed to attach the current thread to a Java VM");
-        }
+    jint envState = attachJVM(&env, "docEnded");
+    if ((envState != JNI_OK) && (envState != JNI_EDETACHED))
+        return;
+
+    jobjectArray docs = toJavaDocumentEndedArray(env, nDocs, documentEnded);
+    env->CallStaticVoidMethod(cls_C4Replicator, m_C4Replicator_documentEndedCallback, (jlong) token, pushing, docs);
+
+    if (envState == JNI_EDETACHED) {
+        detachJVM("docEnded");
     } else {
-        C4Warn("Failed to get the environment: getEnvStat -> %d", getEnvStat);
+        if (docs != nullptr) env->DeleteLocalRef(docs);
     }
 }
 
@@ -359,54 +341,37 @@ static jboolean replicationFilter(
         FLDict dict,
         bool isPush) {
     JNIEnv *env = nullptr;
-    jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
+    jint envState = attachJVM(&env, "replicationFilter");
+    if ((envState != JNI_OK) && (envState != JNI_EDETACHED))
+        return false;
 
-    bool res = false;
-    if (getEnvStat == JNI_OK) {
-        jstring _scope = toJString(env, coll.scope);
-        jstring _name = toJString(env, coll.name);
-        jstring _docID = toJString(env, docID);
-        jstring _revID = toJString(env, revID);
+    jstring _scope = toJString(env, coll.scope);
+    jstring _name = toJString(env, coll.name);
+    jstring _docID = toJString(env, docID);
+    jstring _revID = toJString(env, revID);
 
-        res = (jboolean) env->CallStaticBooleanMethod(
-                cls_ReplColl,
-                m_ReplColl_filterCallback,
-                (jlong) token,
-                _scope,
-                _name,
-                _docID,
-                _revID,
-                flags,
-                (jlong) dict,
-                isPush);
+    jboolean ok = env->CallStaticBooleanMethod(
+            cls_ReplColl,
+            m_ReplColl_filterCallback,
+            (jlong) token,
+            _scope,
+            _name,
+            _docID,
+            _revID,
+            flags,
+            (jlong) dict,
+            isPush);
 
+    if (envState == JNI_EDETACHED) {
+        detachJVM("replicationFilter");
+    } else {
         if (_scope != nullptr) env->DeleteLocalRef(_scope);
         if (_name != nullptr) env->DeleteLocalRef(_name);
         if (_docID != nullptr) env->DeleteLocalRef(_docID);
         if (_revID != nullptr) env->DeleteLocalRef(_revID);
-    } else if (getEnvStat == JNI_EDETACHED) {
-        if (attachCurrentThread(&env) == 0) {
-            res = (jboolean) env->CallStaticBooleanMethod(
-                    cls_ReplColl,
-                    m_ReplColl_filterCallback,
-                    (jlong) token,
-                    toJString(env, coll.scope),
-                    toJString(env, coll.name),
-                    toJString(env, docID),
-                    toJString(env, revID),
-                    flags,
-                    (jlong) dict,
-                    isPush);
-            if (gJVM->DetachCurrentThread() != 0)
-                C4Warn("doRequestClose(): Failed to detach the current thread from a Java VM");
-        } else {
-            C4Warn("doRequestClose(): Failed to attaches the current thread to a Java VM");
-        }
-    } else {
-        C4Warn("doClose(): Failed to get the environment: getEnvStat -> %d", getEnvStat);
     }
 
-    return (jboolean) res;
+    return ok != JNI_FALSE;
 }
 
 /**
