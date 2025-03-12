@@ -63,10 +63,11 @@ bool litecore::jni::initC4Logging(JNIEnv *env) {
 }
 
 //-------------------------------------------------------------------------
-// Logging
+// Pre-initialization Logging
 //-------------------------------------------------------------------------
 
-// The default logging callback writes to stderr, or on Android to __android_log_write.
+// Before our logger is set up, or when something in the logging system fails,
+// log to stderr, or on Android to __android_log_write.
 // ??? Need to do something better for web service and Windows logging
 void vLogError(const char *fmt, va_list args) {
 #if defined(__ANDROID__)
@@ -98,43 +99,36 @@ void litecore::jni::jniLog(const char *fmt, ...) {
     va_end(args);
 }
 
-static bool detach(jint getEnvStat) {
-    if (getEnvStat == JNI_EDETACHED) {
-        if (gJVM->DetachCurrentThread() == 0) return true;
-        C4Warn("logCallback(): doRequestClose(): Failed to detach the current thread from a Java VM");
-    }
-    return false;
+
+//-------------------------------------------------------------------------
+// Logging Callback
+//-------------------------------------------------------------------------
+
+static inline bool detach(jint envState) {
+    return (envState == JNI_EDETACHED) && (JNI_OK == detachJVM("log"));
 }
 
 static void logCallback(C4LogDomain domain, C4LogLevel level, const char *fmt, va_list ignore) {
     if ((cls_C4Log == nullptr) || (m_C4Log_logCallback == nullptr)) {
-        jniLog("Logger: not initialized");
+        jniLog("logger: Not initialized");
         return;
     }
 
     JNIEnv *env = nullptr;
-    jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
-
-    if (getEnvStat == JNI_EDETACHED) {
-        if (attachCurrentThread(&env) != 0) {
-            jniLog("Logger: Failed to attach the current thread for logging");
-            return;
-        }
-    } else if (getEnvStat != JNI_OK) {
-        jniLog("Logger: Could not get the environment: %d", getEnvStat);
+    jint envState = attachJVM(&env, "logger");
+    if ((envState != JNI_OK) && (envState != JNI_EDETACHED))
         return;
-    }
 
     if (env->ExceptionCheck() == JNI_TRUE) {
-        jniLog("Logger: exception outstanding");
-        detach(getEnvStat);
+        jniLog("logger: Exception outstanding");
+        detach(envState);
         return;
     }
 
     jstring message = UTF8ToJstring(env, fmt, strlen(fmt));
     if (message == nullptr) {
-        jniLog("Logger: Failed encoding message");
-        detach(getEnvStat);
+        jniLog("logger: Failed encoding message");
+        detach(envState);
         return;
     }
 
@@ -144,7 +138,7 @@ static void logCallback(C4LogDomain domain, C4LogLevel level, const char *fmt, v
 
     env->CallStaticVoidMethod(cls_C4Log, m_C4Log_logCallback, domainName, (jint) level, message);
 
-    if (!detach(getEnvStat)) {
+    if (!detach(envState)) {
         env->DeleteLocalRef(message);
         env->DeleteLocalRef(domainName);
     }

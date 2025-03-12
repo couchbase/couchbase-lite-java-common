@@ -27,6 +27,9 @@ using namespace litecore;
 using namespace litecore::jni;
 using namespace std;
 
+// Global reference to the Java VM
+static JavaVM *gJVM;
+
 // Java ArrayList class
 static jclass cls_ArrayList;                      // global class reference
 static jmethodID m_ArrayList_init;                // constructor
@@ -168,14 +171,42 @@ namespace litecore::jni {
     // ----------------------------------------------------------------------------
     // JVM
     // ----------------------------------------------------------------------------
-    JavaVM *gJVM;
 
-    int attachCurrentThread(JNIEnv **env) {
+    // This method returns the state of the current thread at the time of the call.
+    // In particular it reutrns JNI_EDETACHED if the thread *was* detached at the
+    // time of the call (but is now attached).
+    int attachJVM(JNIEnv **env, const char *caller) {
+        jint ret = gJVM->GetEnv(reinterpret_cast<void **>(env), JNI_VERSION_1_6);
+
+        if (ret == JNI_OK)
+            return JNI_OK;
+
+        if (ret != JNI_EDETACHED) {
+            jniLog("%s: Failed to get the JVM environment: %d", caller, ret);
+            return ret;
+        }
+
+        ret =
 #ifdef JNI_VERSION_1_8
-        return gJVM->AttachCurrentThread(reinterpret_cast<void **>(env), NULL);
+                gJVM->AttachCurrentThread(reinterpret_cast<void **>(env), NULL);
 #else
-        return gJVM->AttachCurrentThread(env, nullptr);
+                gJVM->AttachCurrentThread(env, nullptr);
 #endif
+
+        // if the thread was detached and we just successfully attached it,
+        // return JNI_EDETACHED so that the caller can decide if it needs to be detached again
+        if (ret == JNI_OK)
+            return JNI_EDETACHED;
+
+        jniLog("%s: Failed to attach the current thread to a JVM: %d", caller, ret);
+        return ret;
+    }
+
+    int detachJVM(const char *caller) {
+        jint ret = gJVM->DetachCurrentThread();
+        if (ret != JNI_OK)
+            jniLog("%s: Failed to detach the current thread from a Java VM: %d", caller, ret);
+        return ret;
     }
 
     // ----------------------------------------------------------------------------
@@ -360,7 +391,7 @@ namespace litecore::jni {
             env,
             delRef,
             jbytes,
-            (size_t) (!jbytes ? 0 : env->GetArrayLength(jbytes)),
+            (size_t)(!jbytes ? 0 : env->GetArrayLength(jbytes)),
             critical) {}
 
     jbyteArraySlice::jbyteArraySlice(JNIEnv *env, bool delRef, jbyteArray jbytes, size_t length, bool critical)
