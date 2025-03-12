@@ -22,8 +22,10 @@ import androidx.annotation.Nullable;
 /**
  * Internal error in native code.
  */
+// The public API should never expose this class (though it may appear in stack traces).
+// I have no idea why it is part of the public API.
 // This class and its constructor are used by reflection.  Don't change it.
-public class LiteCoreException extends Exception {
+public final class LiteCoreException extends Exception {
 
     // This method is used by reflection.  Don't change its signature.
     public static void throwException(int domain, int code, @Nullable String msg) throws LiteCoreException {

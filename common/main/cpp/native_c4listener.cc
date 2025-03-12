@@ -32,7 +32,7 @@ static jmethodID m_ConnectionStatus_init;          // constructor
 // Java C4Listener class
 static jclass cls_C4Listener;                      // global reference
 static jmethodID m_C4Listener_certAuthCallback;    // TLS authentication callback
-static jmethodID m_C4Listener_httpAuthCallback;    // HTTP authentiication callback
+static jmethodID m_C4Listener_httpAuthCallback;    // HTTP authentication callback
 
 // Java KeyManager class
 static jclass cls_C4KeyPair;                      // global reference
@@ -64,28 +64,16 @@ bool litecore::jni::initC4Listener(JNIEnv *env) {
 
 static bool httpAuthCallback(C4Listener *ignore, C4Slice authHeader, void *context) {
     JNIEnv *env = nullptr;
-    jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
+    jint envState = attachJVM(&env, "httpAuth");
+    if ((envState != JNI_OK) && (envState != JNI_EDETACHED))
+        return false;
 
-    jboolean ok = JNI_FALSE;
-
-    if (getEnvStat == JNI_OK) {
-        jstring _header = toJString(env, authHeader);
-        ok = env->CallStaticBooleanMethod(cls_C4Listener, m_C4Listener_httpAuthCallback, (jlong) context, _header);
-        if (_header != nullptr) env->DeleteLocalRef(_header);
-    } else if (getEnvStat == JNI_EDETACHED) {
-        if (attachCurrentThread(&env) == 0) {
-            ok = env->CallStaticBooleanMethod(
-                    cls_C4Listener,
-                    m_C4Listener_httpAuthCallback,
-                    (jlong) context,
-                    toJString(env, authHeader));
-            if (gJVM->DetachCurrentThread() != 0)
-                C4Warn("httpAuthCallback(): Failed to detach the current thread from a Java VM");
-        } else {
-            C4Warn("httpAuthCallback(): Failed to attaches the current thread to a Java VM");
-        }
+    jstring _header = toJString(env, authHeader);
+    jboolean ok = env->CallStaticBooleanMethod(cls_C4Listener, m_C4Listener_httpAuthCallback, (jlong) context, _header);
+    if (envState == JNI_EDETACHED) {
+        detachJVM("httpAuthCallback");
     } else {
-        C4Warn("httpAuthCallback(): Failed to get the environment: getEnvStat -> %d", getEnvStat);
+        if (_header != nullptr) env->DeleteLocalRef(_header);
     }
 
     return ok != JNI_FALSE;
@@ -93,28 +81,17 @@ static bool httpAuthCallback(C4Listener *ignore, C4Slice authHeader, void *conte
 
 static bool certAuthCallback(C4Listener *ignore, C4Slice clientCertData, void *context) {
     JNIEnv *env = nullptr;
-    jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
+    jint envState = attachJVM(&env, "certAuth");
+    if ((envState != JNI_OK) && (envState != JNI_EDETACHED))
+        return false;
 
-    jboolean ok = JNI_FALSE;
+    jbyteArray _data = toJByteArray(env, clientCertData);
+    jboolean ok = env->CallStaticBooleanMethod(cls_C4Listener, m_C4Listener_certAuthCallback, (jlong) context, _data);
 
-    if (getEnvStat == JNI_OK) {
-        jbyteArray _data = toJByteArray(env, clientCertData);
-        ok = env->CallStaticBooleanMethod(cls_C4Listener, m_C4Listener_certAuthCallback, (jlong) context, _data);
-        if (_data != nullptr) env->DeleteLocalRef(_data);
-    } else if (getEnvStat == JNI_EDETACHED) {
-        if (attachCurrentThread(&env) == 0) {
-            ok = env->CallStaticBooleanMethod(
-                    cls_C4Listener,
-                    m_C4Listener_certAuthCallback,
-                    (jlong) context,
-                    toJByteArray(env, clientCertData));
-            if (gJVM->DetachCurrentThread() != 0)
-                C4Warn("certAuthCallback(): Failed to detach the current thread from a Java VM");
-        } else {
-            C4Warn("certAuthCallback(): Failed to attaches the current thread to a Java VM");
-        }
+    if (envState == JNI_EDETACHED) {
+        detachJVM("certAuthCallback");
     } else {
-        C4Warn("certAuthCallback(): Failed to get the environment: getEnvStat -> %d", getEnvStat);
+        if (_data != nullptr) env->DeleteLocalRef(_data);
     }
 
     return ok != JNI_FALSE;
@@ -123,7 +100,10 @@ static bool certAuthCallback(C4Listener *ignore, C4Slice clientCertData, void *c
 // The Java method returns a byte array of key data.
 // This method copies the data to its destination.
 static bool doKeyDataCallback(JNIEnv *env, void *extKey, size_t outMaxLen, void *output, size_t *outLen) {
-    auto key = (jbyteArray) (env->CallStaticObjectMethod(cls_C4KeyPair, m_C4KeyPair_keyDataCallback, (jlong) extKey));
+    auto key = (jbyteArray) (env->CallStaticObjectMethod(
+            cls_C4KeyPair,
+            m_C4KeyPair_keyDataCallback,
+            (jlong) extKey));
     if (key == nullptr) {
         C4Warn("doKeyDataCallback: Failed to get key data from Java");
         return false;
@@ -149,23 +129,14 @@ static bool doKeyDataCallback(JNIEnv *env, void *extKey, size_t outMaxLen, void 
 // See C4ExternalKeyCallbacks in C4Certificate.h
 static bool publicKeyDataCallback(void *externalKey, void *output, size_t outputMaxLen, size_t *outputLen) {
     JNIEnv *env = nullptr;
-    jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
+    jint envState = attachJVM(&env, "publicKeyData");
+    if ((envState != JNI_OK) && (envState != JNI_EDETACHED))
+        return false;
 
-    jboolean ok = JNI_FALSE;
+    jboolean ok = doKeyDataCallback(env, externalKey, outputMaxLen, output, outputLen);
 
-    if (getEnvStat == JNI_OK) {
-        ok = doKeyDataCallback(env, externalKey, outputMaxLen, output, outputLen);
-    } else if (getEnvStat == JNI_EDETACHED) {
-        if (attachCurrentThread(&env) == 0) {
-            ok = doKeyDataCallback(env, externalKey, outputMaxLen, output, outputLen);
-            if (gJVM->DetachCurrentThread() != 0)
-                C4Warn("publicKeyDataCallback(): Failed to detach the current thread from a Java VM");
-        } else {
-            C4Warn("publicKeyDataCallback(): Failed to attaches the current thread to a Java VM");
-        }
-    } else {
-        C4Warn("publicKeyDataCallback(): Failed to get the environment: getEnvStat -> %d", getEnvStat);
-    }
+    if (envState == JNI_EDETACHED)
+        detachJVM("publicKeyDataCallback");
 
     return ok != JNI_FALSE;
 }
@@ -193,9 +164,10 @@ static bool doDecryptCallback(
     auto decData = (jbyteArray)
             (env->CallStaticObjectMethod(cls_C4KeyPair, m_C4KeyPair_decryptCallback, (jlong) extKey, encData));
     env->DeleteLocalRef(encData);
-    if (decData == nullptr)
+    if (decData == nullptr) {
         C4Warn("doDecryptCallback: Failed to get decrypted data from Java");
         return false;
+    }
 
     jsize dataSize = env->GetArrayLength(decData);
     if (dataSize > outMaxLen) {
@@ -217,23 +189,14 @@ static bool doDecryptCallback(
 // See C4ExternalKeyCallbacks in C4Certificate.h
 static bool decryptKeyCallback(void *externalKey, C4Slice input, void *output, size_t outputMaxLen, size_t *outputLen) {
     JNIEnv *env = nullptr;
-    jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
+    jint envState = attachJVM(&env, "decryptKey");
+    if ((envState != JNI_OK) && (envState != JNI_EDETACHED))
+        return false;
 
-    jboolean ok = JNI_FALSE;
+    jboolean ok = doDecryptCallback(env, externalKey, input, outputMaxLen, output, outputLen);
 
-    if (getEnvStat == JNI_OK) {
-        ok = doDecryptCallback(env, externalKey, input, outputMaxLen, output, outputLen);
-    } else if (getEnvStat == JNI_EDETACHED) {
-        if (attachCurrentThread(&env) == 0) {
-            ok = doDecryptCallback(env, externalKey, input, outputMaxLen, output, outputLen);
-            if (gJVM->DetachCurrentThread() != 0)
-                C4Warn("decryptKeyCallback(): Failed to detach the current thread from a Java VM");
-        } else {
-            C4Warn("decryptKeyCallback(): Failed to attaches the current thread to a Java VM");
-        }
-    } else {
-        C4Warn("decryptKeyCallback(): Failed to get the environment: getEnvStat -> %d", getEnvStat);
-    }
+    if (envState == JNI_EDETACHED)
+        detachJVM("decryptKeyCallback");
 
     return ok != JNI_FALSE;
 }
@@ -279,23 +242,13 @@ static bool signKeyCallback(
         C4Slice inputData,
         void *outSignature) {
     JNIEnv *env = nullptr;
-    jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
+    jint envState = attachJVM(&env, "signKey");
+    if ((envState != JNI_OK) && (envState != JNI_EDETACHED))
+        return false;
 
-    jboolean ok = JNI_FALSE;
-
-    if (getEnvStat == JNI_OK) {
-        ok = doSignCallback(env, externalKey, digestAlgorithm, inputData, outSignature);
-    } else if (getEnvStat == JNI_EDETACHED) {
-        if (attachCurrentThread(&env) == 0) {
-            ok = doSignCallback(env, externalKey, digestAlgorithm, inputData, outSignature);
-            if (gJVM->DetachCurrentThread() != 0)
-                C4Warn("signKeyCallback(): Failed to detach the current thread from a Java VM");
-        } else {
-            C4Warn("signKeyCallback(): Failed to attaches the current thread to a Java VM");
-        }
-    } else {
-        C4Warn("signKeyCallback(): Failed to get the environment: getEnvStat -> %d", getEnvStat);
-    }
+    jboolean ok = doSignCallback(env, externalKey, digestAlgorithm, inputData, outSignature);
+    if (envState == JNI_EDETACHED)
+        detachJVM("signKey");
 
     return ok != JNI_FALSE;
 }
@@ -303,21 +256,14 @@ static bool signKeyCallback(
 // See C4ExternalKeyCallbacks in C4Certificate.h
 static void freeKeyCallback(void *externalKey) {
     JNIEnv *env = nullptr;
-    jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
+    jint envState = attachJVM(&env, "freeKey");
+    if ((envState != JNI_OK) && (envState != JNI_EDETACHED))
+        return;
 
-    if (getEnvStat == JNI_OK) {
-        env->CallStaticVoidMethod(cls_C4KeyPair, m_C4KeyPair_freeCallback, (jlong) externalKey);
-    } else if (getEnvStat == JNI_EDETACHED) {
-        if (attachCurrentThread(&env) == 0) {
-            env->CallStaticVoidMethod(cls_C4KeyPair, m_C4KeyPair_freeCallback, (jlong) externalKey);
-            if (gJVM->DetachCurrentThread() != 0)
-                C4Warn("freeKeyCallback(): Failed to detach the current thread from a Java VM");
-        } else {
-            C4Warn("freeKeyCallback(): Failed to attaches the current thread to a Java VM");
-        }
-    } else {
-        C4Warn("freeKeyCallback(): Failed to get the environment: getEnvStat -> %d", getEnvStat);
-    }
+    env->CallStaticVoidMethod(cls_C4KeyPair, m_C4KeyPair_freeCallback, (jlong) externalKey);
+
+    if (envState == JNI_EDETACHED)
+        detachJVM("freeKey");
 }
 
 //-------------------------------------------------------------------------

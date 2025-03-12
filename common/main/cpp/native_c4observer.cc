@@ -121,24 +121,16 @@ bool litecore::jni::initC4Observer(JNIEnv *env) {
  * @param ignore ignored
  * @param context the token bound to the java C4CollectionObserver instance.
  */
-static void
-c4CollectionObsCallback(C4CollectionObserver *ignore, void *context) {
+static void c4CollectionObsCallback(C4CollectionObserver *ignore, void *context) {
     JNIEnv *env = nullptr;
-    jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
+    jint envState = attachJVM(&env, "collectionObserver");
+    if ((envState != JNI_OK) && (envState != JNI_EDETACHED))
+        return;
 
-    if (getEnvStat == JNI_OK) {
-        env->CallStaticVoidMethod(cls_C4CollObs, m_C4CollObs_callback, (jlong) context);
-    } else if (getEnvStat == JNI_EDETACHED) {
-        if (attachCurrentThread(&env) == 0) {
-            env->CallStaticVoidMethod(cls_C4CollObs, m_C4CollObs_callback, (jlong) context);
-            if (gJVM->DetachCurrentThread() != 0)
-                C4Warn("c4CollectionObsCallback(): Failed to detach the current thread from a Java VM");
-        } else {
-            C4Warn("c4CollectionObsCallback(): Failed to attaches the current thread to a Java VM");
-        }
-    } else {
-        C4Warn("c4CollectionObsCallback(): Failed to get the environment: getEnvStat -> %d", getEnvStat);
-    }
+    env->CallStaticVoidMethod(cls_C4CollObs, m_C4CollObs_callback, (jlong) context);
+
+    if (envState == JNI_EDETACHED)
+        detachJVM("collectionObserver");
 }
 
 /**
@@ -149,30 +141,25 @@ c4CollectionObsCallback(C4CollectionObserver *ignore, void *context) {
  * @param seq the doc sequence number: ignored
  * @param context the token bound to the observer instance.
  */
-static void
-c4DocObsCallback(C4DocumentObserver *ign1, C4Collection *ign2, C4Slice docID, C4SequenceNumber seq, void *context) {
+static void c4DocObsCallback(
+        C4DocumentObserver *ign1,
+        C4Collection *ign2,
+        C4Slice docID,
+        C4SequenceNumber seq,
+        void *context) {
     JNIEnv *env = nullptr;
-    jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
+    jint envState = attachJVM(&env, "docObserver");
+    if ((envState != JNI_OK) && (envState != JNI_EDETACHED))
+        return;
 
-    if (getEnvStat == JNI_OK) {
-        jstring _docID = toJString(env, docID);
-        env->CallStaticVoidMethod(cls_C4DocObs, m_C4DocObs_callback, (jlong) context, (jlong) seq, _docID);
-        if (_docID != nullptr) env->DeleteLocalRef(_docID);
-    } else if (getEnvStat == JNI_EDETACHED) {
-        if (attachCurrentThread(&env) == 0) {
-            env->CallStaticVoidMethod(
-                    cls_C4DocObs,
-                    m_C4DocObs_callback,
-                    (jlong) context,
-                    (jlong) seq,
-                    toJString(env, docID));
-            if (gJVM->DetachCurrentThread() != 0)
-                C4Warn("c4DocObsCallback(): Failed to detach the current thread from a Java VM");
-        } else {
-            C4Warn("c4DocObsCallback(): Failed to attaches the current thread to a Java VM");
-        }
+
+    jstring _docID = toJString(env, docID);
+    env->CallStaticVoidMethod(cls_C4DocObs, m_C4DocObs_callback, (jlong) context, (jlong) seq, _docID);
+
+    if (envState == JNI_EDETACHED) {
+        detachJVM("docObserver");
     } else {
-        C4Warn("c4DocObsCallback(): Failed to get the environment: getEnvStat -> %d", getEnvStat);
+        if (_docID != nullptr) env->DeleteLocalRef(_docID);
     }
 }
 
@@ -251,21 +238,14 @@ c4QueryObserverCallback(C4QueryObserver *observer, C4Query *ignore, void *ctx) {
         return;
 
     JNIEnv *env = nullptr;
-    jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
+    jint envState = attachJVM(&env, "queryObserver");
+    if ((envState != JNI_OK) && (envState != JNI_EDETACHED))
+        return;
 
-    if (getEnvStat == JNI_OK) {
-        doC4QueryObserverCallback(env, observer, ctx);
-    } else if (getEnvStat == JNI_EDETACHED) {
-        if (attachCurrentThread(&env) == 0) {
-            doC4QueryObserverCallback(env, observer, ctx);
-            if (gJVM->DetachCurrentThread() != 0)
-                C4Warn("c4QueryObserverCallback(): Failed to detach the current thread from a Java VM");
-        } else {
-            C4Warn("c4QueryObserverCallback(): Failed to attaches the current thread to a Java VM");
-        }
-    } else {
-        C4Warn("c4QueryObserverCallback(): Failed to get the environment: getEnvStat -> %d", getEnvStat);
-    }
+    doC4QueryObserverCallback(env, observer, ctx);
+
+    if (envState == JNI_EDETACHED)
+        detachJVM("queryObserver");
 }
 
 #ifdef __cplusplus

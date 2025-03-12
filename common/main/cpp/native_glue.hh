@@ -40,8 +40,6 @@ namespace litecore {
         // more than 512 refs available. So 200 is being conservative.
         static const jsize MaxLocalRefsToUse = 200;
 
-        extern JavaVM *gJVM;
-
         bool initC4Logging(JNIEnv *env); // Implemented in native_c4.cc
         bool initC4Observer(JNIEnv *);   // Implemented in native_c4observer.cc
         bool initC4Replicator(JNIEnv *); // Implemented in native_c4replicator.cc
@@ -56,13 +54,14 @@ namespace litecore {
         // lightweight logging: defined in native_c4.cc
         void jniLog(const char *fmt, ...);
 
-        int attachCurrentThread(JNIEnv **p_env);
+        int attachJVM(JNIEnv **env, const char *caller);
+        int detachJVM(const char *caller);
 
         // Sets a Java exception based on the LiteCore error.
-        void throwError(JNIEnv *, C4Error);
+        void throwError(JNIEnv *env, C4Error);
 
         // Sets a Java exception based on the LiteCore error.
-        void throwError(JNIEnv *, C4Error, const char *msg);
+        void throwError(JNIEnv *env, C4Error, const char *msg);
 
         std::string JstringToUTF8(JNIEnv *env, jstring jstr);
 
