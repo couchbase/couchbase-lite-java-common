@@ -11,20 +11,20 @@ extern "C" {
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Listener
  * Method:    startHttp
- * Signature: (ILjava/lang/String;IJLjava/lang/String;ZZZZZZ)J
+ * Signature: (ILjava/lang/String;JZZZZ)J
  */
 JNIEXPORT jlong
 JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_startHttp
-        (JNIEnv *, jclass, jint, jstring, jint, jlong, jstring, jboolean, jboolean, jboolean, jboolean, jboolean, jboolean);
+        (JNIEnv *, jclass, jint, jstring, jlong, jboolean, jboolean, jboolean, jboolean);
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Listener
  * Method:    startTls
- * Signature: (ILjava/lang/String;IJJ[BZ[BLjava/lang/String;ZZZZZZ)J
+ * Signature: (ILjava/lang/String;JJ[BZ[BZZZZ)J
  */
 JNIEXPORT jlong
 JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_startTls
-        (JNIEnv *, jclass, jint, jstring, jint, jlong, jlong, jbyteArray, jboolean, jbyteArray, jstring, jboolean, jboolean, jboolean, jboolean, jboolean, jboolean);
+        (JNIEnv *, jclass, jint, jstring, jlong, jlong, jbyteArray, jboolean, jbyteArray, jboolean, jboolean, jboolean, jboolean);
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Listener
