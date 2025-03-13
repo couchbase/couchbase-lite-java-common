@@ -257,7 +257,7 @@ abstract class BaseReplicatorTest : BaseDbTest() {
             }
         } else {
             if (!containsWithComparator(expectedErrs.toList(), err, BaseTest::compareExceptions)) {
-                throw AssertionError("Expecting error in ${expectedErrs} but got", err)
+                throw AssertionError("Expecting error in ${expectedErrs} but got:", err)
             }
         }
 

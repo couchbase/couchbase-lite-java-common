@@ -353,29 +353,19 @@ static C4Listener *startListener(
         JNIEnv *env,
         jint port,
         jstring networkInterface,
-        jint apis,
         jlong context,
-        jstring dbPath,
-        jboolean allowCreateDBs,
-        jboolean allowDeleteDBs,
         jboolean allowPush,
         jboolean allowPull,
         jboolean enableDeltaSync,
         jboolean requirePasswordAuth,
         C4TLSConfig *tlsConfig) {
     jstringSlice iFace(env, networkInterface);
-    jstringSlice path(env, dbPath);
 
     C4ListenerConfig config{};
+    config.apis = kC4SyncAPI; // !!! LiteCore 4.0.0-39
     config.port = (uint16_t) port;
     config.networkInterface = iFace;
-    config.apis = (unsigned) apis;
     config.tlsConfig = tlsConfig;
-    config.directory = path;
-    config.allowCreateDBs = allowCreateDBs;
-    config.allowDeleteDBs = allowDeleteDBs;
-    config.allowCreateCollections = false;
-    config.allowDeleteCollections = false;
     config.allowPush = allowPush;
     config.allowPull = allowPull;
     config.enableDeltaSync = enableDeltaSync;
@@ -467,19 +457,15 @@ extern "C" {
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Listener
  * Method:    startHttp
- * Signature: (ILjava/lang/String;IJLjava/lang/String;ZZZZZZ)J
- */
+ * Signature: (ILjava/lang/String;JZZZZ)J
+  */
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_startHttp(
         JNIEnv *env,
         jclass ignore,
         jint port,
         jstring networkInterface,
-        jint apis,
         jlong context,
-        jstring dbPath,
-        jboolean allowCreateDBs,
-        jboolean allowDeleteDBs,
         jboolean allowPush,
         jboolean allowPull,
         jboolean enableDeltaSync,
@@ -489,11 +475,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_startHttp(
             env,
             port,
             networkInterface,
-            apis,
             context,
-            dbPath,
-            allowCreateDBs,
-            allowDeleteDBs,
             allowPush,
             allowPull,
             enableDeltaSync,
@@ -504,7 +486,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_startHttp(
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Listener
  * Method:    startTls
- * Signature: (ILjava/lang/String;IJJ[BZ[BLjava/lang/String;ZZZZZZ)J
+ * Signature: (ILjava/lang/String;JJ[BZ[BZZZZ)J
  */
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_startTls(
@@ -512,15 +494,11 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_startTls(
         jclass ignore,
         jint port,
         jstring networkInterface,
-        jint apis,
         jlong context,
         jlong keyPair,
         jbyteArray cert,
         jboolean requireClientCerts,
         jbyteArray rootClientCerts,
-        jstring dbPath,
-        jboolean allowCreateDBs,
-        jboolean allowDeleteDBs,
         jboolean allowPush,
         jboolean allowPull,
         jboolean enableDeltaSync,
@@ -553,11 +531,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_startTls(
             env,
             port,
             networkInterface,
-            apis,
             context,
-            dbPath,
-            allowCreateDBs,
-            allowDeleteDBs,
             allowPush,
             allowPull,
             enableDeltaSync,
@@ -642,7 +616,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_getUrls(
     FLMutableArray urls = c4listener_getURLs(
             reinterpret_cast<C4Listener *>(c4Listener),
             reinterpret_cast<C4Database *>(c4Database),
-            kC4SyncAPI, // forced
+            kC4SyncAPI, // !!! LiteCore 4.0.0-39
             &error);
 
     if (urls == nullptr) {
