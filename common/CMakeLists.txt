@@ -48,6 +48,9 @@ set(CMAKE_C_STANDARD 11)
 
 if(BUILD_ENTERPRISE)
     add_definitions(-DCOUCHBASE_ENTERPRISE)
+    set(BUILD_ROOT "${PROJECT_SOURCE_DIR}/../../ee/android")
+else()
+    set(BUILD_ROOT "${PROJECT_SOURCE_DIR}/../../ce/android")
 endif()
 
 add_library( LiteCore SHARED IMPORTED )
@@ -82,7 +85,7 @@ target_include_directories( LiteCoreJNI PUBLIC
 
 set_target_properties(
     LiteCoreJNI PROPERTIES LINK_FLAGS
-    "-Wl,--version-script=${PROJECT_SOURCE_DIR}/jni_android.ld"
+    "-Wl,--version-script=${BUILD_ROOT}/etc/ld/jni_android.ld"
 )
 
 target_link_libraries( LiteCoreJNI
