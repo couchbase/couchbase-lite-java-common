@@ -42,7 +42,7 @@ class PartialIndexTest : BaseDbTest() {
      *
      *     Uncomment the code in native_c4collection.cc before trying enabling this test
      */
-    @Ignore("Partial index is not supported yet")
+    @Ignore("Partial index not yet supported")
     @Test
     fun testCreatePartialValueIndex() {
         testCollection.createIndex("numIndex", ValueIndexConfiguration("num").setWhere("type = 'number'"))
@@ -84,7 +84,7 @@ class PartialIndexTest : BaseDbTest() {
      *
      *     Uncomment the code in native_c4collection.cc before trying enabling this test
      */
-    @Ignore("Partial index is not supported yet")
+    @Ignore("Partial index not yet supported")
     @Test
     fun testCreatePartialFullTextIndex() {
         testCollection.save(MutableDocument().setString("content", "Couchbase Lite is a database."))
