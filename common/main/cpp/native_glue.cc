@@ -23,6 +23,10 @@
 #include <assert.h>
 #include "native_glue.hh"
 
+// Yes, yes, we know: codecvt_utf8_utf16<char16_t> is deprecated
+#define _CLANG_DISABLE_CRT_DEPRECATION_WARNINGS
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
 using namespace litecore;
 using namespace litecore::jni;
 using namespace std;
