@@ -523,7 +523,7 @@ public final class Collection extends BaseCollection
         if (!(o instanceof Collection)) { return false; }
         final Collection other = (Collection) o;
         // don't use .equals here!  The database must be the exact same instance.
-        return db == other.db
+        return db == other.db // this is, actually, redundant: it is tested in the Scope equality
             && c4Collection.getScope().equals(other.c4Collection.getScope())
             && c4Collection.getName().equals(other.c4Collection.getName());
     }
