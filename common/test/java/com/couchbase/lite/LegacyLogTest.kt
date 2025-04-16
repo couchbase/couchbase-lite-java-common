@@ -412,8 +412,8 @@ class LegacyLogTest : BaseDbTest() {
         assertNull(fileLogger.config)
         fileLogger.config = config
         assertEquals(config, fileLogger.config)
-        fileLogger.config = LogFileConfiguration("$scratchDirPath/foo")
-        assertEquals(LogFileConfiguration("$scratchDirPath/foo"), fileLogger.config)
+        fileLogger.config = LogFileConfiguration("$scratchDirPath/legacyLogs")
+        assertEquals(LogFileConfiguration("$scratchDirPath/legacyLogs"), fileLogger.config)
     }
 
     @Test

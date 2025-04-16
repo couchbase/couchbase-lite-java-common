@@ -38,6 +38,7 @@ import com.couchbase.lite.internal.logging.Log;
 import com.couchbase.lite.internal.utils.ClassUtils;
 import com.couchbase.lite.internal.utils.Internal;
 import com.couchbase.lite.internal.utils.Preconditions;
+import com.couchbase.lite.internal.utils.Volatile;
 
 
 /**
@@ -193,8 +194,12 @@ public class Document implements DictionaryInterface, Iterable<String> {
     /**
      * Get the document's timestamp.
      *
+     * The values returned by this method are, actually, just the document's generation
+     * number.  This is a increasing number but not, until future releases, an actual timestamp.
+     *
      * @return the document's timestamp
      */
+    @Volatile
     public long getTimestamp() {
         synchronized (lock) { return (c4Document == null) ? -1 : c4Document.getTimestamp(); }
     }
@@ -616,7 +621,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
         // This seems like a great place to close the old c4Document.
         // It appears, though, that there may be other live references
         // and that closing it here can cause failures.
-        // See C4Document.finalize()
+        // See C4Document.close()
         c4Document = c4Doc;
 
         if (c4Doc != null) { revId = null; }

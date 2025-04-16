@@ -65,7 +65,7 @@ public abstract class C4Peer implements AutoCloseable {
         @NonNull
         private final AtomicReference<Exception> lifecycle;
 
-        PeerHolder(@NonNull String name, long peer, @Nullable PeerCleaner cleaner) {
+        PeerHolder(@NonNull String name, long peer, @Nullable PeerCleaner cleaner, boolean quiet) {
             this.id = peer;
             this.cleaner = cleaner;
 
@@ -73,8 +73,8 @@ public abstract class C4Peer implements AutoCloseable {
 
             this.name = name;
             this.createdAt = System.currentTimeMillis();
-            this.lifecycle
-                = new AtomicReference<>((!CouchbaseLiteInternal.debugging()) ? null : new Exception("Created at:"));
+            this.lifecycle = new AtomicReference<>(
+                (quiet || (!CouchbaseLiteInternal.debugging())) ? null : new Exception("Created at:"));
         }
 
         /**
@@ -100,7 +100,7 @@ public abstract class C4Peer implements AutoCloseable {
             // Keep this at the debug level and only do it if debugging.  It frightens the children.
             // Apparently this call is bizarrely expensive: just don't do it unless you really need it.
             // Definitely don't do it on the cleaner thread
-            PEER_DISPOSER.execute(() -> Log.d(LogDomain.DATABASE, "Peer %s not explicitly closed", createdAt, name));
+            PEER_DISPOSER.execute(() -> Log.d(LogDomain.DATABASE, "Peer %s not explicitly closed", origin, name));
         }
 
         @NonNull
@@ -129,7 +129,11 @@ public abstract class C4Peer implements AutoCloseable {
 
         // Log an attempt to use a closed peer.
         private void logBadCall() {
-            Log.w(LogDomain.DATABASE, "Operation on closed native peer", new Exception("Used at:", lifecycle.get()));
+            Log.w(
+                LogDomain.DATABASE,
+                "Peer %s used after close",
+                new Exception("Used at:", lifecycle.get()),
+                name);
         }
     }
 
@@ -137,8 +141,8 @@ public abstract class C4Peer implements AutoCloseable {
      * LiteCore objects that are not ref-counted must not have multiple references.
      */
     private static class UncountedPeerHolder extends PeerHolder {
-        UncountedPeerHolder(@NonNull String name, long peer, @Nullable PeerCleaner cleaner) {
-            super(name, peer, cleaner);
+        UncountedPeerHolder(@NonNull String name, long peer, @Nullable PeerCleaner cleaner, boolean quiet) {
+            super(name, peer, cleaner, quiet);
         }
 
         @Override
@@ -167,10 +171,13 @@ public abstract class C4Peer implements AutoCloseable {
     @NonNull
     final Cleaner.Cleanable cleaner;
 
-    // Most LiteCore objects are ref-counted.  There may be several references to the same object.
-    protected C4Peer(long peer, @Nullable PeerCleaner cleaner) { this(peer, cleaner, true); }
+    // Most object should bark if they are not explicitly freed
+    protected C4Peer(long peer, @Nullable PeerCleaner cleaner) { this(peer, cleaner, true, false); }
 
-    // At this moment, he following LiteCore objects not ref-counted:
+    // Most LiteCore objects are ref-counted.  There may be several references to the same object.
+    protected C4Peer(long peer, @Nullable PeerCleaner cleaner, boolean quiet) { this(peer, cleaner, true, quiet); }
+
+    // At this moment, the following LiteCore objects not ref-counted:
     //    C4BlobKey
     //    C4BlobReadStream
     //    C4BlobStore
@@ -179,13 +186,13 @@ public abstract class C4Peer implements AutoCloseable {
     //    C4Listener
     //    C4QueryObserver
     //    C4Replicator
-    protected C4Peer(long peer, @Nullable PeerCleaner cleaner, boolean refCounted) {
+    protected C4Peer(long peer, @Nullable PeerCleaner cleaner, boolean refCounted, boolean quiet) {
         this.name = getClass().getSimpleName() + ClassUtils.objId(this);
 
         Preconditions.assertNotZero(peer, "peer");
         this.peerHolder = (refCounted)
-            ? new PeerHolder(name, peer, cleaner)
-            : new UncountedPeerHolder(name, peer, cleaner);
+            ? new PeerHolder(name, peer, cleaner, quiet)
+            : new UncountedPeerHolder(name, peer, cleaner, quiet);
 
         // WARNING:
         // Anything to which the peerHolder holds a reference will be reachable until the cleaner is run
