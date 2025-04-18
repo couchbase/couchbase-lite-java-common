@@ -101,11 +101,11 @@ import com.couchbase.lite.internal.utils.StringUtils;
  * To understanding what goes on here, you need to know about MessageFraming (and its API relative, ProtocolTypes).
  * Core knows all about the WebSockets protocol.  It would be glad to be pretty much completely responsible for a
  * WS connection, if we could just send the bytes across some raw byte stream.  Most of the platforms use this mode,
- * called CLIENT_FRAMING (ProtocolType.BYTE_STREAM). For better or worse, though we hired OkHTTP to do this job.
- * It is also very smart and *it* wants to handle the WS connection.  The solution, dating back to the dawn of time,
- * is that we *always* use the connection mode NO_FRAMING (ProtocolType.MESSAGE_STREAM). In this mode Core calls
- * us for state transitions, but provides on the basic payload data that must be transferred.  Java code is
- * responsible for framing the data as necessary for the remote.  We leave that to OkHttp.
+ * which we call CLIENT_FRAMING (ProtocolType.BYTE_STREAM). For better or worse, though, we hired OkHTTP as our
+ * network interface.  It is also very smart and *it* wants to handle the WS connection.  The solution, dating back
+ * to the dawn of time, is that we *always* use the other connection mode NO_FRAMING (ProtocolType.MESSAGE_STREAM).
+ * In this mode Core calls us for state transitions and provides only the basic payload data that must be transferred.
+ * Java code is responsible for framing the data as necessary for the remote.  We leave that to OkHttp.
  * <p>
  * <p>
  * This document: <a href="https://docs.google.com/document/d/1DH1heyHw_pIJdKx8K1vD1GBvwp5RVlX_IUN2DohkSg0/edit">
@@ -122,7 +122,7 @@ import com.couchbase.lite.internal.utils.StringUtils;
  * </ul>
  * <p>
  * This class operates under the assumption that its correspondents are fairly state tolerant:
- * they can cope with events that are only appropriate to states that they are no longer in.
+ * they *can* cope with events that are only appropriate to states that they are no longer in.
  * While the state machine makes a best effort at preventing out-of-state events, there are several
  * races would allow rogues.
  */
