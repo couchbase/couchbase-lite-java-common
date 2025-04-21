@@ -165,7 +165,8 @@ public final class C4Document extends C4Peer {
     //-------------------------------------------------------------------------
 
     private C4Document(@NonNull NativeImpl impl, long peer, @NonNull Object lock) {
-        super(peer, impl::nFree);
+        // C4Documents cannot be explicitly closed so don't gripe when they aren't
+        super(peer, impl::nFree, true);
         this.impl = impl;
         this.dbLock = lock;
     }
