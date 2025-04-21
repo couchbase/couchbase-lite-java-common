@@ -40,6 +40,7 @@ import com.couchbase.lite.internal.utils.Internal;
 import com.couchbase.lite.internal.utils.Preconditions;
 import com.couchbase.lite.internal.utils.Volatile;
 
+
 /**
  * Readonly version of the Document.
  */
@@ -630,7 +631,7 @@ public class Document implements DictionaryInterface, JSONEncodable, Iterable<St
         // This seems like a great place to close the old c4Document.
         // It appears, though, that there may be other live references
         // and that closing it here can cause failures.
-        // See C4Document.finalize()
+        // See C4Document.close()
         c4Document = c4Doc;
 
         if (c4Doc != null) { revId = null; }

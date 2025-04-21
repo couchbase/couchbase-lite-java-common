@@ -85,7 +85,7 @@ target_include_directories( LiteCoreJNI PUBLIC
 
 set_target_properties(
     LiteCoreJNI PROPERTIES LINK_FLAGS
-    "-Wl,-z,max-page-size=16384,--version-script=${PROJECT_SOURCE_DIR}/jni_android.ld"
+    "-Wl,-z,max-page-size=16384,--version-script=${BUILD_ROOT}/etc/ld/jni_android.ld"
 )
 
 target_link_libraries( LiteCoreJNI

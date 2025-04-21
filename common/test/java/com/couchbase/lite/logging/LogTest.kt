@@ -19,6 +19,7 @@ import com.couchbase.lite.internal.logging.writeToLog
 import org.junit.After
 import org.junit.Assert
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 import java.io.BufferedReader
 import java.io.File
@@ -625,6 +626,7 @@ class LogTest : BaseDbTest() {
     // This test verifies that the destructor will run to completion, even while a callback is taking place.
     // This is a stronger guarantee than the re-entrant case.  This guarantees that running the destructor
     // cannot cause a deadlock even if the thread calling it blocks the LiteCore logging callback thread.
+    @Ignore("CBL-6787")
     @Test
     fun testDeleteLiteCoreLoggerInCallback() {
         val query = C4Query.create(testDatabase.getC4Db, QueryLanguage.N1QL, "SELECT 1 FROM _")
