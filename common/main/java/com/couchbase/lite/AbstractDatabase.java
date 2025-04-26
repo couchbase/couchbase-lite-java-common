@@ -1229,7 +1229,7 @@ abstract class AbstractDatabase extends BaseDatabase
     @Nullable
     String getCookies(@NonNull URI uri) {
         try {
-            synchronized (getDbLock()) { return getOpenC4DbLocked().getCookies(uri); }
+            synchronized (getDbLock()) { return (!isOpenLocked()) ? null : getOpenC4DbLocked().getCookies(uri); }
         }
         catch (LiteCoreException e) { Log.w(DOMAIN, "Cannot get cookies for " + uri, e); }
         return null;

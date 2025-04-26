@@ -79,9 +79,7 @@ public abstract class AbstractReplicator extends BaseReplicator
 
         @Nullable
         @Override
-        public String getCookies(@NonNull URI uri) {
-            synchronized (db.getDbLock()) { return (!db.isOpenLocked()) ? null : db.getCookies(uri); }
-        }
+        public String getCookies(@NonNull URI uri) { return db.getCookies(uri); }
     }
 
     static boolean isStopped(@NonNull C4ReplicatorStatus c4Status) {

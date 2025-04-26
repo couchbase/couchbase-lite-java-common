@@ -27,6 +27,7 @@ import com.couchbase.lite.internal.fleece.FLSliceResult;
 
 
 public final class NativeC4Replicator implements C4Replicator.NativeImpl {
+    @GuardedBy("dbLock")
     @SuppressWarnings("PMD.ExcessiveParameterList")
     @Override
     public long nCreate(
@@ -65,6 +66,7 @@ public final class NativeC4Replicator implements C4Replicator.NativeImpl {
         );
     }
 
+    @GuardedBy("dbLock")
     @Override
     public long nCreateLocal(
         @NonNull String id,
@@ -89,6 +91,7 @@ public final class NativeC4Replicator implements C4Replicator.NativeImpl {
             replicatorToken);
     }
 
+    @GuardedBy("dbLock")
     @Override
     public long nCreateWithSocket(
         @NonNull String id,
@@ -101,22 +104,20 @@ public final class NativeC4Replicator implements C4Replicator.NativeImpl {
         return createWithSocket(id, collections, db, openSocket, options, replicatorToken);
     }
 
-    @Override
-    public void nFree(long peer) { free(peer); }
-
+    // thread safe
     @Override
     public void nStart(long peer, boolean restart) { start(peer, restart); }
 
-    @Override
-    public void nStop(long peer) { stop(peer); }
-
+    // thread safe
     @Override
     public void nSetOptions(long peer, @Nullable byte[] options) { setOptions(peer, options); }
 
+    // thread safe
     @NonNull
     @Override
     public C4ReplicatorStatus nGetStatus(long peer) { return getStatus(peer); }
 
+    // thread safe
     @NonNull
     @Override
     public FLSliceResult nGetPendingDocIds(long peer, @NonNull String scope, @NonNull String collection)
@@ -124,20 +125,30 @@ public final class NativeC4Replicator implements C4Replicator.NativeImpl {
         return getPendingDocIds(peer, scope, collection);
     }
 
+    // thread safe
     @Override
     public boolean nIsDocumentPending(long peer, @NonNull String id, @NonNull String scope, @NonNull String collection)
         throws LiteCoreException {
         return isDocumentPending(peer, id, scope, collection);
     }
 
+    @GuardedBy("replLock")
     @Override
     public void nSetProgressLevel(long peer, int progressLevel) throws LiteCoreException {
         setProgressLevel(peer, progressLevel);
     }
 
+    // thread safe
     @Override
     public void nSetHostReachable(long peer, boolean reachable) { setHostReachable(peer, reachable); }
 
+    // thread safe
+    @Override
+    public void nStop(long peer) { stop(peer); }
+
+    // thread safe
+    @Override
+    public void nFree(long peer) { free(peer); }
 
     //-------------------------------------------------------------------------
     // Native methods
@@ -201,33 +212,27 @@ public final class NativeC4Replicator implements C4Replicator.NativeImpl {
         throws LiteCoreException;
 
     /**
-     * Frees a replicator reference. If the replicator is running it will stop.
-     */
-    private static native void free(long peer);
-
-    /**
      * Tells a replicator to start.
+     * thread-safe
      */
     private static native void start(long peer, boolean restart);
 
     /**
-     * Tells a replicator to stop.
-     */
-    private static native void stop(long peer);
-
-    /**
      * Set the replicator options.
+     * thread-safe
      */
     private static native void setOptions(long peer, @Nullable byte[] options);
 
     /**
      * Returns the current state of a replicator.
+     * thread-safe
      */
     @NonNull
     private static native C4ReplicatorStatus getStatus(long peer);
 
     /**
      * Returns a list of string ids for pending documents.
+     * thread-safe
      */
     @NonNull
     private static native FLSliceResult getPendingDocIds(long peer, @NonNull String scope, @NonNull String collection)
@@ -235,6 +240,7 @@ public final class NativeC4Replicator implements C4Replicator.NativeImpl {
 
     /**
      * Returns true if there are documents that have not been resolved.
+     * thread-safe
      */
     private static native boolean isDocumentPending(
         long peer,
@@ -251,6 +257,21 @@ public final class NativeC4Replicator implements C4Replicator.NativeImpl {
 
     /**
      * Hint to core about the reachability of the target of this replicator.
+     * thread-safe
      */
     private static native void setHostReachable(long peer, boolean reachable);
+
+    /**
+     * Tells a replicator to stop.
+     * thread-safe
+     */
+    private static native void stop(long peer);
+
+    /**
+     * Frees a replicator reference.
+     * If the replicator is running it will not stop!
+     * Call stop first.
+     * thread-safe
+     */
+    private static native void free(long peer);
 }
