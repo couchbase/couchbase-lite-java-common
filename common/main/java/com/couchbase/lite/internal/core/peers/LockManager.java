@@ -26,6 +26,33 @@ import java.util.Map;
 import com.couchbase.lite.internal.exec.RefQueueCleanerThread;
 
 
+/**
+ * This is the new locking strategy.  It originated with Jim Borden and is a huge improvement
+ * for maintainability.
+ *
+ * The old strategy acquired the db lock *first* in any method that might call into a LiteCore
+ * method that was not thread safe.  The Replicator lock was second and other locks were acquired
+ * haphazardly.
+ *
+ * The LiteCore documentation now annotates every API method with the locks that must be held
+ * when the method is called.  By propagating those annotations up through the Java code
+ * we can now ensure that the correct locks are held when calling into LiteCore methods.
+ * The LiteCore locks are now the *last* lock acquired, still Database first, then Replicator
+ * then others.
+ *
+ * Note that the new and old locking strategies are compatible.  As long as locks are acquired
+ * in order there should be no risk of deadlock.
+ *
+ * The following classes have been converted to use this new locking strategy:
+ * C4BlobReadStream.java
+ * C4BlobStore.java
+ * C4BlobWriteStream.java
+ * C4Collection.java
+ * C4Database.java
+ * C4Replicator.java
+ * C4TestUtils.java
+ */
+
 public class LockManager {
     private class LockRef extends WeakReference<Object> implements RefQueueCleanerThread.RefQueueCleaner {
         @NonNull

@@ -35,6 +35,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.Test;
 
+import com.couchbase.lite.internal.utils.FlakyTest;
 import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.MathUtils;
 import com.couchbase.lite.internal.utils.Report;
@@ -2926,6 +2927,7 @@ public class QueryTest extends BaseQueryTest {
             });
     }
 
+    @FlakyTest(description = "Fails on devices that don't agree about the local time")
     @Test
     public void testStringToUTC() {
         createDateDocs();

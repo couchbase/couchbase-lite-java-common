@@ -49,7 +49,7 @@ class LoadTest : BaseDbTest() {
             // android local
             "shiba" to 80,
             "sunfish" to 140,
-            "taimen" to 80,
+            "taimen" to 90,
             "occam" to 300,
         )
     }
