@@ -33,6 +33,7 @@ import com.couchbase.lite.internal.core.C4Constants;
 import com.couchbase.lite.internal.core.C4Replicator;
 import com.couchbase.lite.internal.core.C4ReplicatorStatus;
 import com.couchbase.lite.internal.replicator.AbstractCBLWebSocket;
+import com.couchbase.lite.internal.utils.FlakyTest;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -181,6 +182,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         }
     }
 
+    @FlakyTest(description = "fails, occasionally, on a Nexus 4 running Android 23")
     @Test
     public void testCustomConnectionOptions() {
         // Caution: not disabling heartbeat
@@ -218,6 +220,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         }
     }
 
+    @FlakyTest(description = "fails, occasionally, on a Nexus 4 running Android 23")
     @Test
     public void testBasicAuthOptions() {
         final ReplicatorConfiguration config = makeBasicConfig();
