@@ -31,6 +31,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Test
 import java.io.File
+import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.util.Date
 import java.util.concurrent.FutureTask
@@ -1947,6 +1948,24 @@ class DatabaseTest : BaseDbTest() {
         } finally {
             eraseDb(db)
         }
+    }
+
+    @Test
+    fun testDatabaseCookies() {
+        testDatabase.setCookies(
+            URI("http://zqx3.foo.com"),
+            listOf("session=xyzzy; secure", "user=guest; path=/; domain=foo.com"),
+            true
+        )
+
+        assertNull(testDatabase.getCookies(URI("http://bar.com")))
+
+        var cookies = assertNonNull(testDatabase.getCookies(URI("http://foo.com")))
+        assertTrue(cookies.contains("user=guest"))
+
+        cookies = assertNonNull(testDatabase.getCookies(URI("http://zqx3.foo.com")))
+        assertTrue(cookies.contains("session=xyzzy"))
+        assertTrue(cookies.contains("user=guest"))
     }
 
     /////////////////////////////////   H E L P E R S   //////////////////////////////////////
