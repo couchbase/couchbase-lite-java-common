@@ -38,4 +38,11 @@ public @interface FlakyTest {
      * @return String
      */
     String bugId() default "";
+
+    /**
+     * Failure description.
+     *
+     * @return String
+     */
+    String description() default "";
 }
