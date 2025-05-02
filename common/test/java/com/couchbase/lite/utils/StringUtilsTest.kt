@@ -17,9 +17,7 @@ package com.couchbase.lite.utils
 
 import com.couchbase.lite.BaseTest
 import com.couchbase.lite.internal.utils.StringUtils
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
+import org.junit.Assert
 import org.junit.Test
 
 
@@ -27,25 +25,25 @@ class StringUtilsTest : BaseTest() {
 
     @Test
     fun testIsEmpty() {
-        assertTrue(StringUtils.isEmpty(null))
-        assertTrue(StringUtils.isEmpty(""))
-        assertFalse(StringUtils.isEmpty(" "))
+        Assert.assertTrue(StringUtils.isEmpty(null))
+        Assert.assertTrue(StringUtils.isEmpty(""))
+        Assert.assertFalse(StringUtils.isEmpty(" "))
     }
 
     @Test
     fun testJoin() {
-        assertEquals("", StringUtils.join("", emptyList<String>()))
-        assertEquals("", StringUtils.join("", listOf("")))
-        assertEquals("", StringUtils.join("", listOf("", "")))
-        assertEquals("a", StringUtils.join("", listOf("a")))
-        assertEquals("a", StringUtils.join("", listOf("a", "")))
-        assertEquals("aa", StringUtils.join("", listOf("a", "a")))
-        assertEquals("", StringUtils.join(".", emptyList<String>()))
-        assertEquals("", StringUtils.join(".", listOf("")))
-        assertEquals(".", StringUtils.join(".", listOf("", "")))
-        assertEquals("a", StringUtils.join(".", listOf("a")))
-        assertEquals("a.", StringUtils.join(".", listOf("a", "")))
-        assertEquals(".a", StringUtils.join(".", listOf("", "a")))
-        assertEquals("a.a", StringUtils.join(".", listOf("a", "a")))
+        Assert.assertEquals("", StringUtils.join("", emptyList<String>()))
+        Assert.assertEquals("", StringUtils.join("", listOf("")))
+        Assert.assertEquals("", StringUtils.join("", listOf("", "")))
+        Assert.assertEquals("a", StringUtils.join("", listOf("a")))
+        Assert.assertEquals("a", StringUtils.join("", listOf("a", "")))
+        Assert.assertEquals("aa", StringUtils.join("", listOf("a", "a")))
+        Assert.assertEquals("", StringUtils.join(".", emptyList<String>()))
+        Assert.assertEquals("", StringUtils.join(".", listOf("")))
+        Assert.assertEquals(".", StringUtils.join(".", listOf("", "")))
+        Assert.assertEquals("a", StringUtils.join(".", listOf("a")))
+        Assert.assertEquals("a.", StringUtils.join(".", listOf("a", "")))
+        Assert.assertEquals(".a", StringUtils.join(".", listOf("", "a")))
+        Assert.assertEquals("a.a", StringUtils.join(".", listOf("a", "a")))
     }
 }

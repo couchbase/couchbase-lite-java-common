@@ -16,8 +16,7 @@
 package com.couchbase.lite
 
 import com.couchbase.lite.logging.LogSinks
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotEquals
+import org.junit.Assert
 import org.junit.Test
 
 
@@ -27,8 +26,8 @@ class CommonConfigFactoryTest : BaseTest() {
     @Test
     fun testFullTextIndexConfigurationFactory() {
         val config = FullTextIndexConfigurationFactory.newConfig(CONFIG_FACTORY_TEST_STRING)
-        assertEquals(1, config.expressions.size)
-        assertEquals(CONFIG_FACTORY_TEST_STRING, config.expressions[0])
+        Assert.assertEquals(1, config.expressions.size)
+        Assert.assertEquals(CONFIG_FACTORY_TEST_STRING, config.expressions[0])
     }
 
     @Test
@@ -38,45 +37,45 @@ class CommonConfigFactoryTest : BaseTest() {
             language = "fr",
             ignoreAccents = true
         )
-        assertEquals(1, config.expressions.size)
-        assertEquals(CONFIG_FACTORY_TEST_STRING, config.expressions[0])
-        assertEquals(true, config.isIgnoringAccents)
-        assertEquals("fr", config.language)
+        Assert.assertEquals(1, config.expressions.size)
+        Assert.assertEquals(CONFIG_FACTORY_TEST_STRING, config.expressions[0])
+        Assert.assertEquals(true, config.isIgnoringAccents)
+        Assert.assertEquals("fr", config.language)
     }
 
     @Test
     fun testFullTextIndexConfigurationFactoryNullExp() {
-        assertThrows(IllegalArgumentException::class.java) { FullTextIndexConfigurationFactory.newConfig() }
+        Assert.assertThrows(IllegalArgumentException::class.java) { FullTextIndexConfigurationFactory.newConfig() }
     }
 
     @Test
     fun testFullTextIndexConfigurationFactoryCopy() {
         val config1 = FullTextIndexConfigurationFactory.newConfig(CONFIG_FACTORY_TEST_STRING)
         val config2 = config1.newConfig()
-        assertNotEquals(config1, config2)
-        assertEquals(1, config2.expressions.size)
-        assertEquals(CONFIG_FACTORY_TEST_STRING, config2.expressions[0])
+        Assert.assertNotEquals(config1, config2)
+        Assert.assertEquals(1, config2.expressions.size)
+        Assert.assertEquals(CONFIG_FACTORY_TEST_STRING, config2.expressions[0])
     }
 
     @Test
     fun testValueIndexConfigurationFactory() {
         val config = ValueIndexConfigurationFactory.newConfig(CONFIG_FACTORY_TEST_STRING)
-        assertEquals(1, config.expressions.size)
-        assertEquals(CONFIG_FACTORY_TEST_STRING, config.expressions[0])
+        Assert.assertEquals(1, config.expressions.size)
+        Assert.assertEquals(CONFIG_FACTORY_TEST_STRING, config.expressions[0])
     }
 
     @Test
     fun testValueIndexConfigurationFactoryNullExp() {
-        assertThrows(IllegalArgumentException::class.java) { ValueIndexConfigurationFactory.newConfig() }
+        Assert.assertThrows(IllegalArgumentException::class.java) { ValueIndexConfigurationFactory.newConfig() }
     }
 
     @Test
     fun testValueIndexConfigurationFactoryCopy() {
         val config1 = ValueIndexConfigurationFactory.newConfig(CONFIG_FACTORY_TEST_STRING)
         val config2 = config1.newConfig()
-        assertNotEquals(config1, config2)
-        assertEquals(1, config2.expressions.size)
-        assertEquals(CONFIG_FACTORY_TEST_STRING, config2.expressions[0])
+        Assert.assertNotEquals(config1, config2)
+        Assert.assertEquals(1, config2.expressions.size)
+        Assert.assertEquals(CONFIG_FACTORY_TEST_STRING, config2.expressions[0])
     }
 
     @Test
@@ -84,14 +83,14 @@ class CommonConfigFactoryTest : BaseTest() {
         val dir = getScratchDirectoryPath(getUniqueName("sink-dir"))
         FileLogSinkFactory.install(directory = dir, maxFileSize = 4096L)
         LogSinks.get().file?.let {
-            assertEquals(dir, it.directory)
-            assertEquals(4096L, it.maxFileSize)
+            Assert.assertEquals(dir, it.directory)
+            Assert.assertEquals(4096L, it.maxFileSize)
         }
     }
 
     @Test
-    fun testFileLogSinkactoryNullDir() {
-        assertThrows(IllegalArgumentException::class.java) { FileLogSinkFactory.install() }
+    fun testFileLogSinkFactoryNullDir() {
+        Assert.assertThrows(IllegalArgumentException::class.java) { FileLogSinkFactory.install() }
     }
 
     @Test
@@ -100,16 +99,16 @@ class CommonConfigFactoryTest : BaseTest() {
         FileLogSinkFactory.install(directory = dir1, maxFileSize = 4096L)
         val sink = LogSinks.get().file
         sink?.let {
-            assertEquals(dir1, it.directory)
-            assertEquals(4096L, it.maxFileSize)
+            Assert.assertEquals(dir1, it.directory)
+            Assert.assertEquals(4096L, it.maxFileSize)
         }
 
         val dir2 = getScratchDirectoryPath(getUniqueName("sink-dir2"))
         sink.install(directory = dir2, maxFileSize = 8192L)
         LogSinks.get().file?.let {
-            assertNotEquals(sink, it)
-            assertEquals(dir2, it.directory)
-            assertEquals(8192L, it.maxFileSize)
+            Assert.assertNotEquals(sink, it)
+            Assert.assertEquals(dir2, it.directory)
+            Assert.assertEquals(8192L, it.maxFileSize)
         }
     }
 }

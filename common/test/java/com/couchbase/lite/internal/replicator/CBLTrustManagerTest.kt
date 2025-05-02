@@ -16,6 +16,7 @@
 package com.couchbase.lite.internal.replicator
 
 import com.couchbase.lite.BaseTest
+import org.junit.Assert
 import org.junit.Test
 import java.io.ByteArrayInputStream
 import java.security.cert.CertificateException
@@ -71,7 +72,7 @@ class CBLTrustManagerTest : BaseTest() {
     @Test
     fun testEmptyServerCerts() {
         val trustMgr = object : AbstractCBLTrustManager(makeCert(testServerCert2), false, { }) {}
-        assertThrows(IllegalArgumentException::class.java) {
+        Assert.assertThrows(IllegalArgumentException::class.java) {
             trustMgr.cBLServerTrustCheck(emptyList<X509Certificate>(), "ECDHE_RSA")
         }
     }
@@ -79,7 +80,7 @@ class CBLTrustManagerTest : BaseTest() {
     @Test
     fun testWrongCert() {
         val trustMgr = object : AbstractCBLTrustManager(makeCert(testServerCert2), false, { }) {}
-        assertThrows(IllegalArgumentException::class.java) {
+        Assert.assertThrows(IllegalArgumentException::class.java) {
             trustMgr.cBLServerTrustCheck(listOf(makeCert(testServerCert1)), "")
         }
     }
@@ -93,7 +94,7 @@ class CBLTrustManagerTest : BaseTest() {
     @Test
     fun testTooManySelfSignedCerts() {
         val trustMgr = object : AbstractCBLTrustManager(null, true, { }) {}
-        assertThrows(CertificateException::class.java) {
+        Assert.assertThrows(CertificateException::class.java) {
             trustMgr.cBLServerTrustCheck(listOf(makeCert(testServerCert1), makeCert(testServerCert2)), "ECDHE_RSA")
         }
     }
@@ -103,7 +104,7 @@ class CBLTrustManagerTest : BaseTest() {
     fun testPinnedCertDoesntMatch() {
         val certs = listOf(makeCert(testServerCert1))
         val trustMgr = object : AbstractCBLTrustManager(makeCert(testServerCert2), false, { }) {}
-        assertThrows(CertificateException::class.java) {
+        Assert.assertThrows(CertificateException::class.java) {
             trustMgr.cBLServerTrustCheck(certs, "ECDHE_RSA")
         }
     }

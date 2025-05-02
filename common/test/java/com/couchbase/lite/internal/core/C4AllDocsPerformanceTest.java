@@ -18,6 +18,7 @@ package com.couchbase.lite.internal.core;
 import java.util.Arrays;
 import java.util.Random;
 
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -27,9 +28,6 @@ import com.couchbase.lite.internal.utils.LoadTest;
 import com.couchbase.lite.internal.utils.Report;
 import com.couchbase.lite.internal.utils.SlowTest;
 import com.couchbase.lite.internal.utils.StopWatch;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 
 
 /**
@@ -71,7 +69,7 @@ public class C4AllDocsPerformanceTest extends C4BaseTest {
                         true,
                         0,
                         0);
-                    assertNotNull(doc);
+                    Assert.assertNotNull(doc);
                 }
                 commit = true;
             }
@@ -81,7 +79,7 @@ public class C4AllDocsPerformanceTest extends C4BaseTest {
         }
         catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
 
-        assertEquals(DOC_NUM, c4Collection.getDocumentCount());
+        Assert.assertEquals(DOC_NUM, c4Collection.getDocumentCount());
     }
 
     // - AllDocsPerformance
@@ -95,10 +93,9 @@ public class C4AllDocsPerformanceTest extends C4BaseTest {
         C4TestUtils.C4DocEnumerator e = C4TestUtils.enumerateDocsForCollection(
             c4Collection,
             C4Constants.EnumeratorFlags.DEFAULT & ~C4Constants.EnumeratorFlags.INCLUDE_BODIES);
-        C4Document doc;
         int i = 0;
-        while ((doc = nextDocument(e)) != null) { i++; }
-        assertEquals(DOC_NUM, i);
+        while (nextDocument(e) != null) { i++; }
+        Assert.assertEquals(DOC_NUM, i);
 
         double elapsed = timer.getElapsedTimeMillis();
         Report.log("Enumerating %d docs took %.3f ms (%.3f ms/doc)", i, elapsed, elapsed / i);

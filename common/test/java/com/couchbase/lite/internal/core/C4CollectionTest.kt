@@ -15,54 +15,50 @@
 //
 package com.couchbase.lite.internal.core
 
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
+import org.junit.Assert
 import org.junit.Test
 
 
 class C4CollectionTest : C4BaseTest() {
     @Test
     fun setUpC4CollectionTest() {
-        assertNotNull(C4Collection.getDefault(c4Database))
+        Assert.assertNotNull(C4Collection.getDefault(c4Database))
         // Would like to be able to verify that this is the default collection...
     }
 
     @Test
     fun testCreateCollection() {
-        C4Collection.create(c4Database, "Tele", "Chintz").use { coll -> assertNotNull(coll) }
+        C4Collection.create(c4Database, "Tele", "Chintz").use { coll -> Assert.assertNotNull(coll) }
     }
 
     @Test
     fun testGetCollection() {
-        C4Collection.create(c4Database, "Tele", "Chintz").use { coll -> assertNotNull(coll) }
-        C4Collection.get(c4Database, "Tele", "Chintz").use { coll -> assertNotNull(coll) }
+        C4Collection.create(c4Database, "Tele", "Chintz").use { coll -> Assert.assertNotNull(coll) }
+        C4Collection.get(c4Database, "Tele", "Chintz").use { coll -> Assert.assertNotNull(coll) }
     }
 
     @Test
     fun testCollectionIsValidAfterClose() {
         C4Collection.create(c4Database, "Micro", "PezDispensers").use { coll ->
-            assertTrue(coll.isValid)
+            Assert.assertTrue(coll.isValid)
             c4Database.closeDb()
             c4Database = null
-            assertFalse(coll.isValid)
+            Assert.assertFalse(coll.isValid)
         }
     }
 
     @Test
     fun testGetNonExistentDoc() {
         C4Collection.create(c4Database, "Kaleido", "BeanieBabies").use { coll ->
-            assertEquals(0, coll.documentCount)
-            assertNull(coll.getDocument("nexistpas"))
+            Assert.assertEquals(0, coll.documentCount)
+            Assert.assertNull(coll.getDocument("nexistpas"))
         }
     }
 
     @Test
     fun testCreateDocWithNullBody() {
         C4Collection.create(c4Database, "Tachisto", "Stamps").use { coll ->
-            assertEquals(0, coll.documentCount)
+            Assert.assertEquals(0, coll.documentCount)
 
             assertThrowsLiteCoreException(
                 C4Constants.ErrorDomain.LITE_CORE,
@@ -71,8 +67,8 @@ class C4CollectionTest : C4BaseTest() {
                 coll.createDocument("yep", null, 0)
             }
 
-            assertNull(coll.getDocument("yep"))
-            assertEquals(0, coll.documentCount)
+            Assert.assertNull(coll.getDocument("yep"))
+            Assert.assertEquals(0, coll.documentCount)
         }
     }
 }

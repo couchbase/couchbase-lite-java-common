@@ -19,9 +19,7 @@ import com.couchbase.lite.internal.utils.LoadTest
 import com.couchbase.lite.internal.utils.Report
 import com.couchbase.lite.internal.utils.SlowTest
 import com.couchbase.lite.internal.utils.VerySlowTest
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertTrue
+import org.junit.Assert
 import org.junit.Test
 import java.util.Date
 
@@ -66,13 +64,13 @@ class LoadTest : BaseDbTest() {
         val tag = getUniqueName("create#1")
         val docs = createComplexTestDocs(ITERATIONS, tag)
 
-        assertEquals(0, testCollection.count)
+        Assert.assertEquals(0, testCollection.count)
         timeTest("testCreateUnbatched", 170) {
             for (doc in docs) {
                 testCollection.save(doc)
             }
         }
-        assertEquals(ITERATIONS.toLong(), testCollection.count)
+        Assert.assertEquals(ITERATIONS.toLong(), testCollection.count)
         verifyByTag(tag, ITERATIONS)
     }
 
@@ -83,7 +81,7 @@ class LoadTest : BaseDbTest() {
         val tag = getUniqueName("create#2")
         val docs = createComplexTestDocs(ITERATIONS, tag)
 
-        assertEquals(0, testCollection.count)
+        Assert.assertEquals(0, testCollection.count)
         timeTest("testCreateBatched", 45) {
             testDatabase.inBatch<CouchbaseLiteException> {
                 for (doc in docs) {
@@ -91,7 +89,7 @@ class LoadTest : BaseDbTest() {
                 }
             }
         }
-        assertEquals(ITERATIONS.toLong(), testCollection.count)
+        Assert.assertEquals(ITERATIONS.toLong(), testCollection.count)
         verifyByTag(tag, ITERATIONS)
     }
 
@@ -101,21 +99,21 @@ class LoadTest : BaseDbTest() {
         val tag = getUniqueName("read")
         val ids = saveDocsInCollection(createComplexTestDocs(ITERATIONS, tag)).map { it.id }
 
-        assertEquals(ITERATIONS.toLong(), testCollection.count)
+        Assert.assertEquals(ITERATIONS.toLong(), testCollection.count)
         timeTest("testRead", 60) {
             for (id in ids) {
                 val doc = testCollection.getDocument(id)
-                assertNotNull(doc)
+                Assert.assertNotNull(doc)
 
-                assertEquals(tag, doc!!.getString(TEST_DOC_TAG_KEY))
+                Assert.assertEquals(tag, doc!!.getString(TEST_DOC_TAG_KEY))
 
                 val address = doc.getDictionary("address")
-                assertNotNull(address)
-                assertEquals("Mountain View", address!!.getString("city"))
+                Assert.assertNotNull(address)
+                Assert.assertEquals("Mountain View", address!!.getString("city"))
 
                 val phones = doc.getArray("phones")
-                assertNotNull(phones)
-                assertEquals("650-123-0002", phones!!.getString(1))
+                Assert.assertNotNull(phones)
+                Assert.assertEquals("650-123-0002", phones!!.getString(1))
             }
         }
     }
@@ -127,7 +125,7 @@ class LoadTest : BaseDbTest() {
         val newTag = getUniqueName("update")
         val ids = saveDocsInCollection(createComplexTestDocs(ITERATIONS, getUniqueName("update"))).map { it.id }
 
-        assertEquals(ITERATIONS.toLong(), testCollection.count)
+        Assert.assertEquals(ITERATIONS.toLong(), testCollection.count)
         timeTest("testUpdate1", 130) {
             var i = 0
             for (id in ids) {
@@ -141,19 +139,19 @@ class LoadTest : BaseDbTest() {
                 mDoc.setValue(TEST_DOC_TAG_KEY, newTag)
 
                 val address = mDoc.getDictionary("address")
-                assertNotNull(address)
+                Assert.assertNotNull(address)
                 address!!.setValue("street", "${i} street")
                 mDoc.setDictionary("address", address)
 
                 val phones = mDoc.getArray("phones")
-                assertNotNull(phones)
+                Assert.assertNotNull(phones)
                 phones!!.setValue(0, "650-000-${i}")
                 mDoc.setArray("phones", phones)
 
                 testCollection.save(mDoc)
             }
         }
-        assertEquals(ITERATIONS.toLong(), testCollection.count)
+        Assert.assertEquals(ITERATIONS.toLong(), testCollection.count)
         verifyByTag(newTag, ITERATIONS)
     }
 
@@ -166,7 +164,7 @@ class LoadTest : BaseDbTest() {
         mDoc.setValue("map", mapOf("idx" to 0, "long" to 0L, TEST_DOC_TAG_KEY to getUniqueName("tag")))
         testCollection.save(mDoc)
 
-        assertEquals(1L, testCollection.count)
+        Assert.assertEquals(1L, testCollection.count)
         timeTest("testUpdate2", 110) {
             for (i in 0..ITERATIONS) {
                 mDoc = testCollection.getDocument(mDoc.id)!!.toMutable()
@@ -176,12 +174,12 @@ class LoadTest : BaseDbTest() {
         }
 
         val doc = testCollection.getDocument(mDoc.id)
-        assertNotNull(doc)
+        Assert.assertNotNull(doc)
         val map = doc!!.getDictionary("map")
-        assertNotNull(map)
-        assertEquals(ITERATIONS, map!!.getInt("idx"))
-        assertEquals(ITERATIONS.toLong(), map.getLong("long"))
-        assertEquals(mDoc.getString(TEST_DOC_TAG_KEY), doc.getString(TEST_DOC_TAG_KEY))
+        Assert.assertNotNull(map)
+        Assert.assertEquals(ITERATIONS, map!!.getInt("idx"))
+        Assert.assertEquals(ITERATIONS.toLong(), map.getLong("long"))
+        Assert.assertEquals(mDoc.getString(TEST_DOC_TAG_KEY), doc.getString(TEST_DOC_TAG_KEY))
     }
 
     @VerySlowTest
@@ -190,13 +188,13 @@ class LoadTest : BaseDbTest() {
     fun testDelete() {
         val docs = saveDocsInCollection(createComplexTestDocs(ITERATIONS, getUniqueName("delete")))
 
-        assertEquals(ITERATIONS.toLong(), testCollection.count)
+        Assert.assertEquals(ITERATIONS.toLong(), testCollection.count)
         timeTest("testDelete", 100) {
             for (doc in docs) {
                 testCollection.delete(doc)
             }
         }
-        assertEquals(0, testCollection.count)
+        Assert.assertEquals(0, testCollection.count)
     }
 
     @SlowTest
@@ -213,7 +211,7 @@ class LoadTest : BaseDbTest() {
                 }
             }
         }
-        assertEquals((ITERATIONS - 1), testCollection.getDocument(mDoc.id)!!.getInt("count"))
+        Assert.assertEquals((ITERATIONS - 1), testCollection.getDocument(mDoc.id)!!.getInt("count"))
     }
 
     @SlowTest
@@ -229,13 +227,13 @@ class LoadTest : BaseDbTest() {
                 }
             }
         }
-        assertEquals((ITERATIONS - 1), testCollection.getDocument(mDoc.id)!!.getInt("count"))
+        Assert.assertEquals((ITERATIONS - 1), testCollection.getDocument(mDoc.id)!!.getInt("count"))
     }
 
     // Utility methods
 
     private fun verifyByTag(tag: String, count: Int) {
-        assertEquals(
+        Assert.assertEquals(
             count,
             QueryBuilder.select(SelectResult.expression(Meta.id))
                 .from(DataSource.collection(testCollection))
@@ -251,7 +249,7 @@ class LoadTest : BaseDbTest() {
         test.run()
         val elapsedTime = System.currentTimeMillis() - t0
         Report.log("Load test ${testName} completed in ${elapsedTime}ms (${maxTimeMs}) on ${device}")
-        assertTrue(
+        Assert.assertTrue(
             "Load test ${testName} over time: ${elapsedTime} > ${maxTimeMs} on ${device}",
             elapsedTime < maxTimeMs
         )

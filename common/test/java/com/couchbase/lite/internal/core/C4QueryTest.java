@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -31,10 +32,6 @@ import com.couchbase.lite.internal.core.C4TestUtils.C4FullTextMatch;
 import com.couchbase.lite.internal.fleece.FLArrayIterator;
 import com.couchbase.lite.internal.fleece.FLDict;
 import com.couchbase.lite.internal.fleece.FLValue;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
 
 
 public class C4QueryTest extends C4QueryBaseTest {
@@ -53,11 +50,11 @@ public class C4QueryTest extends C4QueryBaseTest {
     public void testDatabaseErrorMessages() {
         try {
             c4Database.createJsonQuery("[\"=\"]");
-            fail();
+            Assert.fail();
         }
         catch (LiteCoreException e) {
-            assertEquals(C4Constants.ErrorDomain.LITE_CORE, e.domain);
-            assertEquals(C4Constants.LiteCoreError.INVALID_QUERY, e.code);
+            Assert.assertEquals(C4Constants.ErrorDomain.LITE_CORE, e.domain);
+            Assert.assertEquals(C4Constants.LiteCoreError.INVALID_QUERY, e.code);
         }
     }
 
@@ -65,7 +62,7 @@ public class C4QueryTest extends C4QueryBaseTest {
     @Test
     public void testDBQuery() throws LiteCoreException {
         compile("['=', ['.', 'contact', 'address', 'state'], 'CA']");
-        assertEquals(
+        Assert.assertEquals(
             Arrays.asList("0000001", "0000015", "0000036", "0000043", "0000053", "0000064", "0000072", "0000073"),
             run());
 
@@ -73,18 +70,18 @@ public class C4QueryTest extends C4QueryBaseTest {
         Map<String, Object> params = new HashMap<>();
         params.put("offset", 1);
         params.put("limit", 8);
-        assertEquals(
+        Assert.assertEquals(
             Arrays.asList("0000015", "0000036", "0000043", "0000053", "0000064", "0000072", "0000073"),
             run(params));
 
         params = new HashMap<>();
         params.put("offset", 1);
         params.put("limit", 4);
-        assertEquals(Arrays.asList("0000015", "0000036", "0000043", "0000053"), run(params));
+        Assert.assertEquals(Arrays.asList("0000015", "0000036", "0000043", "0000053"), run(params));
 
         compile(
             "['AND', ['=', ['array_count()', ['.', 'contact', 'phone']], 2],['=', ['.', 'gender'], 'male']]");
-        assertEquals(
+        Assert.assertEquals(
             Arrays.asList(
                 "0000002",
                 "0000014",
@@ -112,24 +109,24 @@ public class C4QueryTest extends C4QueryBaseTest {
         params = new HashMap<>();
         params.put("offset", 0);
         params.put("limit", 4);
-        assertEquals(Arrays.asList("0000004", "0000006", "0000008", "0000015"), run(params));
+        Assert.assertEquals(Arrays.asList("0000004", "0000006", "0000008", "0000015"), run(params));
 
         // ...whereas null is a JSON null value
         compile("['IS', ['.', 'contact', 'phone', [0]], null]", "", true);
         params = new HashMap<>();
         params.put("offset", 0);
         params.put("limit", 4);
-        assertEquals(Collections.emptyList(), run(params));
+        Assert.assertEquals(Collections.emptyList(), run(params));
     }
 
     // - DB Query LIKE
     @Test
     public void testDBQueryLIKE() throws LiteCoreException {
         compile("['LIKE', ['.name.first'], '%j%']");
-        assertEquals(Collections.singletonList("0000085"), run());
+        Assert.assertEquals(Collections.singletonList("0000085"), run());
 
         compile("['LIKE', ['.name.first'], '%J%']");
-        assertEquals(
+        Assert.assertEquals(
             Arrays.asList(
                 "0000002",
                 "0000004",
@@ -146,7 +143,7 @@ public class C4QueryTest extends C4QueryBaseTest {
             run());
 
         compile("['LIKE', ['.name.first'], 'Jen%']");
-        assertEquals(Arrays.asList("0000008", "0000028"), run());
+        Assert.assertEquals(Arrays.asList("0000008", "0000028"), run());
     }
 
     // - DB Query IN
@@ -154,11 +151,11 @@ public class C4QueryTest extends C4QueryBaseTest {
     public void testDBQueryIN() throws LiteCoreException {
         // Type 1: RHS is an expression; generates a call to array_contains
         compile("['IN', 'reading', ['.', 'likes']]");
-        assertEquals(Arrays.asList("0000004", "0000056", "0000064", "0000079", "0000099"), run());
+        Assert.assertEquals(Arrays.asList("0000004", "0000056", "0000064", "0000079", "0000099"), run());
 
         // Type 2: RHS is an array literal; generates a SQL "IN" expression
         compile("['IN', ['.', 'name', 'first'], ['[]', 'Eddie', 'Verna']]");
-        assertEquals(Arrays.asList("0000091", "0000093"), run());
+        Assert.assertEquals(Arrays.asList("0000091", "0000093"), run());
     }
 
     // - DB Query sorted
@@ -166,7 +163,7 @@ public class C4QueryTest extends C4QueryBaseTest {
     public void testDBQuerySorted() throws LiteCoreException {
         compile(
             "['=', ['.', 'contact', 'address', 'state'], 'CA']", "[['.', 'name', 'last']]");
-        assertEquals(
+        Assert.assertEquals(
             Arrays.asList("0000015", "0000036", "0000072", "0000043", "0000001", "0000064", "0000073", "0000053"),
             run());
     }
@@ -177,14 +174,14 @@ public class C4QueryTest extends C4QueryBaseTest {
         compile("['=', ['.', 'contact', 'address', 'state'], ['$', 1]]");
         Map<String, Object> params = new HashMap<>();
         params.put("1", "CA");
-        assertEquals(
+        Assert.assertEquals(
             Arrays.asList("0000001", "0000015", "0000036", "0000043", "0000053", "0000064", "0000072", "0000073"),
             run(params));
 
         compile("['=', ['.', 'contact', 'address', 'state'], ['$', 'state']]");
         params = new HashMap<>();
         params.put("state", "CA");
-        assertEquals(
+        Assert.assertEquals(
             Arrays.asList("0000001", "0000015", "0000036", "0000043", "0000053", "0000064", "0000072", "0000073"),
             run(params));
     }
@@ -193,21 +190,21 @@ public class C4QueryTest extends C4QueryBaseTest {
     @Test
     public void testDBQueryANY() throws LiteCoreException {
         compile("['ANY', 'like', ['.', 'likes'], ['=', ['?', 'like'], 'climbing']]");
-        assertEquals(Arrays.asList("0000017", "0000021", "0000023", "0000045", "0000060"), run());
+        Assert.assertEquals(Arrays.asList("0000017", "0000021", "0000023", "0000045", "0000060"), run());
 
         // This EVERY query has lots of results because every empty `likes` array matches it
         compile("['EVERY', 'like', ['.', 'likes'], ['=', ['?', 'like'], 'taxes']]");
         List<String> result = run();
-        assertEquals(42, result.size());
-        assertEquals("0000007", result.get(0));
+        Assert.assertEquals(42, result.size());
+        Assert.assertEquals("0000007", result.get(0));
 
         // Changing the op to ANY AND EVERY returns no results
         compile("['ANY AND EVERY', 'like', ['.', 'likes'], ['=', ['?', 'like'], 'taxes']]");
-        assertEquals(Collections.emptyList(), run());
+        Assert.assertEquals(Collections.emptyList(), run());
 
         // Look for people where every like contains an L:
         compile("['ANY AND EVERY', 'like', ['.', 'likes'], ['LIKE', ['?', 'like'], '%l%']]");
-        assertEquals(Arrays.asList("0000017", "0000027", "0000060", "0000068"), run());
+        Assert.assertEquals(Arrays.asList("0000017", "0000027", "0000060", "0000068"), run());
     }
 
     // - DB Query ANY w/paths
@@ -217,10 +214,10 @@ public class C4QueryTest extends C4QueryBaseTest {
     @Test
     public void testDBQueryANYofDict() throws LiteCoreException {
         compile("['ANY', 'n', ['.', 'name'], ['=', ['?', 'n'], 'Arturo']]");
-        assertEquals(Collections.singletonList("0000090"), run());
+        Assert.assertEquals(Collections.singletonList("0000090"), run());
 
         compile("['ANY', 'n', ['.', 'name'], ['contains()', ['?', 'n'], 'V']]");
-        assertEquals(Arrays.asList("0000044", "0000048", "0000053", "0000093"), run());
+        Assert.assertEquals(Arrays.asList("0000044", "0000048", "0000053", "0000093"), run());
     }
 
     // - DB Query expression index
@@ -232,7 +229,7 @@ public class C4QueryTest extends C4QueryBaseTest {
             json5("[['length()', ['.name.first']]]"),
             null);
         compile("['=', ['length()', ['.name.first']], 9]");
-        assertEquals(Arrays.asList("0000015", "0000099"), run());
+        Assert.assertEquals(Arrays.asList("0000015", "0000099"), run());
     }
 
     // - Delete indexed doc
@@ -251,7 +248,7 @@ public class C4QueryTest extends C4QueryBaseTest {
             c4Database.beginTransaction();
             try {
                 C4Document doc = c4Collection.getDocument("0000015");
-                assertNotNull(doc);
+                Assert.assertNotNull(doc);
                 String[] history = {doc.getRevID()};
                 C4Document updatedDoc = C4TestUtils.create(
                     c4Collection,
@@ -264,7 +261,7 @@ public class C4QueryTest extends C4QueryBaseTest {
                     true,
                     0,
                     0);
-                assertNotNull(updatedDoc);
+                Assert.assertNotNull(updatedDoc);
                 commit = true;
             }
             finally {
@@ -274,7 +271,7 @@ public class C4QueryTest extends C4QueryBaseTest {
 
         // Now run a query that would have returned the deleted doc, if it weren't deleted:
         compile("['=', ['length()', ['.name.first']], 9]");
-        assertEquals(Collections.singletonList("0000099"), run());
+        Assert.assertEquals(Collections.singletonList("0000099"), run());
     }
 
     // - Missing columns
@@ -282,12 +279,12 @@ public class C4QueryTest extends C4QueryBaseTest {
     public void testMissingColumns() throws LiteCoreException {
         compileSelect("'WHAT': [['.name'], ['.gender']], 'LIMIT': 1");
         C4QueryEnumerator e = runQuery(query);
-        while (e.next()) { assertEquals(0x00, e.getMissingColumns()); }
+        while (e.next()) { Assert.assertEquals(0x00, e.getMissingColumns()); }
         e.close();
 
         compileSelect("'WHAT': [['.XX'], ['.name'], ['.YY'], ['.gender'], ['.ZZ']], 'LIMIT': 1");
         e = runQuery(query);
-        while (e.next()) { assertEquals(0x15, e.getMissingColumns()); }
+        while (e.next()) { Assert.assertEquals(0x15, e.getMissingColumns()); }
         e.close();
     }
 
@@ -304,7 +301,7 @@ public class C4QueryTest extends C4QueryBaseTest {
             true,
             null);
         compile("['MATCH()', 'byStreet', 'Hwy']");
-        assertEquals(
+        Assert.assertEquals(
             Arrays.asList(
                 Collections.singletonList(new C4FullTextMatch(13L, 0L, 0L, 10L, 3L)),
                 Collections.singletonList(new C4FullTextMatch(15L, 0L, 0L, 11L, 3L)),
@@ -328,7 +325,7 @@ public class C4QueryTest extends C4QueryBaseTest {
 
         // Some docs match 'Santa' in the street name, some in the city name
         compile("['MATCH()', 'byAddress', 'Santa']");
-        assertEquals(
+        Assert.assertEquals(
             Arrays.asList(
                 Collections.singletonList(new C4FullTextMatch(15L, 1L, 0L, 0L, 5L)),
                 Collections.singletonList(new C4FullTextMatch(44L, 0L, 0L, 3L, 5L)),
@@ -339,7 +336,7 @@ public class C4QueryTest extends C4QueryBaseTest {
 
         // Search only the street name:
         compile("['MATCH()', 'byAddress', 'contact.address.street:Santa']");
-        assertEquals(
+        Assert.assertEquals(
             Arrays.asList(
                 Collections.singletonList(new C4FullTextMatch(44L, 0L, 0L, 3L, 5L)),
                 Collections.singletonList(new C4FullTextMatch(68L, 0L, 0L, 3L, 5L))
@@ -348,7 +345,7 @@ public class C4QueryTest extends C4QueryBaseTest {
 
         // Search for 'Santa' in the street name, and 'Saint' in either:
         compile("['MATCH()', 'byAddress', 'contact.address.street:Santa Saint']");
-        assertEquals(
+        Assert.assertEquals(
             Collections.singletonList(
                 Arrays.asList(
                     new C4FullTextMatch(68L, 0L, 0L, 3L, 5L),
@@ -358,7 +355,7 @@ public class C4QueryTest extends C4QueryBaseTest {
 
         // Search for 'Santa' in the street name, _or_ 'Saint' in either:
         compile("['MATCH()', 'byAddress', 'contact.address.street:Santa OR Saint']");
-        assertEquals(
+        Assert.assertEquals(
             Arrays.asList(
                 Collections.singletonList(new C4FullTextMatch(20L, 1L, 1L, 0L, 5L)),
                 Collections.singletonList(new C4FullTextMatch(44L, 0L, 0L, 3L, 5L)),
@@ -389,8 +386,8 @@ public class C4QueryTest extends C4QueryBaseTest {
             true,
             null);
         compile("['AND', ['MATCH()', 'byStreet', 'Hwy'], ['MATCH()', 'byCity',   'Santa']]");
-        assertEquals(Collections.singletonList("0000015"), run());
-        assertEquals(
+        Assert.assertEquals(Collections.singletonList("0000015"), run());
+        Assert.assertEquals(
             Collections.singletonList(Collections.singletonList(new C4FullTextMatch(15L, 0L, 0L, 11L, 3L))),
             runFTS());
     }
@@ -414,8 +411,8 @@ public class C4QueryTest extends C4QueryBaseTest {
             null);
         compile("['AND',['AND',['=',['.gender'],'male'],"
             + "['MATCH()','byCity','Santa']],['=',['.name.first'],'Cleveland']]");
-        assertEquals(Collections.singletonList("0000015"), run());
-        assertEquals(
+        Assert.assertEquals(Collections.singletonList("0000015"), run());
+        Assert.assertEquals(
             Collections.singletonList(Collections.singletonList(new C4FullTextMatch(15L, 0L, 0L, 0L, 5L))),
             runFTS());
     }
@@ -436,8 +433,8 @@ public class C4QueryTest extends C4QueryBaseTest {
                 "['AND', ['MATCH()', 'byStreet', 'Hwy'], ['MATCH()', 'byStreet', 'Blvd']]");
         }
         catch (LiteCoreException e) {
-            assertEquals(C4Constants.ErrorDomain.LITE_CORE, e.domain);
-            assertEquals(C4Constants.LiteCoreError.INVALID_QUERY, e.code);
+            Assert.assertEquals(C4Constants.ErrorDomain.LITE_CORE, e.domain);
+            Assert.assertEquals(C4Constants.LiteCoreError.INVALID_QUERY, e.code);
         }
     }
 
@@ -457,8 +454,8 @@ public class C4QueryTest extends C4QueryBaseTest {
                 "['OR', ['MATCH()', 'byStreet', 'Hwy'], ['=', ['.', 'contact', 'address', 'state'], 'CA']]");
         }
         catch (LiteCoreException e) {
-            assertEquals(C4Constants.ErrorDomain.LITE_CORE, e.domain);
-            assertEquals(C4Constants.LiteCoreError.INVALID_QUERY, e.code);
+            Assert.assertEquals(C4Constants.ErrorDomain.LITE_CORE, e.domain);
+            Assert.assertEquals(C4Constants.LiteCoreError.INVALID_QUERY, e.code);
         }
     }
 
@@ -474,20 +471,20 @@ public class C4QueryTest extends C4QueryBaseTest {
                 + "WHERE: ['>=', ['length()', ['.name.first']], 9],"
                 + "ORDER_BY: [['.name.first']]");
 
-        assertEquals(2, query.getColumnCount());
+        Assert.assertEquals(2, query.getColumnCount());
 
         C4QueryEnumerator e = runQuery(query);
-        assertNotNull(e);
+        Assert.assertNotNull(e);
         int i = 0;
         while (e.next()) {
             FLArrayIterator itr = e.getColumns();
-            assertEquals(itr.getValue().asString(), expectedFirst.get(i));
+            Assert.assertEquals(itr.getValue().asString(), expectedFirst.get(i));
             itr.next();
-            assertEquals(itr.getValue().asString(), expectedLast.get(i));
+            Assert.assertEquals(itr.getValue().asString(), expectedLast.get(i));
             i++;
         }
         e.close();
-        assertEquals(3, i);
+        Assert.assertEquals(3, i);
     }
 
     // - DB Query WHAT returning object
@@ -497,22 +494,22 @@ public class C4QueryTest extends C4QueryBaseTest {
         List<String> expectedLast = Arrays.asList("Bejcek", "Kolding", "Ogwynn");
         compileSelect("WHAT: ['.name'], WHERE: ['>=', ['length()', ['.name.first']], 9], "
             + "ORDER_BY: [['.name.first']]");
-        assertEquals(1, query.getColumnCount());
+        Assert.assertEquals(1, query.getColumnCount());
 
         C4QueryEnumerator e = runQuery(query);
-        assertNotNull(e);
+        Assert.assertNotNull(e);
         int i = 0;
         while (e.next()) {
             FLArrayIterator itr = e.getColumns();
             FLValue col = itr.getValueAt(0);
-            assertEquals(col.getType(), FLValue.DICT);
+            Assert.assertEquals(FLValue.DICT, col.getType());
             FLDict name = col.asFLDict();
-            assertEquals(expectedFirst.get(i), name.get("first").asString());
-            assertEquals(expectedLast.get(i), name.get("last").asString());
+            Assert.assertEquals(expectedFirst.get(i), name.get("first").asString());
+            Assert.assertEquals(expectedLast.get(i), name.get("last").asString());
             i++;
         }
         e.close();
-        assertEquals(3, i);
+        Assert.assertEquals(3, i);
     }
 
     // - DB Query Aggregate
@@ -521,17 +518,17 @@ public class C4QueryTest extends C4QueryBaseTest {
         compileSelect("WHAT: [['min()', ['.name.last']], ['max()', ['.name.last']]]");
 
         C4QueryEnumerator e = runQuery(query);
-        assertNotNull(e);
+        Assert.assertNotNull(e);
         int i = 0;
         while (e.next()) {
             FLArrayIterator itr = e.getColumns();
-            assertEquals(itr.getValue().asString(), "Aerni");
+            Assert.assertEquals("Aerni", itr.getValue().asString());
             itr.next();
-            assertEquals(itr.getValue().asString(), "Zirk");
+            Assert.assertEquals("Zirk", itr.getValue().asString());
             i++;
         }
         e.close();
-        assertEquals(1, i);
+        Assert.assertEquals(1, i);
     }
 
     // - DB Query Grouped
@@ -548,21 +545,21 @@ public class C4QueryTest extends C4QueryBaseTest {
                 + "GROUP_BY: [['.contact.address.state']]");
 
         C4QueryEnumerator e = runQuery(query);
-        assertNotNull(e);
+        Assert.assertNotNull(e);
         int i = 0;
         while (e.next()) {
             FLArrayIterator itr = e.getColumns();
             if (i < expectedState.size()) {
-                assertEquals(itr.getValue().asString(), expectedState.get(i));
+                Assert.assertEquals(itr.getValue().asString(), expectedState.get(i));
                 itr.next();
-                assertEquals(itr.getValue().asString(), expectedMin.get(i));
+                Assert.assertEquals(itr.getValue().asString(), expectedMin.get(i));
                 itr.next();
-                assertEquals(itr.getValue().asString(), expectedMax.get(i));
+                Assert.assertEquals(itr.getValue().asString(), expectedMax.get(i));
             }
             i++;
         }
         e.close();
-        assertEquals(expectedRowCount, i);
+        Assert.assertEquals(expectedRowCount, i);
     }
 
     // - DB Query Join
@@ -583,19 +580,19 @@ public class C4QueryTest extends C4QueryBaseTest {
                 + "  'ORDER_BY': [ [ '.person.name.first' ] ]"
                 + "}"));
         C4QueryEnumerator e = runQuery(query);
-        assertNotNull(e);
+        Assert.assertNotNull(e);
         int i = 0;
         while (e.next()) {
             FLArrayIterator itr = e.getColumns();
             if (i < expectedState.size()) {
-                assertEquals(itr.getValue().asString(), expectedFirst.get(i));
+                Assert.assertEquals(itr.getValue().asString(), expectedFirst.get(i));
                 itr.next();
-                assertEquals(itr.getValue().asString(), expectedState.get(i));
+                Assert.assertEquals(itr.getValue().asString(), expectedState.get(i));
             }
             i++;
         }
         e.close();
-        assertEquals(3, i);
+        Assert.assertEquals(3, i);
     }
     // @formatter:on
 
@@ -607,11 +604,11 @@ public class C4QueryTest extends C4QueryBaseTest {
     public void testQueryParserErrorMessages() {
         try {
             query = C4Query.create(c4Database, QueryLanguage.JSON, "[\"=\"]");
-            fail();
+            Assert.fail();
         }
         catch (LiteCoreException ex) {
-            assertEquals(C4Constants.ErrorDomain.LITE_CORE, ex.domain);
-            assertEquals(C4Constants.LiteCoreError.INVALID_QUERY, ex.code);
+            Assert.assertEquals(C4Constants.ErrorDomain.LITE_CORE, ex.domain);
+            Assert.assertEquals(C4Constants.LiteCoreError.INVALID_QUERY, ex.code);
         }
     }
 }

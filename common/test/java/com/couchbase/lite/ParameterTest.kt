@@ -48,7 +48,6 @@ class ParameterTest : BaseDbTest() {
         )
 
         query.parameters = params
-
         Assert.assertThrows(CouchbaseLiteError::class.java) {
             query.parameters?.setString("param", "value2")
         }

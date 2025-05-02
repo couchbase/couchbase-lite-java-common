@@ -16,12 +16,7 @@
 package com.couchbase.lite
 
 import com.couchbase.lite.internal.utils.VerySlowTest
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNotSame
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
-import org.junit.Assert.fail
+import org.junit.Assert
 import org.junit.Test
 
 class DbCollectionsTest : BaseDbTest() {
@@ -33,22 +28,22 @@ class DbCollectionsTest : BaseDbTest() {
     @Test
     fun testGetDefaultScope() {
         val scope = testDatabase.defaultScope
-        assertNotNull(scope)
-        assertTrue(testDatabase.scopes.contains(scope))
-        assertEquals(Scope.DEFAULT_NAME, scope.name)
-        assertEquals(1, scope.collectionCount)
-        assertNotNull(scope.getCollection(Collection.DEFAULT_NAME))
+        Assert.assertNotNull(scope)
+        Assert.assertTrue(testDatabase.scopes.contains(scope))
+        Assert.assertEquals(Scope.DEFAULT_NAME, scope.name)
+        Assert.assertEquals(1, scope.collectionCount)
+        Assert.assertNotNull(scope.getCollection(Collection.DEFAULT_NAME))
     }
 
     @Test
     fun testGetDefaultCollection() {
         val col = testDatabase.defaultCollection
-        assertEquals(Collection.DEFAULT_NAME, col.name)
-        assertEquals(col, testDatabase.getCollection(Collection.DEFAULT_NAME))
-        assertTrue(testDatabase.collections.contains(col))
-        assertNotNull(col.scope)
-        assertEquals(Scope.DEFAULT_NAME, col.scope.name)
-        assertEquals(0, col.count)
+        Assert.assertEquals(Collection.DEFAULT_NAME, col.name)
+        Assert.assertEquals(col, testDatabase.getCollection(Collection.DEFAULT_NAME))
+        Assert.assertTrue(testDatabase.collections.contains(col))
+        Assert.assertNotNull(col.scope)
+        Assert.assertEquals(Scope.DEFAULT_NAME, col.scope.name)
+        Assert.assertEquals(0, col.count)
     }
 
     // Test that collections can be created and accessed from the default scope
@@ -56,23 +51,23 @@ class DbCollectionsTest : BaseDbTest() {
     fun testCreateCollectionInDefaultScope() {
         //name with valid characters
         testDatabase.createCollection("chintz")
-        // collection names should be case sensitive
+        // collection names should be case-sensitive
         testDatabase.createCollection("Chintz")
         testDatabase.createCollection("6hintz")
         testDatabase.createCollection("-Ch1ntz")
 
         val scope = testDatabase.defaultScope
-        assertEquals(5, scope.collectionCount)
-        assertNotNull(scope.getCollection("chintz"))
-        assertNotNull(scope.getCollection("Chintz"))
-        assertNotNull(scope.getCollection("6hintz"))
-        assertNotNull(scope.getCollection("-Ch1ntz"))
+        Assert.assertEquals(5, scope.collectionCount)
+        Assert.assertNotNull(scope.getCollection("chintz"))
+        Assert.assertNotNull(scope.getCollection("Chintz"))
+        Assert.assertNotNull(scope.getCollection("6hintz"))
+        Assert.assertNotNull(scope.getCollection("-Ch1ntz"))
 
         // collections exists when calling from database
-        assertNotNull(testDatabase.getCollection("chintz"))
-        assertNotNull(testDatabase.getCollection("Chintz"))
-        assertNotNull(testDatabase.getCollection("6hintz"))
-        assertNotNull(testDatabase.getCollection("-Ch1ntz"))
+        Assert.assertNotNull(testDatabase.getCollection("chintz"))
+        Assert.assertNotNull(testDatabase.getCollection("Chintz"))
+        Assert.assertNotNull(testDatabase.getCollection("6hintz"))
+        Assert.assertNotNull(testDatabase.getCollection("-Ch1ntz"))
     }
 
 
@@ -96,7 +91,7 @@ class DbCollectionsTest : BaseDbTest() {
             val colName = "notval" + c + "d"
             try {
                 testDatabase.createCollection(colName)
-                fail("Expect CBL Exception for collection : $colName")
+                Assert.fail("Expect CBL Exception for collection : $colName")
             } catch (ignore: CouchbaseLiteException) {
             }
         }
@@ -118,30 +113,30 @@ class DbCollectionsTest : BaseDbTest() {
         testDatabase.createCollection("chintz", "-micro")
 
         var scope: Scope? = testDatabase.defaultScope
-        assertEquals(1, scope?.collectionCount)
+        Assert.assertEquals(1, scope?.collectionCount)
 
         // get non-existing collection returns null
-        assertNull(scope?.getCollection("chintz"))
-        assertNull(testDatabase.getCollection("chintz"))
+        Assert.assertNull(scope?.getCollection("chintz"))
+        Assert.assertNull(testDatabase.getCollection("chintz"))
 
         scope = testDatabase.getScope("micro")
-        assertEquals(1, scope?.collectionCount)
-        assertNotNull(scope?.getCollection("chintz"))
+        Assert.assertEquals(1, scope?.collectionCount)
+        Assert.assertNotNull(scope?.getCollection("chintz"))
 
         scope = testDatabase.getScope("3icro")
-        assertEquals(1, scope?.collectionCount)
-        assertNotNull(scope?.getCollection("chintz"))
+        Assert.assertEquals(1, scope?.collectionCount)
+        Assert.assertNotNull(scope?.getCollection("chintz"))
 
 
         scope = testDatabase.getScope("-micro")
-        assertEquals(1, scope?.collectionCount)
-        assertNotNull(scope?.getCollection("chintz"))
+        Assert.assertEquals(1, scope?.collectionCount)
+        Assert.assertNotNull(scope?.getCollection("chintz"))
 
 
         // collections exists when calling from database
-        assertNotNull(testDatabase.getCollection("chintz", "micro"))
-        assertNotNull(testDatabase.getCollection("chintz", "3icro"))
-        assertNotNull(testDatabase.getCollection("chintz", "-micro"))
+        Assert.assertNotNull(testDatabase.getCollection("chintz", "micro"))
+        Assert.assertNotNull(testDatabase.getCollection("chintz", "3icro"))
+        Assert.assertNotNull(testDatabase.getCollection("chintz", "-micro"))
     }
 
     //Test that creating an existing collection returns an existing collection
@@ -153,12 +148,12 @@ class DbCollectionsTest : BaseDbTest() {
         val col = testDatabase.createCollection(testCollection.name, testCollection.scope.name)
 
         // the copy collection has the same content as testCollection
-        assertEquals(col, testCollection)
-        assertNotNull(col.getDocument(doc.id))
+        Assert.assertEquals(col, testCollection)
+        Assert.assertNotNull(col.getDocument(doc.id))
 
         // updating the copy col also update the original one
         col.save(MutableDocument("doc2"))
-        assertNotNull(testCollection.getDocument("doc2"))
+        Assert.assertNotNull(testCollection.getDocument("doc2"))
     }
 
 
@@ -184,36 +179,36 @@ class DbCollectionsTest : BaseDbTest() {
         testDatabase.createCollection("coll2", "Scope1")
         val scope2 = testDatabase.getScope("Scope1")
 
-        assertNotNull(scope1)
-        assertNotNull(scope2)
-        assertEquals(scope1, testDatabase.getScope("scope1"))
-        assertNotSame(scope1, scope2)
+        Assert.assertNotNull(scope1)
+        Assert.assertNotNull(scope2)
+        Assert.assertEquals(scope1, testDatabase.getScope("scope1"))
+        Assert.assertNotSame(scope1, scope2)
     }
 
     @Test
     fun testGetScopes() {
         val scopes = testDatabase.scopes
-        assertEquals(2, scopes.size)
+        Assert.assertEquals(2, scopes.size)
 
         var scope = scopes.first { it.name == Scope.DEFAULT_NAME }
-        assertNotNull(scope.getCollection(Scope.DEFAULT_NAME))
+        Assert.assertNotNull(scope.getCollection(Scope.DEFAULT_NAME))
 
         scope = scopes.first { it.name == testCollection.scope.name }
-        assertNotNull(scope.getCollection(testCollection.name))
+        Assert.assertNotNull(scope.getCollection(testCollection.name))
     }
 
     @Test
     fun testDeleteCollectionFromNamedScope() {
         var scopes = testDatabase.scopes
-        assertEquals(2, scopes.size)
+        Assert.assertEquals(2, scopes.size)
 
         testDatabase.deleteCollection(testCollection.name, testCollection.scope.name)
 
         scopes = testDatabase.scopes
-        assertEquals(1, scopes.size)
+        Assert.assertEquals(1, scopes.size)
 
         val recreateCol = testDatabase.createCollection(testCollection.name, testCollection.scope.name)
-        assertNotNull(recreateCol)
+        Assert.assertNotNull(recreateCol)
     }
 
     @Test
@@ -221,27 +216,28 @@ class DbCollectionsTest : BaseDbTest() {
         val scopes = testDatabase.scopes
 
         // scopes should have a default scope and a non default test scope created in BaseDbTest
-        assertEquals(2, scopes.size)
+        Assert.assertEquals(2, scopes.size)
 
         val scope = testDatabase.defaultScope
-        assertEquals(1, scope.collectionCount)
+        Assert.assertEquals(1, scope.collectionCount)
 
         assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) {
             testDatabase.deleteCollection(Collection.DEFAULT_NAME, Scope.DEFAULT_NAME)
         }
 
         // Creating the default collection just returns it
-        assertEquals(
+        Assert.assertEquals(
             testDatabase.defaultScope.getCollection(Collection.DEFAULT_NAME),
-            testDatabase.createCollection(Collection.DEFAULT_NAME, Scope.DEFAULT_NAME))
+            testDatabase.createCollection(Collection.DEFAULT_NAME, Scope.DEFAULT_NAME)
+        )
     }
 
     // When deleting all collections in non-default scope, the scope will be deleted
     @Test
     fun testDeleteAllCollectionsInNamedScope() {
         testDatabase.deleteCollection(testCollection.name, testCollection.scope.name)
-        assertNull(testDatabase.getScope(testCollection.name))
-        assertEquals(setOf(testDatabase.defaultScope), testDatabase.scopes)
+        Assert.assertNull(testDatabase.getScope(testCollection.name))
+        Assert.assertEquals(setOf(testDatabase.defaultScope), testDatabase.scopes)
     }
 
     @Test
@@ -250,7 +246,7 @@ class DbCollectionsTest : BaseDbTest() {
             val scopeName = "notval${c}d"
             try {
                 testDatabase.createCollection("col", scopeName)
-                fail("Expect CBL Exception for scope : $scopeName")
+                Assert.fail("Expect CBL Exception for scope : $scopeName")
             } catch (ignore: CouchbaseLiteException) {
             }
         }
@@ -275,17 +271,17 @@ class DbCollectionsTest : BaseDbTest() {
         duplicateDb(testDatabase).use { otherDb ->
             testDatabase.createCollection("testColl")
             val collection = otherDb.getCollection("testColl")
-            assertNotNull(collection)
+            Assert.assertNotNull(collection)
 
             //delete coll from a db
             testDatabase.deleteCollection("testColl")
-            assertNull(testDatabase.getCollection("testColl"))
-            assertNull(otherDb.getCollection("testColl"))
+            Assert.assertNull(testDatabase.getCollection("testColl"))
+            Assert.assertNull(otherDb.getCollection("testColl"))
 
             //recreate collection
             testDatabase.createCollection("testColl")
             val collectionRecreated = otherDb.getCollection("testColl")
-            assertNotSame(collectionRecreated, collection)
+            Assert.assertNotSame(collectionRecreated, collection)
         }
     }
 
@@ -294,7 +290,7 @@ class DbCollectionsTest : BaseDbTest() {
         //open a new db
         val newDB = createDb("different_db")
         try {
-            assertNull(newDB.getCollection(testCollection.name, testCollection.scope.name))
+            Assert.assertNull(newDB.getCollection(testCollection.name, testCollection.scope.name))
         } finally {
             eraseDb(newDB)
         }
@@ -305,14 +301,14 @@ class DbCollectionsTest : BaseDbTest() {
     fun testGetScopeFromDeletedCollection() {
         val scopeName = testCollection.scope.name
         testDatabase.deleteCollection(testCollection.name, scopeName)
-        assertEquals(scopeName, testCollection.scope.name)
+        Assert.assertEquals(scopeName, testCollection.scope.name)
     }
 
     @Test
     fun testGetColNameFromDeletedCollection() {
         val collectionName = testCollection.name
         testDatabase.deleteCollection(collectionName, testCollection.scope.name)
-        assertEquals(collectionName, testCollection.name)
+        Assert.assertEquals(collectionName, testCollection.name)
     }
 
     // Test get scope from a collection that is deleted from a different database instance
@@ -322,14 +318,14 @@ class DbCollectionsTest : BaseDbTest() {
         val otherDb = duplicateDb(testDatabase)
         otherDb.use {
             val collection = otherDb.getCollection(collectionName, testCollection.scope.name)
-            assertNotNull(collection)
+            Assert.assertNotNull(collection)
 
             otherDb.deleteCollection(testCollection.name, testCollection.scope.name)
-            assertNull(otherDb.getCollection(testCollection.name, testCollection.scope.name))
+            Assert.assertNull(otherDb.getCollection(testCollection.name, testCollection.scope.name))
 
             //get from original collection
-            assertNotNull(testCollection.scope)
-            assertEquals(collectionName, testCollection.name)
+            Assert.assertNotNull(testCollection.scope)
+            Assert.assertEquals(collectionName, testCollection.name)
         }
     }
 
@@ -338,8 +334,8 @@ class DbCollectionsTest : BaseDbTest() {
     fun testGetScopeAndCollectionNameFromAClosedDatabase() {
         val collectionName = testCollection.name
         testDatabase.close()
-        assertNotNull(testCollection.scope)
-        assertEquals(collectionName, testCollection.name)
+        Assert.assertNotNull(testCollection.scope)
+        Assert.assertEquals(collectionName, testCollection.name)
     }
 
     // Test getting scope, and collection name from a collection when database is deleted returns the scope and name
@@ -347,8 +343,8 @@ class DbCollectionsTest : BaseDbTest() {
     fun testGetScopeAndCollectionNameFromADeletedDatabase() {
         val collectionName = testCollection.name
         testDatabase.delete()
-        assertNotNull(testCollection.scope)
-        assertEquals(collectionName, testCollection.name)
+        Assert.assertNotNull(testCollection.scope)
+        Assert.assertEquals(collectionName, testCollection.name)
     }
 }
 

@@ -27,12 +27,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 import com.couchbase.lite.internal.utils.Fn;
-
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 
 
 @SuppressWarnings("ConstantConditions")
@@ -41,9 +39,9 @@ public class QueryChangeTest extends BaseQueryTest {
     @Test
     public void testQueryChangeTest() {
         QueryChange change = new QueryChange(null, null, null);
-        assertNull(change.getQuery());
-        assertNull(change.getResults());
-        assertNull(change.getError());
+        Assert.assertNull(change.getQuery());
+        Assert.assertNull(change.getResults());
+        Assert.assertNull(change.getError());
     }
 
     // https://github.com/couchbase/couchbase-lite-android/issues/1615
@@ -75,13 +73,13 @@ public class QueryChangeTest extends BaseQueryTest {
         // If that happened "token" would not yet have been set and the test would not work.
         // Seizing a lock here guarantees that that can't happen.
         synchronized (lock) { token.set(query.addChangeListener(getTestSerialExecutor(), listener)); }
-        try { assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS)); }
+        try { Assert.assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS)); }
         finally {
             ListenerToken t = token.get();
             if (t != null) { t.remove(); }
         }
 
-        assertNull(token.get());
+        Assert.assertNull(token.get());
     }
 
     // https://issues.couchbase.com/browse/CBL-5647
@@ -118,7 +116,7 @@ public class QueryChangeTest extends BaseQueryTest {
         }
 
         exec.shutdown();
-        try { assertTrue(exec.awaitTermination(LONG_TIMEOUT_SEC, TimeUnit.SECONDS)); }
+        try { Assert.assertTrue(exec.awaitTermination(LONG_TIMEOUT_SEC, TimeUnit.SECONDS)); }
         catch (InterruptedException e) { throw new AssertionError(e); }
         finally {
             synchronized (tokens) {

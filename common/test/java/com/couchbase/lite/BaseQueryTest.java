@@ -19,7 +19,7 @@ import androidx.annotation.NonNull;
 
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.Assert;
 
 
 public abstract class BaseQueryTest extends BaseDbTest {
@@ -32,7 +32,7 @@ public abstract class BaseQueryTest extends BaseDbTest {
         return loadDocuments(n, getTestCollection());
     }
 
-    protected final List<MutableDocument> loadDocuments(int first,  int n) {
+    protected final List<MutableDocument> loadDocuments(int first, int n) {
         return loadDocuments(first, n, getTestCollection());
     }
 
@@ -47,8 +47,8 @@ public abstract class BaseQueryTest extends BaseDbTest {
     }
 
     protected final void verifyQuery(@NonNull Query query, int expected, @NonNull ResultVerifier verifier) {
-        assertEquals(expected, verifyQueryWithEnumerator(query, verifier));
-        assertEquals(expected, verifyQueryWithIterable(query, verifier));
+        Assert.assertEquals(expected, verifyQueryWithEnumerator(query, verifier));
+        Assert.assertEquals(expected, verifyQueryWithIterable(query, verifier));
     }
 
     protected final int verifyQueryWithEnumerator(@NonNull Query query, @NonNull ResultVerifier verifier) {

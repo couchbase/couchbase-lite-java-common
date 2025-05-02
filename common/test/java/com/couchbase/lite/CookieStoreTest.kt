@@ -8,10 +8,7 @@ import com.couchbase.lite.internal.sockets.OkHttpSocket
 import com.couchbase.lite.internal.utils.SlowTest
 import okhttp3.Cookie
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertTrue
+import org.junit.Assert
 import org.junit.Test
 import java.net.URI
 
@@ -44,28 +41,28 @@ class CookieStoreTest : BaseDbTest() {
 
         // Get localhost cookie
         var cookieHeader = cookieStore.getCookies(uri)
-        assertNotNull(cookieHeader)
+        Assert.assertNotNull(cookieHeader)
         var cookies = OkHttpSocket.parseCookies(uri.toHttpUrlOrNull()!!, cookieHeader!!)
-        assertEquals(2, cookies.size)
-        assertTrue(containsCookie(cookies, c1))
-        assertTrue(containsCookie(cookies, c2))
-        assertFalse(containsCookie(cookies, c3)) // Expired
-        assertFalse(containsCookie(cookies, c4)) // Mismatched domain
+        Assert.assertEquals(2, cookies.size)
+        Assert.assertTrue(containsCookie(cookies, c1))
+        Assert.assertTrue(containsCookie(cookies, c2))
+        Assert.assertFalse(containsCookie(cookies, c3)) // Expired
+        Assert.assertFalse(containsCookie(cookies, c4)) // Mismatched domain
 
         // Get couchbase domain cookie
         cookieHeader = cookieStore.getCookies(cbUri)
-        assertNotNull(cookieHeader)
+        Assert.assertNotNull(cookieHeader)
         cookies = OkHttpSocket.parseCookies(cbUri.toHttpUrlOrNull()!!, cookieHeader!!)
-        assertEquals(1, cookies.size)
-        assertTrue(containsCookie(cookies, c4))
+        Assert.assertEquals(1, cookies.size)
+        Assert.assertTrue(containsCookie(cookies, c4))
 
         // After reopen db, the c1 cookie should be gone as it is a session cookie
         reopenTestDb()
         cookieHeader = AbstractReplicator.ReplicatorCookieStore(testDatabase).getCookies(uri)
-        assertNotNull(cookies)
+        Assert.assertNotNull(cookies)
         cookies = OkHttpSocket.parseCookies(uri.toHttpUrlOrNull()!!, cookieHeader!!)
-        assertEquals(1, cookies.size)
-        assertTrue(containsCookie(cookies, c2))
+        Assert.assertEquals(1, cookies.size)
+        Assert.assertTrue(containsCookie(cookies, c2))
     }
 
     @Test
@@ -74,29 +71,29 @@ class CookieStoreTest : BaseDbTest() {
 
         // Empty
         var cookies = OkHttpSocket.parseCookies(uri.toHttpUrlOrNull()!!, "")
-        assertNotNull(cookies)
-        assertEquals(0, cookies.size)
+        Assert.assertNotNull(cookies)
+        Assert.assertEquals(0, cookies.size)
 
         // Invalid
         cookies = OkHttpSocket.parseCookies(uri.toHttpUrlOrNull()!!, "cookie")
-        assertNotNull(cookies)
-        assertEquals(0, cookies.size)
+        Assert.assertNotNull(cookies)
+        Assert.assertEquals(0, cookies.size)
 
         // One cookie
         cookies = OkHttpSocket.parseCookies(uri.toHttpUrlOrNull()!!, "a1=b1")
-        assertNotNull(cookies)
-        assertEquals(1, cookies.size)
-        assertEquals("a1", cookies[0].name)
-        assertEquals("b1", cookies[0].value)
+        Assert.assertNotNull(cookies)
+        Assert.assertEquals(1, cookies.size)
+        Assert.assertEquals("a1", cookies[0].name)
+        Assert.assertEquals("b1", cookies[0].value)
 
         // Multiple cookies
         cookies = OkHttpSocket.parseCookies(uri.toHttpUrlOrNull()!!, "a1=b1; a2=b2")
-        assertNotNull(cookies)
-        assertEquals(2, cookies.size)
-        assertEquals("a1", cookies[0].name)
-        assertEquals("b1", cookies[0].value)
-        assertEquals("a2", cookies[1].name)
-        assertEquals("b2", cookies[1].value)
+        Assert.assertNotNull(cookies)
+        Assert.assertEquals(2, cookies.size)
+        Assert.assertEquals("a1", cookies[0].name)
+        Assert.assertEquals("b1", cookies[0].value)
+        Assert.assertEquals("a2", cookies[1].name)
+        Assert.assertEquals("b2", cookies[1].value)
     }
 
     private fun makeCookie(name: String, value: String, maxAge: Long, domain: String?): Cookie {

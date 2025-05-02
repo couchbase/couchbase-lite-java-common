@@ -10,12 +10,11 @@
 //
 package com.couchbase.lite.internal.core
 
-
-import com.couchbase.lite.BaseTest
 import com.couchbase.lite.CouchbaseLiteError
 import com.couchbase.lite.internal.core.peers.TaggedWeakPeerBinding
 import org.junit.Assert
 import org.junit.Test
+
 
 class PeerBindingTest {
     /**
@@ -52,7 +51,7 @@ class PeerBindingTest {
     fun testBindWithoutKey() {
         val binding = TaggedWeakPeerBinding<Any>()
         try {
-            BaseTest.assertThrows(CouchbaseLiteError::class.java) { binding.bind(4345, object {}) }
+            Assert.assertThrows(CouchbaseLiteError::class.java) { binding.bind(4345, object {}) }
         } finally {
             binding.clear()
         }
@@ -68,7 +67,7 @@ class PeerBindingTest {
             val object2 = object {}
 
             binding.bind(keyReserve, object1)
-            BaseTest.assertThrows(CouchbaseLiteError::class.java) { binding.bind(keyReserve, object2) }
+            Assert.assertThrows(CouchbaseLiteError::class.java) { binding.bind(keyReserve, object2) }
         } finally {
             binding.clear()
         }
@@ -90,7 +89,7 @@ class PeerBindingTest {
     fun testGetOutOfBoundKey() {
         val binding = TaggedWeakPeerBinding<Any>()
         try {
-            BaseTest.assertThrows(IllegalArgumentException::class.java) { binding.getBinding(-1) }
+            Assert.assertThrows(IllegalArgumentException::class.java) { binding.getBinding(-1) }
         } finally {
             binding.clear()
         }

@@ -4,8 +4,7 @@ import com.couchbase.lite.Collection
 import com.couchbase.lite.LiteCoreException
 import com.couchbase.lite.Scope
 import com.couchbase.lite.internal.utils.StringUtils
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
+import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 
@@ -31,8 +30,9 @@ class C4CollectionDocObserverTest : C4BaseTest() {
         C4Collection.create(c4Database, collName, scopeName).use { coll ->
             coll.voidWithPeerOrThrow<LiteCoreException> { peer ->
                 C4CollectionDocObserver.newObserver(mockCollectionDocObserver, peer, "test", {}).use {
-                assertNotNull(it)
-            }}
+                    Assert.assertNotNull(it)
+                }
+            }
         }
     }
 
@@ -44,13 +44,13 @@ class C4CollectionDocObserverTest : C4BaseTest() {
         C4Collection.create(c4Database, collName, scopeName).use { coll ->
             coll.voidWithPeerOrThrow<LiteCoreException> { peer ->
                 C4CollectionDocObserver.newObserver(mockCollectionDocObserver, peer, "A", { i++ }).use { obs ->
-                    assertEquals(0, i)
+                    Assert.assertEquals(0, i)
 
                     C4CollectionDocObserver.callback(obs.token, 43L, "A")
                     C4CollectionDocObserver.callback(obs.token, 43L, "A")
                     C4CollectionDocObserver.callback(obs.token, 43L, "A")
 
-                    assertEquals(3, i)
+                    Assert.assertEquals(3, i)
                 }
             }
         }
@@ -65,12 +65,12 @@ class C4CollectionDocObserverTest : C4BaseTest() {
         C4Collection.create(c4Database, Scope.DEFAULT_NAME, Collection.DEFAULT_NAME).use { coll ->
             coll.voidWithPeerOrThrow<LiteCoreException> { peer ->
                 C4CollectionDocObserver.newObserver(peer, "A", { i++ }).use {
-                    assertEquals(0, i)
+                    Assert.assertEquals(0, i)
 
                     createRev(coll, "A", getTestRevId("bb", 2), fleeceBody)
                     createRev(coll, "B", getTestRevId("bb", 1), fleeceBody)
 
-                    assertEquals(1, i)
+                    Assert.assertEquals(1, i)
                 }
             }
         }

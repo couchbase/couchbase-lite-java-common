@@ -18,12 +18,11 @@ package com.couchbase.lite.internal.core;
 import java.io.IOException;
 import java.util.Arrays;
 
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 import com.couchbase.lite.LiteCoreException;
-
-import static org.junit.Assert.assertEquals;
 
 
 public class C4NestedQueryTest extends C4QueryBaseTest {
@@ -40,6 +39,6 @@ public class C4NestedQueryTest extends C4QueryBaseTest {
     @Test
     public void testDBQueryANYNested() throws LiteCoreException {
         compile("['ANY', 'Shape', ['.', 'shapes'], ['=', ['?', 'Shape', 'color'], 'red']]");
-        assertEquals(Arrays.asList("0000001", "0000003"), run());
+        Assert.assertEquals(Arrays.asList("0000001", "0000003"), run());
     }
 }

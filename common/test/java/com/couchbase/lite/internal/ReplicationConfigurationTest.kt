@@ -25,9 +25,7 @@ import com.couchbase.lite.internal.fleece.FLEncoder
 import com.couchbase.lite.internal.fleece.FLValue
 import com.couchbase.lite.internal.fleece.withContent
 import org.junit.After
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNull
+import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 
@@ -47,11 +45,11 @@ class ReplicationConfigurationTest : BaseDbTest() {
 
     @Test
     fun testCreateAndCloseReplicationCollection() {
-        assertEquals(0, boundCollectionCount())
+        Assert.assertEquals(0, boundCollectionCount())
         val replColl = ReplicationCollection.create(testDatabase.defaultCollection, null, null, null, null)
-        assertEquals(1, boundCollectionCount())
+        Assert.assertEquals(1, boundCollectionCount())
         replColl.close()
-        assertEquals(0, boundCollectionCount())
+        Assert.assertEquals(0, boundCollectionCount())
     }
 
     @Test
@@ -61,18 +59,18 @@ class ReplicationConfigurationTest : BaseDbTest() {
             testDatabase.createCollection("antique_clocks") to CollectionConfiguration()
         )
 
-        assertEquals(0, boundCollectionCount())
+        Assert.assertEquals(0, boundCollectionCount())
         val replColls = ReplicationCollection.createAll(colls)
-        assertEquals(2, replColls.size)
-        assertEquals(2, boundCollectionCount())
+        Assert.assertEquals(2, replColls.size)
+        Assert.assertEquals(2, boundCollectionCount())
 
         val replColl = replColls.firstOrNull { it.name == "antique_clocks" }
-        assertNotNull(replColl)
-        assertEquals(replColl, ReplicationCollection.BOUND_COLLECTIONS.getBinding(replColl!!.token))
-        assertEquals(Scope.DEFAULT_NAME, replColl.scope)
-        assertNull(replColl.options)
-        assertNull(replColl.c4PushFilter)
-        assertNull(replColl.c4PullFilter)
+        Assert.assertNotNull(replColl)
+        Assert.assertEquals(replColl, ReplicationCollection.BOUND_COLLECTIONS.getBinding(replColl!!.token))
+        Assert.assertEquals(Scope.DEFAULT_NAME, replColl.scope)
+        Assert.assertNull(replColl.options)
+        Assert.assertNull(replColl.c4PushFilter)
+        Assert.assertNull(replColl.c4PullFilter)
     }
 
     @Test
@@ -82,8 +80,8 @@ class ReplicationConfigurationTest : BaseDbTest() {
         val colls = mapOf(testDatabase.createCollection("rockwell_plates") to config)
         val opts = FLValue.fromData(ReplicationCollection.createAll(colls)[0].options!!)
             .asMap(String::class.java, Object::class.java)
-        assertEquals(1, opts.size)
-        assertEquals(listOf("x", "y", "z"), opts[C4Replicator.REPLICATOR_OPTION_CHANNELS])
+        Assert.assertEquals(1, opts.size)
+        Assert.assertEquals(listOf("x", "y", "z"), opts[C4Replicator.REPLICATOR_OPTION_CHANNELS])
     }
 
     @Test
@@ -93,8 +91,8 @@ class ReplicationConfigurationTest : BaseDbTest() {
         val colls = mapOf(testDatabase.createCollection("porcelain_dolls") to config)
         val opts = FLValue.fromData(ReplicationCollection.createAll(colls)[0].options!!)
             .asMap(String::class.java, Object::class.java)
-        assertEquals(1, opts.size)
-        assertEquals(listOf("x", "y", "z"), opts[C4Replicator.REPLICATOR_OPTION_DOC_IDS])
+        Assert.assertEquals(1, opts.size)
+        Assert.assertEquals(listOf("x", "y", "z"), opts[C4Replicator.REPLICATOR_OPTION_DOC_IDS])
     }
 
     @Test
@@ -117,7 +115,7 @@ class ReplicationConfigurationTest : BaseDbTest() {
             ReplicationCollection.filterCallback(token, null, null, "doc-2", "88", 0, it, true)
         }
 
-        assertEquals(1, calls)
+        Assert.assertEquals(1, calls)
     }
 
     @Test
@@ -140,7 +138,7 @@ class ReplicationConfigurationTest : BaseDbTest() {
             ReplicationCollection.filterCallback(token, null, null, "doc-2", "88", 0, it, true)
         }
 
-        assertEquals(1, calls)
+        Assert.assertEquals(1, calls)
     }
 
     @Test
@@ -164,7 +162,7 @@ class ReplicationConfigurationTest : BaseDbTest() {
             ReplicationCollection.filterCallback(token, null, null, "doc-2", "88", 0, it, true)
         }
 
-        assertEquals(2, calls)
+        Assert.assertEquals(2, calls)
     }
 
     @Test
@@ -190,6 +188,6 @@ class ReplicationConfigurationTest : BaseDbTest() {
             ReplicationCollection.filterCallback(token, null, null, "doc-2", "88", 0, it, true)
         }
 
-        assertEquals(0, calls)
+        Assert.assertEquals(0, calls)
     }
 }

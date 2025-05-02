@@ -27,12 +27,7 @@ import okhttp3.Response
 import okhttp3.ResponseBody.Companion.toResponseBody
 import okhttp3.WebSocket
 import okio.ByteString
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
-import org.junit.Assert.fail
+import org.junit.Assert
 import org.junit.Test
 import java.net.URI
 
@@ -74,67 +69,66 @@ class OkHttpSocketTest : BaseTest() {
     @Test
     fun testInit() {
         val ok = OkHttpSocket()
-        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(SocketFromRemote.Constants.NULL, ok.core)
+        Assert.assertNull(ok.remote)
 
         val mockCore = MockCore()
         ok.init(mockCore)
-        assertEquals(mockCore, ok.core)
+        Assert.assertEquals(mockCore, ok.core)
     }
 
     // Attempt to initialize a closed socket is ignored.
     @Test
     fun testInitAfterClose() {
         val ok = OkHttpSocket()
-        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(SocketFromRemote.Constants.NULL, ok.core)
+        Assert.assertNull(ok.remote)
 
         ok.close()
-        assertNull(ok.core)
+        Assert.assertNull(ok.core)
 
         ok.init(MockCore())
-        assertNull(ok.core)
+        Assert.assertNull(ok.core)
     }
 
     // Attempt to initialize a socket with the same core is ignored.
     @Test
     fun testReinitSameCore() {
         val ok = OkHttpSocket()
-        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(SocketFromRemote.Constants.NULL, ok.core)
+        Assert.assertNull(ok.remote)
 
         val core = MockCore()
         ok.init(core)
-        assertEquals(core, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertNull(ok.remote)
 
         ok.init(core)
-        assertEquals(core, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertNull(ok.remote)
     }
 
     // Can't initialize a socket twice
     @Test
     fun testReinitDifferentCore() {
         val ok = OkHttpSocket()
-        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(SocketFromRemote.Constants.NULL, ok.core)
+        Assert.assertNull(ok.remote)
 
         val core = MockCore()
         ok.init(core)
-        assertEquals(core, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertNull(ok.remote)
 
-        assertThrowsCBLSocketException(
-            C4Constants.ErrorDomain.NETWORK,
-            C4Constants.NetworkError.NETWORK_RESET
-        ) { ok.init(MockCore()) }
+        assertThrowsCBLSocketException(C4Constants.ErrorDomain.NETWORK, C4Constants.NetworkError.NETWORK_RESET) {
+            ok.init(MockCore())
+        }
     }
 
     // Core request to open a socket before it is initialized, fails
     @Test
     fun testOpenRemoteBeforeInit() {
-        assertThrows(CouchbaseLiteError::class.java) {
+        Assert.assertThrows(CouchbaseLiteError::class.java) {
             OkHttpSocket().openRemote(URI("https://foo.com"), null)
         }
     }
@@ -144,19 +138,19 @@ class OkHttpSocketTest : BaseTest() {
     fun testOpenRemoteBeforeOpen() {
         val ws = MockWS()
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(SocketFromRemote.Constants.NULL, ok.core)
+        Assert.assertNull(ok.remote)
 
         val core = object : MockCore() {
             override fun setupRemoteSocketFactory(builder: OkHttpClient.Builder) = Unit
         }
         ok.init(core)
-        assertEquals(core, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertNull(ok.remote)
 
         ok.openRemote(URI("https://foo.com"), null)
-        assertEquals(core, ok.core)
-        assertEquals(ws, ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertEquals(ws, ok.remote)
     }
 
     // Core request to reopen a socket is ignored
@@ -166,59 +160,59 @@ class OkHttpSocketTest : BaseTest() {
 
         val ws = MockWS()
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(SocketFromRemote.Constants.NULL, ok.core)
+        Assert.assertNull(ok.remote)
 
         val core = object : MockCore() {
             override fun setupRemoteSocketFactory(builder: OkHttpClient.Builder) {
                 if (callPermitted) {
                     return; }
-                fail()
+                Assert.fail()
             }
         }
         ok.init(core)
-        assertEquals(core, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertNull(ok.remote)
 
-        assertTrue(ok.openRemote(URI("https://foo.com"), null))
-        assertEquals(core, ok.core)
-        assertEquals(ws, ok.remote)
+        Assert.assertTrue(ok.openRemote(URI("https://foo.com"), null))
+        Assert.assertEquals(core, ok.core)
+        Assert.assertEquals(ws, ok.remote)
 
         // attempt to re-open is ignored.
         callPermitted = false
-        assertFalse(ok.openRemote(URI("https://foo.com"), null))
-        assertEquals(core, ok.core)
-        assertEquals(ws, ok.remote)
+        Assert.assertFalse(ok.openRemote(URI("https://foo.com"), null))
+        Assert.assertEquals(core, ok.core)
+        Assert.assertEquals(ws, ok.remote)
     }
 
     // Core request to open a closed socket is ignored
     @Test
     fun testOpenRemoteWhileClosed() {
         val ok = OkHttpSocket()
-        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(SocketFromRemote.Constants.NULL, ok.core)
+        Assert.assertNull(ok.remote)
 
         val core = object : MockCore() {
             override fun setupRemoteSocketFactory(builder: OkHttpClient.Builder) = Unit
             override fun remoteClosed(status: CloseStatus) = Unit
         }
         ok.init(core)
-        assertEquals(core, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertNull(ok.remote)
 
         ok.close()
-        assertNull(ok.core)
-        assertNull(ok.remote)
+        Assert.assertNull(ok.core)
+        Assert.assertNull(ok.remote)
 
         ok.openRemote(URI("https://foo.com"), null)
-        assertNull(ok.core)
-        assertNull(ok.remote)
+        Assert.assertNull(ok.core)
+        Assert.assertNull(ok.remote)
     }
 
     // Core request to write to a socket before it is initialized, fails
     @Test
     fun testWriteToRemoteBeforeInit() {
-        assertThrows(CouchbaseLiteError::class.java) {
+        Assert.assertThrows(CouchbaseLiteError::class.java) {
             OkHttpSocket().writeToRemote(ByteArray(1))
         }
     }
@@ -227,13 +221,13 @@ class OkHttpSocketTest : BaseTest() {
     @Test
     fun testWriteToRemoteBeforeOpen() {
         val ok = OkHttpSocket()
-        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(SocketFromRemote.Constants.NULL, ok.core)
+        Assert.assertNull(ok.remote)
 
         val core = MockCore()
         ok.init(core)
-        assertEquals(core, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertNull(ok.remote)
 
         ok.writeToRemote(ByteArray(1))
     }
@@ -249,22 +243,22 @@ class OkHttpSocketTest : BaseTest() {
             }
         }
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(SocketFromRemote.Constants.NULL, ok.core)
+        Assert.assertNull(ok.remote)
 
         val core = object : MockCore() {
             override fun setupRemoteSocketFactory(builder: OkHttpClient.Builder) = Unit
         }
         ok.init(core)
-        assertEquals(core, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertNull(ok.remote)
 
         ok.openRemote(URI("https://foo.com"), null)
-        assertEquals(core, ok.core)
-        assertEquals(ws, ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertEquals(ws, ok.remote)
 
         ok.writeToRemote(ByteArray(7))
-        assertEquals(7, sentBytes)
+        Assert.assertEquals(7, sentBytes)
     }
 
     // Core request to write to a fully opened socket succeeds
@@ -278,27 +272,27 @@ class OkHttpSocketTest : BaseTest() {
             }
         }
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(SocketFromRemote.Constants.NULL, ok.core)
+        Assert.assertNull(ok.remote)
 
         val core = object : MockCore() {
             override fun setupRemoteSocketFactory(builder: OkHttpClient.Builder) = Unit
             override fun remoteOpened(code: Int, headers: MutableMap<String, Any>?) = Unit
         }
         ok.init(core)
-        assertEquals(core, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertNull(ok.remote)
 
         ok.openRemote(URI("https://foo.com"), null)
-        assertEquals(core, ok.core)
-        assertEquals(ws, ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertEquals(ws, ok.remote)
 
         ok.onOpen(MockWS(), mockResponse)
-        assertEquals(core, ok.core)
-        assertEquals(ws, ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertEquals(ws, ok.remote)
 
         ok.writeToRemote(ByteArray(7))
-        assertEquals(7, sentBytes)
+        Assert.assertEquals(7, sentBytes)
     }
 
     // Core request to write to a closed socket is ignored
@@ -308,8 +302,8 @@ class OkHttpSocketTest : BaseTest() {
             override fun close(code: Int, reason: String?) = true
         }
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(SocketFromRemote.Constants.NULL, ok.core)
+        Assert.assertNull(ok.remote)
 
         val core = object : MockCore() {
             override fun setupRemoteSocketFactory(builder: OkHttpClient.Builder) = Unit
@@ -317,16 +311,16 @@ class OkHttpSocketTest : BaseTest() {
             override fun remoteClosed(status: CloseStatus) = Unit
         }
         ok.init(core)
-        assertEquals(core, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertNull(ok.remote)
 
         ok.openRemote(URI("https://foo.com"), null)
-        assertEquals(core, ok.core)
-        assertEquals(ws, ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertEquals(ws, ok.remote)
 
         ok.close()
-        assertNull(ok.core)
-        assertNull(ok.remote)
+        Assert.assertNull(ok.core)
+        Assert.assertNull(ok.remote)
 
         ok.writeToRemote(ByteArray(7))
     }
@@ -334,7 +328,7 @@ class OkHttpSocketTest : BaseTest() {
     // Core request to close a socket before it is initialized, fails
     @Test
     fun testCloseRemoteBeforeInit() {
-        assertThrows(CouchbaseLiteError::class.java) {
+        Assert.assertThrows(CouchbaseLiteError::class.java) {
             OkHttpSocket().closeRemote(CloseStatus(1, ""))
         }
     }
@@ -343,17 +337,17 @@ class OkHttpSocketTest : BaseTest() {
     @Test
     fun testCloseRemoteBeforeOpen() {
         val ok = OkHttpSocket()
-        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(SocketFromRemote.Constants.NULL, ok.core)
+        Assert.assertNull(ok.remote)
 
         val core = MockCore()
         ok.init(core)
-        assertEquals(core, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertNull(ok.remote)
 
         ok.closeRemote(CloseStatus(1, ""))
-        assertEquals(core, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertNull(ok.remote)
     }
 
     // Core request to close a socket it has requested open proxies the request to the remote
@@ -370,25 +364,25 @@ class OkHttpSocketTest : BaseTest() {
             }
         }
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(SocketFromRemote.Constants.NULL, ok.core)
+        Assert.assertNull(ok.remote)
 
         val core = object : MockCore() {
             override fun setupRemoteSocketFactory(builder: OkHttpClient.Builder) = Unit
         }
         ok.init(core)
-        assertEquals(core, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertNull(ok.remote)
 
         ok.openRemote(URI("https://foo.com"), null)
-        assertEquals(core, ok.core)
-        assertEquals(ws, ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertEquals(ws, ok.remote)
 
         ok.closeRemote(CloseStatus(1, "silliness"))
-        assertEquals(core, ok.core)
-        assertEquals(ws, ok.remote)
-        assertEquals(1, closeCode)
-        assertEquals("silliness", closeReason)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertEquals(ws, ok.remote)
+        Assert.assertEquals(1, closeCode)
+        Assert.assertEquals("silliness", closeReason)
     }
 
     // Core request to close a socket that is open proxies the request to the remote
@@ -405,30 +399,30 @@ class OkHttpSocketTest : BaseTest() {
             }
         }
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(SocketFromRemote.Constants.NULL, ok.core)
+        Assert.assertNull(ok.remote)
 
         val core = object : MockCore() {
             override fun setupRemoteSocketFactory(builder: OkHttpClient.Builder) = Unit
             override fun remoteOpened(code: Int, headers: MutableMap<String, Any>?) = Unit
         }
         ok.init(core)
-        assertEquals(core, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertNull(ok.remote)
 
         ok.openRemote(URI("https://foo.com"), null)
-        assertEquals(core, ok.core)
-        assertEquals(ws, ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertEquals(ws, ok.remote)
 
         ok.onOpen(ws, mockResponse)
-        assertEquals(core, ok.core)
-        assertEquals(ws, ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertEquals(ws, ok.remote)
 
         ok.closeRemote(CloseStatus(1, "silliness"))
-        assertEquals(core, ok.core)
-        assertEquals(ws, ok.remote)
-        assertEquals(1, closeCode)
-        assertEquals("silliness", closeReason)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertEquals(ws, ok.remote)
+        Assert.assertEquals(1, closeCode)
+        Assert.assertEquals("silliness", closeReason)
     }
 
     // Core request to close a closed socket is ignored
@@ -446,8 +440,8 @@ class OkHttpSocketTest : BaseTest() {
             }
         }
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(SocketFromRemote.Constants.NULL, ok.core)
+        Assert.assertNull(ok.remote)
 
         val core = object : MockCore() {
             override fun setupRemoteSocketFactory(builder: OkHttpClient.Builder) = Unit
@@ -456,50 +450,50 @@ class OkHttpSocketTest : BaseTest() {
             }
         }
         ok.init(core)
-        assertEquals(core, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertNull(ok.remote)
 
         ok.close()
-        assertNull(ok.core)
-        assertNull(ok.remote)
+        Assert.assertNull(ok.core)
+        Assert.assertNull(ok.remote)
 
         closeStatus = null
         closeCode = null
         closeReason = null
         ok.closeRemote(CloseStatus(1, "silliness"))
-        assertNull(ok.core)
-        assertNull(ok.remote)
-        assertNull(closeCode)
-        assertNull(closeReason)
-        assertNull(closeStatus)
+        Assert.assertNull(ok.core)
+        Assert.assertNull(ok.remote)
+        Assert.assertNull(closeCode)
+        Assert.assertNull(closeReason)
+        Assert.assertNull(closeStatus)
     }
 
     // Core request to cancel an uninitialized socket closes it
     @Test
     fun testCancelRemoteBeforeInit() {
         val ok = OkHttpSocket()
-        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(SocketFromRemote.Constants.NULL, ok.core)
+        Assert.assertNull(ok.remote)
         ok.cancelRemote()
-        assertNull(ok.core)
-        assertNull(ok.remote)
+        Assert.assertNull(ok.core)
+        Assert.assertNull(ok.remote)
     }
 
     // Core request to cancel an unopened socket closes it
     @Test
     fun testCancelRemoteBeforeOpen() {
         val ok = OkHttpSocket()
-        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(SocketFromRemote.Constants.NULL, ok.core)
+        Assert.assertNull(ok.remote)
 
         val core = MockCore()
         ok.init(core)
-        assertEquals(core, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertNull(ok.remote)
 
         ok.cancelRemote()
-        assertNull(ok.core)
-        assertNull(ok.remote)
+        Assert.assertNull(ok.core)
+        Assert.assertNull(ok.remote)
     }
 
     // Core request to cancel a half-open socket closes it
@@ -509,23 +503,23 @@ class OkHttpSocketTest : BaseTest() {
             override fun cancel() = Unit
         }
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(SocketFromRemote.Constants.NULL, ok.core)
+        Assert.assertNull(ok.remote)
 
         val core = object : MockCore() {
             override fun setupRemoteSocketFactory(builder: OkHttpClient.Builder) = Unit
         }
         ok.init(core)
-        assertEquals(core, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertNull(ok.remote)
 
         ok.openRemote(URI("https://foo.com"), null)
-        assertEquals(core, ok.core)
-        assertEquals(ws, ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertEquals(ws, ok.remote)
 
         ok.cancelRemote()
-        assertNull(ok.core)
-        assertNull(ok.remote)
+        Assert.assertNull(ok.core)
+        Assert.assertNull(ok.remote)
     }
 
     // Core request to cancel an open socket closes it
@@ -535,28 +529,28 @@ class OkHttpSocketTest : BaseTest() {
             override fun cancel() = Unit
         }
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(SocketFromRemote.Constants.NULL, ok.core)
+        Assert.assertNull(ok.remote)
 
         val core = object : MockCore() {
             override fun setupRemoteSocketFactory(builder: OkHttpClient.Builder) = Unit
             override fun remoteOpened(code: Int, headers: MutableMap<String, Any>?) = Unit
         }
         ok.init(core)
-        assertEquals(core, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertNull(ok.remote)
 
         ok.openRemote(URI("https://foo.com"), null)
-        assertEquals(core, ok.core)
-        assertEquals(ws, ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertEquals(ws, ok.remote)
 
         ok.onOpen(ws, mockResponse)
-        assertEquals(core, ok.core)
-        assertEquals(ws, ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertEquals(ws, ok.remote)
 
         ok.cancelRemote()
-        assertNull(ok.core)
-        assertNull(ok.remote)
+        Assert.assertNull(ok.core)
+        Assert.assertNull(ok.remote)
     }
 
     // Core request to cancel socket that is already closed, is ignored
@@ -564,29 +558,29 @@ class OkHttpSocketTest : BaseTest() {
     fun testCancelRemoteWhileClosed() {
         val ws = MockWS()
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(SocketFromRemote.Constants.NULL, ok.core)
+        Assert.assertNull(ok.remote)
 
         val core = object : MockCore() {
             override fun remoteClosed(status: CloseStatus) = Unit
         }
         ok.init(core)
-        assertEquals(core, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertNull(ok.remote)
 
         ok.close()
-        assertNull(ok.core)
-        assertNull(ok.remote)
+        Assert.assertNull(ok.core)
+        Assert.assertNull(ok.remote)
 
         ok.cancelRemote()
-        assertNull(ok.core)
-        assertNull(ok.remote)
+        Assert.assertNull(ok.core)
+        Assert.assertNull(ok.remote)
     }
 
     // Remote attempt to open an uninitialized socket fails
     @Test
     fun testOnOpenBeforeInit() {
-        assertThrows(CouchbaseLiteError::class.java) {
+        Assert.assertThrows(CouchbaseLiteError::class.java) {
             OkHttpSocket().onOpen(MockWS(), mockResponse)
         }
     }
@@ -595,17 +589,17 @@ class OkHttpSocketTest : BaseTest() {
     @Test
     fun testOnOpenBeforeOpen() {
         val ok = OkHttpSocket()
-        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(SocketFromRemote.Constants.NULL, ok.core)
+        Assert.assertNull(ok.remote)
 
         val core = MockCore()
         ok.init(core)
-        assertEquals(core, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertNull(ok.remote)
 
         ok.onOpen(MockWS(), mockResponse)
-        assertEquals(core, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertNull(ok.remote)
     }
 
     // Remote attempt to open a socket after core requests open, succeeds
@@ -614,8 +608,8 @@ class OkHttpSocketTest : BaseTest() {
         var respCode = 0
         val ws = MockWS()
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(SocketFromRemote.Constants.NULL, ok.core)
+        Assert.assertNull(ok.remote)
 
         val core = object : MockCore() {
             override fun setupRemoteSocketFactory(builder: OkHttpClient.Builder) = Unit
@@ -624,17 +618,17 @@ class OkHttpSocketTest : BaseTest() {
             }
         }
         ok.init(core)
-        assertEquals(core, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertNull(ok.remote)
 
         ok.openRemote(URI("https://foo.com"), null)
-        assertEquals(core, ok.core)
-        assertEquals(ws, ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertEquals(ws, ok.remote)
 
         ok.onOpen(ws, mockResponse)
-        assertEquals(core, ok.core)
-        assertEquals(ws, ok.remote)
-        assertEquals(200, respCode)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertEquals(ws, ok.remote)
+        Assert.assertEquals(200, respCode)
     }
 
     // Remote attempt to reopen a socket that is already open, is ignored
@@ -643,8 +637,8 @@ class OkHttpSocketTest : BaseTest() {
         var respCode: Int? = null
         val ws = MockWS()
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(SocketFromRemote.Constants.NULL, ok.core)
+        Assert.assertNull(ok.remote)
 
         val core = object : MockCore() {
             override fun setupRemoteSocketFactory(builder: OkHttpClient.Builder) = Unit
@@ -653,23 +647,23 @@ class OkHttpSocketTest : BaseTest() {
             }
         }
         ok.init(core)
-        assertEquals(core, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertNull(ok.remote)
 
         ok.openRemote(URI("https://foo.com"), null)
-        assertEquals(core, ok.core)
-        assertEquals(ws, ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertEquals(ws, ok.remote)
 
         ok.onOpen(ws, mockResponse)
-        assertEquals(core, ok.core)
-        assertEquals(ws, ok.remote)
-        assertEquals(200, respCode)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertEquals(ws, ok.remote)
+        Assert.assertEquals(200, respCode)
 
         respCode = null
         ok.onOpen(MockWS(), mockResponse)
-        assertEquals(core, ok.core)
-        assertEquals(ws, ok.remote)
-        assertNull(respCode)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertEquals(ws, ok.remote)
+        Assert.assertNull(respCode)
     }
 
     // Remote attempt to reopen a closed socket is ignored
@@ -677,29 +671,29 @@ class OkHttpSocketTest : BaseTest() {
     fun testOnOpenWhileClosed() {
         val ws = MockWS()
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(SocketFromRemote.Constants.NULL, ok.core)
+        Assert.assertNull(ok.remote)
 
         val core = object : MockCore() {
             override fun remoteClosed(status: CloseStatus) = Unit
         }
         ok.init(core)
-        assertEquals(core, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertNull(ok.remote)
 
         ok.close()
-        assertNull(ok.core)
-        assertNull(ok.remote)
+        Assert.assertNull(ok.core)
+        Assert.assertNull(ok.remote)
 
         ok.onOpen(ws, mockResponse)
-        assertNull(ok.core)
-        assertNull(ok.remote)
+        Assert.assertNull(ok.core)
+        Assert.assertNull(ok.remote)
     }
 
     // Remote attempt to send to an uninitialized socket fails
     @Test
     fun testOnMessageBeforeInit() {
-        assertThrows(CouchbaseLiteError::class.java) {
+        Assert.assertThrows(CouchbaseLiteError::class.java) {
             OkHttpSocket().onMessage(MockWS(), "booya")
         }
     }
@@ -710,17 +704,17 @@ class OkHttpSocketTest : BaseTest() {
     fun testOnMessageBeforeOpen() {
         val ws = MockWS()
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(SocketFromRemote.Constants.NULL, ok.core)
+        Assert.assertNull(ok.remote)
 
         val core = MockCore()
         ok.init(core)
-        assertEquals(core, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertNull(ok.remote)
 
         ok.onMessage(ws, "")
-        assertEquals(core, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertNull(ok.remote)
     }
 
     // Remote attempt to send data on a half open connection transfers data
@@ -729,8 +723,8 @@ class OkHttpSocketTest : BaseTest() {
         var sentBytes: Int? = null
         val ws = MockWS()
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(SocketFromRemote.Constants.NULL, ok.core)
+        Assert.assertNull(ok.remote)
 
         val core = object : MockCore() {
             override fun setupRemoteSocketFactory(builder: OkHttpClient.Builder) = Unit
@@ -740,17 +734,17 @@ class OkHttpSocketTest : BaseTest() {
             }
         }
         ok.init(core)
-        assertEquals(core, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertNull(ok.remote)
 
         ok.openRemote(URI("https://foo.com"), null)
-        assertEquals(core, ok.core)
-        assertEquals(ws, ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertEquals(ws, ok.remote)
 
         ok.onMessage(ws, "booya")
-        assertEquals(core, ok.core)
-        assertEquals(ws, ok.remote)
-        assertEquals("booya".length, sentBytes)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertEquals(ws, ok.remote)
+        Assert.assertEquals("booya".length, sentBytes)
     }
 
     // Remote attempt to send data on a fully open connection transfers data
@@ -759,8 +753,8 @@ class OkHttpSocketTest : BaseTest() {
         var sentBytes: Int? = null
         val ws = MockWS()
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(SocketFromRemote.Constants.NULL, ok.core)
+        Assert.assertNull(ok.remote)
 
         val core = object : MockCore() {
             override fun setupRemoteSocketFactory(builder: OkHttpClient.Builder) = Unit
@@ -770,21 +764,21 @@ class OkHttpSocketTest : BaseTest() {
             }
         }
         ok.init(core)
-        assertEquals(core, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertNull(ok.remote)
 
         ok.openRemote(URI("https://foo.com"), null)
-        assertEquals(core, ok.core)
-        assertEquals(ws, ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertEquals(ws, ok.remote)
 
         ok.onOpen(ws, mockResponse)
-        assertEquals(core, ok.core)
-        assertEquals(ws, ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertEquals(ws, ok.remote)
 
         ok.onMessage(ws, "booya")
-        assertEquals(core, ok.core)
-        assertEquals(ws, ok.remote)
-        assertEquals("booya".length, sentBytes)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertEquals(ws, ok.remote)
+        Assert.assertEquals("booya".length, sentBytes)
     }
 
     // Remote attempt to send data on a closed socket is a no-op
@@ -792,23 +786,23 @@ class OkHttpSocketTest : BaseTest() {
     fun testOnMessageWhileClosed() {
         val ws = MockWS()
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(SocketFromRemote.Constants.NULL, ok.core)
+        Assert.assertNull(ok.remote)
 
         val core = object : MockCore() {
             override fun remoteClosed(status: CloseStatus) = Unit
         }
         ok.init(core)
-        assertEquals(core, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertNull(ok.remote)
 
         ok.close()
-        assertNull(ok.core)
-        assertNull(ok.remote)
+        Assert.assertNull(ok.core)
+        Assert.assertNull(ok.remote)
 
         ok.onMessage(ws, "booya")
-        assertNull(ok.core)
-        assertNull(ok.remote)
+        Assert.assertNull(ok.core)
+        Assert.assertNull(ok.remote)
     }
 
     // Remote attempt to send data to the wrong socket is ignored
@@ -817,8 +811,8 @@ class OkHttpSocketTest : BaseTest() {
         var sentBytes: Int? = null
         val ws = MockWS()
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(SocketFromRemote.Constants.NULL, ok.core)
+        Assert.assertNull(ok.remote)
 
         val core = object : MockCore() {
             override fun setupRemoteSocketFactory(builder: OkHttpClient.Builder) = Unit
@@ -828,27 +822,27 @@ class OkHttpSocketTest : BaseTest() {
             }
         }
         ok.init(core)
-        assertEquals(core, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertNull(ok.remote)
 
         ok.openRemote(URI("https://foo.com"), null)
-        assertEquals(core, ok.core)
-        assertEquals(ws, ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertEquals(ws, ok.remote)
 
         ok.onOpen(ws, mockResponse)
-        assertEquals(core, ok.core)
-        assertEquals(ws, ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertEquals(ws, ok.remote)
 
         ok.onMessage(MockWS(), "booya")
-        assertEquals(core, ok.core)
-        assertEquals(ws, ok.remote)
-        assertNull(sentBytes)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertEquals(ws, ok.remote)
+        Assert.assertNull(sentBytes)
     }
 
     // Remote request to close an uninitialized socket fails
     @Test
     fun testOnClosingBeforeInit() {
-        assertThrows(CouchbaseLiteError::class.java) {
+        Assert.assertThrows(CouchbaseLiteError::class.java) {
             OkHttpSocket().onClosing(MockWS(), 47, "xyzzy")
         }
     }
@@ -858,17 +852,17 @@ class OkHttpSocketTest : BaseTest() {
     fun testOnClosingBeforeOpen() {
         val ws = MockWS()
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(SocketFromRemote.Constants.NULL, ok.core)
+        Assert.assertNull(ok.remote)
 
         val core = MockCore()
         ok.init(core)
-        assertEquals(core, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertNull(ok.remote)
 
         ok.onClosing(ws, 47, "xyzzy")
-        assertEquals(core, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertNull(ok.remote)
     }
 
     // Remote request to close a half-open socket is proxied to core
@@ -877,8 +871,8 @@ class OkHttpSocketTest : BaseTest() {
         var closeStatus: CloseStatus? = null
         val ws = MockWS()
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(SocketFromRemote.Constants.NULL, ok.core)
+        Assert.assertNull(ok.remote)
 
         val core = object : MockCore() {
             override fun setupRemoteSocketFactory(builder: OkHttpClient.Builder) = Unit
@@ -888,17 +882,17 @@ class OkHttpSocketTest : BaseTest() {
             }
         }
         ok.init(core)
-        assertEquals(core, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertNull(ok.remote)
 
         ok.openRemote(URI("https://foo.com"), null)
-        assertEquals(core, ok.core)
-        assertEquals(ws, ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertEquals(ws, ok.remote)
 
         ok.onClosing(ws, 47, "xyzzy")
-        assertEquals(core, ok.core)
-        assertEquals(ws, ok.remote)
-        assertEquals(CloseStatus(47, "xyzzy"), closeStatus)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertEquals(ws, ok.remote)
+        Assert.assertEquals(CloseStatus(47, "xyzzy"), closeStatus)
     }
 
     // Remote request to close an open socket is proxied to core
@@ -907,8 +901,8 @@ class OkHttpSocketTest : BaseTest() {
         var closeStatus: CloseStatus? = null
         val ws = MockWS()
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(SocketFromRemote.Constants.NULL, ok.core)
+        Assert.assertNull(ok.remote)
 
         val core = object : MockCore() {
             override fun setupRemoteSocketFactory(builder: OkHttpClient.Builder) = Unit
@@ -918,21 +912,21 @@ class OkHttpSocketTest : BaseTest() {
             }
         }
         ok.init(core)
-        assertEquals(core, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertNull(ok.remote)
 
         ok.openRemote(URI("https://foo.com"), null)
-        assertEquals(core, ok.core)
-        assertEquals(ws, ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertEquals(ws, ok.remote)
 
         ok.onOpen(ws, mockResponse)
-        assertEquals(core, ok.core)
-        assertEquals(ws, ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertEquals(ws, ok.remote)
 
         ok.onClosing(ws, 47, "xyzzy")
-        assertEquals(core, ok.core)
-        assertEquals(ws, ok.remote)
-        assertEquals(CloseStatus(47, "xyzzy"), closeStatus)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertEquals(ws, ok.remote)
+        Assert.assertEquals(CloseStatus(47, "xyzzy"), closeStatus)
     }
 
     // Remote request to close a closed socket is ignored
@@ -940,29 +934,29 @@ class OkHttpSocketTest : BaseTest() {
     fun testOnClosingWhileClosed() {
         val ws = MockWS()
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(SocketFromRemote.Constants.NULL, ok.core)
+        Assert.assertNull(ok.remote)
 
         val core = object : MockCore() {
             override fun remoteClosed(status: CloseStatus) = Unit
         }
         ok.init(core)
-        assertEquals(core, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertNull(ok.remote)
 
         ok.close()
-        assertNull(ok.core)
-        assertNull(ok.remote)
+        Assert.assertNull(ok.core)
+        Assert.assertNull(ok.remote)
 
         ok.onClosing(ws, 47, "xyzzy")
-        assertNull(ok.core)
-        assertNull(ok.remote)
+        Assert.assertNull(ok.core)
+        Assert.assertNull(ok.remote)
     }
 
     // Remote confirm close on an uninitialized socket fails
     @Test
     fun testOnClosedBeforeInit() {
-        assertThrows(CouchbaseLiteError::class.java) {
+        Assert.assertThrows(CouchbaseLiteError::class.java) {
             OkHttpSocket().onClosed(MockWS(), 47, "xyzzy")
         }
     }
@@ -973,8 +967,8 @@ class OkHttpSocketTest : BaseTest() {
         var closeStatus: CloseStatus? = null
         val ws = MockWS()
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(SocketFromRemote.Constants.NULL, ok.core)
+        Assert.assertNull(ok.remote)
 
         val core = object : MockCore() {
             override fun remoteClosed(status: CloseStatus) {
@@ -982,13 +976,13 @@ class OkHttpSocketTest : BaseTest() {
             }
         }
         ok.init(core)
-        assertEquals(core, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertNull(ok.remote)
 
         ok.onClosed(ws, 47, "xyzzy")
-        assertNull(ok.core)
-        assertNull(ok.remote)
-        assertEquals(CloseStatus(C4Constants.ErrorDomain.WEB_SOCKET, 47, "xyzzy"), closeStatus)
+        Assert.assertNull(ok.core)
+        Assert.assertNull(ok.remote)
+        Assert.assertEquals(CloseStatus(C4Constants.ErrorDomain.WEB_SOCKET, 47, "xyzzy"), closeStatus)
     }
 
     // Remote confirmation of close on a half open socket is proxied to core
@@ -997,8 +991,8 @@ class OkHttpSocketTest : BaseTest() {
         var closeStatus: CloseStatus? = null
         val ws = MockWS()
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(SocketFromRemote.Constants.NULL, ok.core)
+        Assert.assertNull(ok.remote)
 
         val core = object : MockCore() {
             override fun setupRemoteSocketFactory(builder: OkHttpClient.Builder) = Unit
@@ -1007,17 +1001,17 @@ class OkHttpSocketTest : BaseTest() {
             }
         }
         ok.init(core)
-        assertEquals(core, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertNull(ok.remote)
 
         ok.openRemote(URI("https://foo.com"), null)
-        assertEquals(core, ok.core)
-        assertEquals(ws, ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertEquals(ws, ok.remote)
 
         ok.onClosed(ws, 47, "xyzzy")
-        assertNull(ok.core)
-        assertNull(ok.remote)
-        assertEquals(CloseStatus(C4Constants.ErrorDomain.WEB_SOCKET, 47, "xyzzy"), closeStatus)
+        Assert.assertNull(ok.core)
+        Assert.assertNull(ok.remote)
+        Assert.assertEquals(CloseStatus(C4Constants.ErrorDomain.WEB_SOCKET, 47, "xyzzy"), closeStatus)
     }
 
     // Remote confirmation of close on an open socket is proxied to core
@@ -1026,8 +1020,8 @@ class OkHttpSocketTest : BaseTest() {
         var closeStatus: CloseStatus? = null
         val ws = MockWS()
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(SocketFromRemote.Constants.NULL, ok.core)
+        Assert.assertNull(ok.remote)
 
         val core = object : MockCore() {
             override fun setupRemoteSocketFactory(builder: OkHttpClient.Builder) = Unit
@@ -1037,21 +1031,21 @@ class OkHttpSocketTest : BaseTest() {
             }
         }
         ok.init(core)
-        assertEquals(core, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertNull(ok.remote)
 
         ok.openRemote(URI("https://foo.com"), null)
-        assertEquals(core, ok.core)
-        assertEquals(ws, ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertEquals(ws, ok.remote)
 
         ok.onOpen(ws, mockResponse)
-        assertEquals(core, ok.core)
-        assertEquals(ws, ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertEquals(ws, ok.remote)
 
         ok.onClosed(ws, 47, "xyzzy")
-        assertNull(ok.core)
-        assertNull(ok.remote)
-        assertEquals(CloseStatus(C4Constants.ErrorDomain.WEB_SOCKET, 47, "xyzzy"), closeStatus)
+        Assert.assertNull(ok.core)
+        Assert.assertNull(ok.remote)
+        Assert.assertEquals(CloseStatus(C4Constants.ErrorDomain.WEB_SOCKET, 47, "xyzzy"), closeStatus)
     }
 
     // Remote confirmation of close on an closed socket is ignored
@@ -1060,34 +1054,34 @@ class OkHttpSocketTest : BaseTest() {
         var callPermitted = true
         val ws = MockWS()
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(SocketFromRemote.Constants.NULL, ok.core)
+        Assert.assertNull(ok.remote)
 
         val core = object : MockCore() {
             override fun remoteClosed(status: CloseStatus) {
                 if (callPermitted) {
                     return; }
-                fail()
+                Assert.fail()
             }
         }
         ok.init(core)
-        assertEquals(core, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertNull(ok.remote)
 
         ok.close()
-        assertNull(ok.core)
-        assertNull(ok.remote)
+        Assert.assertNull(ok.core)
+        Assert.assertNull(ok.remote)
 
         callPermitted = false
         ok.onClosed(ws, 47, "xyzzy")
-        assertNull(ok.core)
-        assertNull(ok.remote)
+        Assert.assertNull(ok.core)
+        Assert.assertNull(ok.remote)
     }
 
     // Remote failure on an uninitialized socket fails
     @Test
     fun testOnFailureBeforeInit() {
-        assertThrows(CouchbaseLiteError::class.java) {
+        Assert.assertThrows(CouchbaseLiteError::class.java) {
             OkHttpSocket().onFailure(MockWS(), Exception(), null)
         }
     }
@@ -1098,8 +1092,8 @@ class OkHttpSocketTest : BaseTest() {
         var failureErr: Throwable? = null
         val ws = MockWS()
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(SocketFromRemote.Constants.NULL, ok.core)
+        Assert.assertNull(ok.remote)
 
         val core = object : MockCore() {
             override fun remoteFailed(err: Throwable) {
@@ -1107,14 +1101,14 @@ class OkHttpSocketTest : BaseTest() {
             }
         }
         ok.init(core)
-        assertEquals(core, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertNull(ok.remote)
 
         val failure = Exception()
         ok.onFailure(ws, failure, null)
-        assertNull(ok.core)
-        assertNull(ok.remote)
-        assertEquals(failure, failureErr)
+        Assert.assertNull(ok.core)
+        Assert.assertNull(ok.remote)
+        Assert.assertEquals(failure, failureErr)
     }
 
     // Remote failure on an half-open socket closes it and proxies to core
@@ -1123,8 +1117,8 @@ class OkHttpSocketTest : BaseTest() {
         var failureErr: Throwable? = null
         val ws = MockWS()
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(SocketFromRemote.Constants.NULL, ok.core)
+        Assert.assertNull(ok.remote)
 
         val core = object : MockCore() {
             override fun setupRemoteSocketFactory(builder: OkHttpClient.Builder) = Unit
@@ -1133,18 +1127,18 @@ class OkHttpSocketTest : BaseTest() {
             }
         }
         ok.init(core)
-        assertEquals(core, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertNull(ok.remote)
 
         ok.openRemote(URI("https://foo.com"), null)
-        assertEquals(core, ok.core)
-        assertEquals(ws, ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertEquals(ws, ok.remote)
 
         val failure = Exception()
         ok.onFailure(ws, failure, null)
-        assertNull(ok.core)
-        assertNull(ok.remote)
-        assertEquals(failure, failureErr)
+        Assert.assertNull(ok.core)
+        Assert.assertNull(ok.remote)
+        Assert.assertEquals(failure, failureErr)
     }
 
     // Remote failure on an-open socket closes it and proxies to core
@@ -1153,8 +1147,8 @@ class OkHttpSocketTest : BaseTest() {
         var failureErr: Throwable? = null
         val ws = MockWS()
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(SocketFromRemote.Constants.NULL, ok.core)
+        Assert.assertNull(ok.remote)
 
         val core = object : MockCore() {
             override fun setupRemoteSocketFactory(builder: OkHttpClient.Builder) = Unit
@@ -1164,22 +1158,22 @@ class OkHttpSocketTest : BaseTest() {
             }
         }
         ok.init(core)
-        assertEquals(core, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertNull(ok.remote)
 
         ok.openRemote(URI("https://foo.com"), null)
-        assertEquals(core, ok.core)
-        assertEquals(ws, ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertEquals(ws, ok.remote)
 
         ok.onOpen(ws, mockResponse)
-        assertEquals(core, ok.core)
-        assertEquals(ws, ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertEquals(ws, ok.remote)
 
         val failure = Exception()
         ok.onFailure(ws, failure, null)
-        assertNull(ok.core)
-        assertNull(ok.remote)
-        assertEquals(failure, failureErr)
+        Assert.assertNull(ok.core)
+        Assert.assertNull(ok.remote)
+        Assert.assertEquals(failure, failureErr)
     }
 
     // Remote failure on a closed socket is ignored
@@ -1187,35 +1181,35 @@ class OkHttpSocketTest : BaseTest() {
     fun testOnFailureWhileClosed() {
         val ws = MockWS()
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(SocketFromRemote.Constants.NULL, ok.core)
+        Assert.assertNull(ok.remote)
 
         val core = object : MockCore() {
             override fun remoteClosed(status: CloseStatus) = Unit
         }
         ok.init(core)
-        assertEquals(core, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertNull(ok.remote)
 
         ok.close()
-        assertNull(ok.core)
-        assertNull(ok.remote)
+        Assert.assertNull(ok.core)
+        Assert.assertNull(ok.remote)
 
         ok.onFailure(ws, Exception(), null)
-        assertNull(ok.core)
-        assertNull(ok.remote)
+        Assert.assertNull(ok.core)
+        Assert.assertNull(ok.remote)
     }
 
     // Closing an uninitialized socket closes the socket
     @Test
     fun testCloseBeforeInit() {
         val ok = OkHttpSocket()
-        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(SocketFromRemote.Constants.NULL, ok.core)
+        Assert.assertNull(ok.remote)
 
         ok.close()
-        assertNull(ok.core)
-        assertNull(ok.remote)
+        Assert.assertNull(ok.core)
+        Assert.assertNull(ok.remote)
     }
 
     // Closing an unopened socket closes the socket and tells core
@@ -1229,13 +1223,13 @@ class OkHttpSocketTest : BaseTest() {
             }
         }
         ok.init(core)
-        assertEquals(core, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertNull(ok.remote)
 
         ok.close()
-        assertNull(ok.core)
-        assertNull(ok.remote)
-        assertEquals(
+        Assert.assertNull(ok.core)
+        Assert.assertNull(ok.remote)
+        Assert.assertEquals(
             CloseStatus(
                 C4Constants.ErrorDomain.WEB_SOCKET,
                 C4Constants.WebSocketError.GOING_AWAY,
@@ -1269,19 +1263,19 @@ class OkHttpSocketTest : BaseTest() {
             }
         }
         ok.init(core)
-        assertEquals(core, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertNull(ok.remote)
 
         ok.openRemote(URI("https://foo.com"), null)
-        assertEquals(core, ok.core)
-        assertEquals(ws, ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertEquals(ws, ok.remote)
 
         ok.close()
-        assertNull(ok.core)
-        assertNull(ok.remote)
-        assertEquals(C4Constants.WebSocketError.GOING_AWAY, closeCode)
-        assertEquals("Closed by client", closeReason)
-        assertEquals(
+        Assert.assertNull(ok.core)
+        Assert.assertNull(ok.remote)
+        Assert.assertEquals(C4Constants.WebSocketError.GOING_AWAY, closeCode)
+        Assert.assertEquals("Closed by client", closeReason)
+        Assert.assertEquals(
             CloseStatus(
                 C4Constants.ErrorDomain.WEB_SOCKET,
                 C4Constants.WebSocketError.GOING_AWAY,
@@ -1315,23 +1309,23 @@ class OkHttpSocketTest : BaseTest() {
             }
         }
         ok.init(core)
-        assertEquals(core, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertNull(ok.remote)
 
         ok.openRemote(URI("https://foo.com"), null)
-        assertEquals(core, ok.core)
-        assertEquals(ws, ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertEquals(ws, ok.remote)
 
         ok.onOpen(ok.remote!!, mockResponse)
-        assertEquals(core, ok.core)
-        assertEquals(ws, ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertEquals(ws, ok.remote)
 
         ok.close()
-        assertNull(ok.core)
-        assertNull(ok.remote)
-        assertEquals(C4Constants.WebSocketError.GOING_AWAY, closeCode)
-        assertEquals("Closed by client", closeReason)
-        assertEquals(
+        Assert.assertNull(ok.core)
+        Assert.assertNull(ok.remote)
+        Assert.assertEquals(C4Constants.WebSocketError.GOING_AWAY, closeCode)
+        Assert.assertEquals("Closed by client", closeReason)
+        Assert.assertEquals(
             CloseStatus(
                 C4Constants.ErrorDomain.WEB_SOCKET,
                 C4Constants.WebSocketError.GOING_AWAY,
@@ -1348,8 +1342,8 @@ class OkHttpSocketTest : BaseTest() {
 
         val ws = MockWS()
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(SocketFromRemote.Constants.NULL, ok.core)
+        Assert.assertNull(ok.remote)
 
         val core = object : MockCore() {
             override fun remoteClosed(status: CloseStatus) {
@@ -1357,39 +1351,39 @@ class OkHttpSocketTest : BaseTest() {
             }
         }
         ok.init(core)
-        assertEquals(core, ok.core)
-        assertNull(ok.remote)
+        Assert.assertEquals(core, ok.core)
+        Assert.assertNull(ok.remote)
 
         ok.close()
-        assertNull(ok.core)
-        assertNull(ok.remote)
+        Assert.assertNull(ok.core)
+        Assert.assertNull(ok.remote)
 
         closeStatus = null
         ok.closeRemote(CloseStatus(1, "silliness"))
-        assertNull(ok.core)
-        assertNull(ok.remote)
-        assertNull(closeStatus)
-    }
-
-    private fun assertIsCBLSocketException(err: Exception?, domain: Int, code: Int) {
-        assertNotNull(err)
-        if (err !is CBLSocketException) {
-            throw AssertionError("Expected CBL Socket exception ($domain, $code) but got:", err)
-        }
-        if (domain > 0) {
-            assertEquals(domain, err.domain)
-        }
-        if (code > 0) {
-            assertEquals(code.toLong(), err.code.toLong())
-        }
+        Assert.assertNull(ok.core)
+        Assert.assertNull(ok.remote)
+        Assert.assertNull(closeStatus)
     }
 
     private fun assertThrowsCBLSocketException(domain: Int, code: Int, block: TaskThrows<java.lang.Exception?>) {
         try {
             block.run()
-            fail("Expected CBL Socket exception ($domain, $code)")
+            Assert.fail("Expected CBL Socket exception ($domain, $code)")
         } catch (e: Exception) {
             assertIsCBLSocketException(e, domain, code)
+        }
+    }
+
+    private fun assertIsCBLSocketException(err: Exception?, domain: Int, code: Int) {
+        Assert.assertNotNull(err)
+        if (err !is CBLSocketException) {
+            throw AssertionError("Expected CBL Socket exception ($domain, $code) but got:", err)
+        }
+        if (domain > 0) {
+            Assert.assertEquals(domain, err.domain)
+        }
+        if (code > 0) {
+            Assert.assertEquals(code.toLong(), err.code.toLong())
         }
     }
 }

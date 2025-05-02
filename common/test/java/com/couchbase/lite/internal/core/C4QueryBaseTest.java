@@ -22,13 +22,12 @@ import java.util.List;
 import java.util.Map;
 
 import org.junit.After;
+import org.junit.Assert;
 
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.core.C4TestUtils.C4FullTextMatch;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
-
-import static org.junit.Assert.assertNotNull;
 
 
 public class C4QueryBaseTest extends C4BaseTest {
@@ -51,7 +50,7 @@ public class C4QueryBaseTest extends C4BaseTest {
             + json + "}";
 
         query = c4Database.createJsonQuery(json5(json));
-        assertNotNull(query);
+        Assert.assertNotNull(query);
     }
 
     protected final void compile(String whereExpr) throws LiteCoreException { compile(whereExpr, null); }
@@ -79,7 +78,7 @@ public class C4QueryBaseTest extends C4BaseTest {
             query = null;
         }
         query = c4Database.createJsonQuery(json5(json.toString()));
-        assertNotNull(query);
+        Assert.assertNotNull(query);
     }
 
     protected List<String> run() throws LiteCoreException { return run(null); }
@@ -87,7 +86,7 @@ public class C4QueryBaseTest extends C4BaseTest {
     protected final List<String> run(Map<String, Object> params) throws LiteCoreException {
         List<String> docIDs = new ArrayList<>();
         try (FLSliceResult encodedParams = encodeParameters(params); C4QueryEnumerator e = query.run(encodedParams)) {
-            assertNotNull(e);
+            Assert.assertNotNull(e);
             while (e.next()) { docIDs.add(e.getColumns().getValueAt(0).asString()); }
             return docIDs;
         }
@@ -102,7 +101,7 @@ public class C4QueryBaseTest extends C4BaseTest {
         final List<List<C4FullTextMatch>> matches = new ArrayList<>();
 
         try (FLSliceResult params = encodeParameters(null); C4QueryEnumerator e = query.run(params)) {
-            assertNotNull(e);
+            Assert.assertNotNull(e);
             while (e.next()) {
                 List<C4FullTextMatch> match = new ArrayList<>();
                 for (int i = 0; i < C4FullTextMatch.getMatchCount(e); i++) {
