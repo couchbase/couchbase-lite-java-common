@@ -21,9 +21,7 @@ import com.couchbase.lite.internal.core.C4Replicator
 import com.couchbase.lite.internal.replicator.AndroidConnectivityObserver
 import com.couchbase.lite.internal.replicator.NetworkConnectivityManager
 import com.couchbase.lite.internal.utils.Fn
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
+import org.junit.Assert
 import org.junit.Assume
 import org.junit.Test
 
@@ -92,24 +90,24 @@ class NetworkConnectivityManagerTest : BaseTest() {
         // Now online: don't observe the network anymore, regardless of previous state
         mgr.observers.add(observer)
         observer.handleOffline(ReplicatorActivityLevel.CONNECTING, true)
-        assertTrue(mgr.observers.isEmpty())
+        Assert.assertTrue(mgr.observers.isEmpty())
 
         // Now online: don't observe the network anymore, regardless of previous state
         mgr.observers.add(observer)
         observer.handleOffline(ReplicatorActivityLevel.OFFLINE, true)
-        assertTrue(mgr.observers.isEmpty())
-        assertEquals(0, replFactory.calls)
+        Assert.assertTrue(mgr.observers.isEmpty())
+        Assert.assertEquals(0, replFactory.calls)
 
         // Now offline but previously offline: no change
         mgr.observers.add(observer)
         observer.handleOffline(ReplicatorActivityLevel.OFFLINE, false)
-        assertEquals(1, mgr.observers.size)
-        assertEquals(0, replFactory.calls)
+        Assert.assertEquals(1, mgr.observers.size)
+        Assert.assertEquals(0, replFactory.calls)
 
         // Now offline but previously online: subscribe and try to tell the C4Replicator
         observer.handleOffline(ReplicatorActivityLevel.CONNECTING, false)
-        assertEquals(1, mgr.observers.size)
-        assertEquals(1, replFactory.calls)
+        Assert.assertEquals(1, mgr.observers.size)
+        Assert.assertEquals(1, replFactory.calls)
     }
 
     // CBSE-12499: multiple registration may cause exception
@@ -117,18 +115,18 @@ class NetworkConnectivityManagerTest : BaseTest() {
     fun testRegisterALot() {
         for (v in listOf(22, 26, 29).filter { it <= Build.VERSION.SDK_INT }) {
             val mgr = AndroidConnectivityManager(v) { r -> r.run() }
-            assertFalse(mgr.isRunning)
+            Assert.assertFalse(mgr.isRunning)
 
             mgr.registerObserver { }
-            assertTrue(mgr.isRunning)
+            Assert.assertTrue(mgr.isRunning)
 
             for (i in 0..99) {
                 mgr.registerObserver { }
             }
-            assertTrue(mgr.isRunning)
+            Assert.assertTrue(mgr.isRunning)
 
             mgr.clear()
-            assertFalse(mgr.isRunning)
+            Assert.assertFalse(mgr.isRunning)
         }
     }
 
@@ -136,16 +134,16 @@ class NetworkConnectivityManagerTest : BaseTest() {
         val observer = TestObserver()
 
         mgr.registerObserver(observer)
-        assertTrue(mgr.isRunning)
+        Assert.assertTrue(mgr.isRunning)
 
         // this has to be sloppy because the registration might cause an immediate callback
-        assertTrue(observer.changeCalls <= 1)
+        Assert.assertTrue(observer.changeCalls <= 1)
         mgr.connectivityChanged(true)
         mgr.connectivityChanged(false)
         mgr.connectivityChanged(true)
-        assertTrue(observer.changeCalls >= 3)
+        Assert.assertTrue(observer.changeCalls >= 3)
 
         mgr.unregisterObserver(observer)
-        assertFalse(mgr.isRunning)
+        Assert.assertFalse(mgr.isRunning)
     }
 }

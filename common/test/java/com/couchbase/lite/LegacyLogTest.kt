@@ -26,11 +26,7 @@ import com.couchbase.lite.logging.FileLogSink
 import com.couchbase.lite.logging.LogSinks
 import com.couchbase.lite.utils.KotlinHelpers
 import org.junit.After
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
+import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import java.io.BufferedReader
@@ -98,7 +94,7 @@ class LegacyLogTest : BaseDbTest() {
             consoleLogger.log(LogLevel.ERROR, LogDomain.DATABASE, "E")
         }
 
-        assertEquals("DVIWEVIWEIWEWEE", consoleLogger.content)
+        Assert.assertEquals("DVIWEVIWEIWEWEE", consoleLogger.content)
     }
 
     @Test
@@ -118,7 +114,7 @@ class LegacyLogTest : BaseDbTest() {
             consoleLogger.log(LogLevel.WARNING, LogDomain.DATABASE, "W")
             consoleLogger.log(LogLevel.ERROR, LogDomain.DATABASE, "E")
         }
-        assertEquals("", consoleLogger.content)
+        Assert.assertEquals("", consoleLogger.content)
         consoleLogger.clearContent()
 
         consoleLogger.setDomains(LogDomain.NETWORK, LogDomain.QUERY)
@@ -134,22 +130,22 @@ class LegacyLogTest : BaseDbTest() {
             consoleLogger.log(LogLevel.WARNING, LogDomain.DATABASE, "W")
             consoleLogger.log(LogLevel.ERROR, LogDomain.DATABASE, "E")
         }
-        assertEquals("", consoleLogger.content)
+        Assert.assertEquals("", consoleLogger.content)
 
         consoleLogger.domains = LogDomain.ALL_DOMAINS
         consoleLogger.level = LogLevel.DEBUG
         consoleLogger.log(LogLevel.DEBUG, LogDomain.NETWORK, "N")
         consoleLogger.log(LogLevel.DEBUG, LogDomain.QUERY, "Q")
         consoleLogger.log(LogLevel.DEBUG, LogDomain.DATABASE, "D")
-        assertEquals("NQD", consoleLogger.content)
+        Assert.assertEquals("NQD", consoleLogger.content)
     }
 
     @Test
     fun testFileLoggerDefaults() {
         val config = LogFileConfiguration("up/down")
-        assertEquals(Defaults.LogFile.MAX_SIZE, config.maxSize)
-        assertEquals(Defaults.LogFile.MAX_ROTATE_COUNT, config.maxRotateCount)
-        assertEquals(Defaults.LogFile.USE_PLAINTEXT, config.usesPlaintext())
+        Assert.assertEquals(Defaults.LogFile.MAX_SIZE, config.maxSize)
+        Assert.assertEquals(Defaults.LogFile.MAX_ROTATE_COUNT, config.maxRotateCount)
+        Assert.assertEquals(Defaults.LogFile.USE_PLAINTEXT, config.usesPlaintext())
     }
 
     @Test
@@ -184,11 +180,11 @@ class LegacyLogTest : BaseDbTest() {
 
                 val logPath = log.canonicalPath
                 when {
-                    logPath.contains("error") -> assertEquals(5, lineCount)
-                    logPath.contains("warning") -> assertEquals(4, lineCount)
-                    logPath.contains("info") -> assertEquals(3, lineCount)
-                    logPath.contains("debug") -> assertEquals(1, lineCount)
-                    logPath.contains("verbose") -> assertEquals(0, lineCount)
+                    logPath.contains("error") -> Assert.assertEquals(5, lineCount)
+                    logPath.contains("warning") -> Assert.assertEquals(4, lineCount)
+                    logPath.contains("info") -> Assert.assertEquals(3, lineCount)
+                    logPath.contains("debug") -> Assert.assertEquals(1, lineCount)
+                    logPath.contains("verbose") -> Assert.assertEquals(0, lineCount)
                 }
             }
         }
@@ -200,17 +196,17 @@ class LegacyLogTest : BaseDbTest() {
             Log.i(LogDomain.DATABASE, "TEST INFO")
 
             val files = logFiles
-            assertTrue(files.isNotEmpty())
+            Assert.assertTrue(files.isNotEmpty())
 
             val lastModifiedFile = getMostRecent(files)
-            assertNotNull(lastModifiedFile)
+            Assert.assertNotNull(lastModifiedFile)
 
             val bytes = ByteArray(4)
-            FileInputStream(lastModifiedFile!!).use { inStr -> assertEquals(4, inStr.read(bytes)) }
-            assertEquals(0xCF.toByte(), bytes[0])
-            assertEquals(0xB2.toByte(), bytes[1])
-            assertEquals(0xAB.toByte(), bytes[2])
-            assertEquals(0x1B.toByte(), bytes[3])
+            FileInputStream(lastModifiedFile!!).use { inStr -> Assert.assertEquals(4, inStr.read(bytes)) }
+            Assert.assertEquals(0xCF.toByte(), bytes[0])
+            Assert.assertEquals(0xB2.toByte(), bytes[1])
+            Assert.assertEquals(0xAB.toByte(), bytes[2])
+            Assert.assertEquals(0x1B.toByte(), bytes[3])
         }
     }
 
@@ -223,12 +219,12 @@ class LegacyLogTest : BaseDbTest() {
                 name.lowercase(Locale.getDefault()).startsWith("cbl_info_")
             }
 
-            assertNotNull(files)
-            assertEquals(1, files?.size ?: 0)
+            Assert.assertNotNull(files)
+            Assert.assertEquals(1, files?.size ?: 0)
 
             val file = getMostRecent(files)
-            assertNotNull(file)
-            assertTrue(getLogContents(file!!).contains(uuidString))
+            Assert.assertNotNull(file)
+            Assert.assertTrue(getLogContents(file!!).contains(uuidString))
         }
     }
 
@@ -238,11 +234,11 @@ class LegacyLogTest : BaseDbTest() {
             Log.e(LogDomain.DATABASE, "$$\$TEST MESSAGE")
 
             val files = logFiles
-            assertTrue(files.size >= 4)
+            Assert.assertTrue(files.size >= 4)
 
             val rex = Regex("cbl_(debug|verbose|info|warning|error)_\\d+\\.cbllog")
             for (file in files) {
-                assertTrue(file.name.matches(rex))
+                Assert.assertTrue(file.name.matches(rex))
             }
         }
     }
@@ -257,7 +253,7 @@ class LegacyLogTest : BaseDbTest() {
             // This should create two files for each of the 5 levels except verbose (debug, info, warning, error):
             // 1k of logs plus .5k headers. There should be only one file at the verbose level (just the headers)
             write1KBToLog()
-            assertEquals((4 * 2) + 1, logFiles.size)
+            Assert.assertEquals((4 * 2) + 1, logFiles.size)
         }
     }
 
@@ -268,7 +264,7 @@ class LegacyLogTest : BaseDbTest() {
         testWithConfiguration(LogLevel.NONE, LogFileConfiguration(scratchDirPath!!).setUsePlaintext(true)) {
             writeAllLogs(uuidString)
             for (log in logFiles) {
-                assertFalse(getLogContents(log).contains(uuidString))
+                Assert.assertFalse(getLogContents(log).contains(uuidString))
             }
         }
     }
@@ -281,20 +277,20 @@ class LegacyLogTest : BaseDbTest() {
             writeAllLogs(uuidString)
 
             for (log in logFiles) {
-                assertFalse(getLogContents(log).contains(uuidString))
+                Assert.assertFalse(getLogContents(log).contains(uuidString))
             }
 
             Database.log.file.level = LogLevel.INFO
             writeAllLogs(uuidString)
 
             val logFiles = tempDir!!.listFiles()
-            assertNotNull(tempDir!!.listFiles())
+            Assert.assertNotNull(tempDir!!.listFiles())
             for (log in logFiles!!) {
                 val fn = log.name.lowercase(Locale.getDefault())
                 if (fn.startsWith("cbl_debug_") || fn.startsWith("cbl_verbose_")) {
-                    assertFalse(getLogContents(log).contains(uuidString))
+                    Assert.assertFalse(getLogContents(log).contains(uuidString))
                 } else {
-                    assertTrue(getLogContents(log).contains(uuidString))
+                    Assert.assertTrue(getLogContents(log).contains(uuidString))
                 }
             }
         }
@@ -310,10 +306,10 @@ class LegacyLogTest : BaseDbTest() {
                     logLine = it.readLine()
                     logLine = it.readLine() // skip the LiteCore log line...
                 }
-                assertNotNull(logLine)
-                assertTrue(logLine.contains("CouchbaseLite $PRODUCT"))
-                assertTrue(logLine.contains("Core/"))
-                assertTrue(logLine.contains(CBLVersion.getSysInfo()))
+                Assert.assertNotNull(logLine)
+                Assert.assertTrue(logLine.contains("CouchbaseLite $PRODUCT"))
+                Assert.assertTrue(logLine.contains("Core/"))
+                Assert.assertTrue(logLine.contains(CBLVersion.getSysInfo()))
             }
         }
     }
@@ -332,7 +328,7 @@ class LegacyLogTest : BaseDbTest() {
 
             for (log in logFiles) {
                 if (!log.name.contains("verbose")) {
-                    assertTrue(getLogContents(log).contains(uuid))
+                    Assert.assertTrue(getLogContents(log).contains(uuid))
                 }
             }
         }
@@ -354,8 +350,8 @@ class LegacyLogTest : BaseDbTest() {
             for (log in logFiles) {
                 if (!log.name.contains("verbose")) {
                     val content = getLogContents(log)
-                    assertTrue(content.contains(uuid1))
-                    assertTrue(content.contains(uuid2))
+                    Assert.assertTrue(content.contains(uuid1))
+                    Assert.assertTrue(content.contains(uuid2))
                 }
             }
         }
@@ -367,11 +363,11 @@ class LegacyLogTest : BaseDbTest() {
         val maxSize = 2048L
         val usePlainText = true
 
-        assertThrows(IllegalArgumentException::class.java) {
+        Assert.assertThrows(IllegalArgumentException::class.java) {
             KotlinHelpers.createLogFileConfigWithNullConfig()
         }
 
-        assertThrows(IllegalArgumentException::class.java) {
+        Assert.assertThrows(IllegalArgumentException::class.java) {
             KotlinHelpers.createLogFileConfigWithNullDir()
         }
 
@@ -380,25 +376,25 @@ class LegacyLogTest : BaseDbTest() {
             .setMaxSize(maxSize)
             .setUsePlaintext(usePlainText)
 
-        assertEquals(rotateCount, config.maxRotateCount)
-        assertEquals(maxSize, config.maxSize)
-        assertEquals(usePlainText, config.usesPlaintext())
-        assertEquals(scratchDirPath, config.directory)
+        Assert.assertEquals(rotateCount, config.maxRotateCount)
+        Assert.assertEquals(maxSize, config.maxSize)
+        Assert.assertEquals(usePlainText, config.usesPlaintext())
+        Assert.assertEquals(scratchDirPath, config.directory)
 
         val tempDir2 = getScratchDirectoryPath(getUniqueName("logtest2"))
         val newConfig = LogFileConfiguration(tempDir2, config)
-        assertEquals(rotateCount, newConfig.maxRotateCount)
-        assertEquals(maxSize, newConfig.maxSize)
-        assertEquals(usePlainText, newConfig.usesPlaintext())
-        assertEquals(tempDir2, newConfig.directory)
+        Assert.assertEquals(rotateCount, newConfig.maxRotateCount)
+        Assert.assertEquals(maxSize, newConfig.maxSize)
+        Assert.assertEquals(usePlainText, newConfig.usesPlaintext())
+        Assert.assertEquals(tempDir2, newConfig.directory)
     }
 
     @Test
     fun testEditReadOnlyLogFileConfiguration() {
         testWithConfiguration(LogLevel.DEBUG, LogFileConfiguration(scratchDirPath!!)) {
-            assertThrows(CouchbaseLiteError::class.java) { Database.log.file.config!!.maxSize = 1024 }
-            assertThrows(CouchbaseLiteError::class.java) { Database.log.file.config!!.maxRotateCount = 3 }
-            assertThrows(CouchbaseLiteError::class.java) { Database.log.file.config!!.setUsePlaintext(true) }
+            Assert.assertThrows(CouchbaseLiteError::class.java) { Database.log.file.config!!.maxSize = 1024 }
+            Assert.assertThrows(CouchbaseLiteError::class.java) { Database.log.file.config!!.maxRotateCount = 3 }
+            Assert.assertThrows(CouchbaseLiteError::class.java) { Database.log.file.config!!.setUsePlaintext(true) }
         }
     }
 
@@ -407,18 +403,18 @@ class LegacyLogTest : BaseDbTest() {
         val config = LogFileConfiguration(scratchDirPath!!)
         val fileLogger = Database.log.file
         fileLogger.config = config
-        assertEquals(config, fileLogger.config)
+        Assert.assertEquals(config, fileLogger.config)
         fileLogger.config = null
-        assertNull(fileLogger.config)
+        Assert.assertNull(fileLogger.config)
         fileLogger.config = config
-        assertEquals(config, fileLogger.config)
+        Assert.assertEquals(config, fileLogger.config)
         fileLogger.config = LogFileConfiguration("$scratchDirPath/legacyLogs")
-        assertEquals(LogFileConfiguration("$scratchDirPath/legacyLogs"), fileLogger.config)
+        Assert.assertEquals(LogFileConfiguration("$scratchDirPath/legacyLogs"), fileLogger.config)
     }
 
     @Test
     fun testMixLegacyAndNewAPIs1() {
-        assertThrows(CouchbaseLiteError::class.java) {
+        Assert.assertThrows(CouchbaseLiteError::class.java) {
             val fileLogger = Database.log.file
             fileLogger.config = LogFileConfiguration(scratchDirPath!!)
             fileLogger.setLevel(LogLevel.VERBOSE)
@@ -428,7 +424,7 @@ class LegacyLogTest : BaseDbTest() {
 
     @Test
     fun testMixLegacyAndNewAPIs2() {
-        assertThrows(CouchbaseLiteError::class.java) {
+        Assert.assertThrows(CouchbaseLiteError::class.java) {
             LogSinks.get().file = FileLogSink.Builder().setDirectory(scratchDirPath!!).setLevel(LogLevel.ERROR).build()
             val fileLogger = Database.log.file
             fileLogger.config = LogFileConfiguration(scratchDirPath!!)
@@ -438,7 +434,7 @@ class LegacyLogTest : BaseDbTest() {
 
     @Test
     fun testMixLegacyAndNewAPIs3() {
-        assertThrows(CouchbaseLiteError::class.java) {
+        Assert.assertThrows(CouchbaseLiteError::class.java) {
             Database.log.console.level = LogLevel.VERBOSE
             LogSinks.get().console = ConsoleLogSink(LogLevel.ERROR, LogDomain.ALL)
         }
@@ -446,7 +442,7 @@ class LegacyLogTest : BaseDbTest() {
 
     @Test
     fun testMixLegacyAndNewAPIs4() {
-        assertThrows(CouchbaseLiteError::class.java) {
+        Assert.assertThrows(CouchbaseLiteError::class.java) {
             LogSinks.get().console = ConsoleLogSink(LogLevel.VERBOSE, LogDomain.ALL)
             Database.log.console.level = LogLevel.ERROR
         }
@@ -454,7 +450,7 @@ class LegacyLogTest : BaseDbTest() {
 
     @Test
     fun testMixLegacyAndNewAPIs5() {
-        assertThrows(CouchbaseLiteError::class.java) {
+        Assert.assertThrows(CouchbaseLiteError::class.java) {
             Database.log.custom = object : Logger {
                 override fun getLevel() = LogLevel.VERBOSE
                 override fun log(level: LogLevel, domain: LogDomain, message: String) {}
@@ -467,7 +463,7 @@ class LegacyLogTest : BaseDbTest() {
 
     @Test
     fun testMixLegacyAndNewAPIs6() {
-        assertThrows(CouchbaseLiteError::class.java) {
+        Assert.assertThrows(CouchbaseLiteError::class.java) {
             LogSinks.get().custom = object : BaseLogSink(LogLevel.ERROR, LogDomain.ALL) {
                 override fun writeLog(level: LogLevel, domain: LogDomain, message: String) {}
             }
@@ -480,7 +476,7 @@ class LegacyLogTest : BaseDbTest() {
 
     @Test
     fun testMixLegacyAndNewAPIs7() {
-        assertThrows(CouchbaseLiteError::class.java) {
+        Assert.assertThrows(CouchbaseLiteError::class.java) {
             Database.log.custom = object : Logger {
                 override fun getLevel() = LogLevel.VERBOSE
                 override fun log(level: LogLevel, domain: LogDomain, message: String) {}
@@ -491,7 +487,7 @@ class LegacyLogTest : BaseDbTest() {
 
     @Test
     fun testMixLegacyAndNewAPIs8() {
-        assertThrows(CouchbaseLiteError::class.java) {
+        Assert.assertThrows(CouchbaseLiteError::class.java) {
             LogSinks.get().file = FileLogSink.Builder().setDirectory(scratchDirPath!!).setLevel(LogLevel.ERROR).build()
             Database.log.custom = object : Logger {
                 override fun getLevel() = LogLevel.VERBOSE
@@ -529,7 +525,7 @@ class LegacyLogTest : BaseDbTest() {
 
     private fun getLogContents(log: File): String {
         val b = ByteArray(log.length().toInt())
-        FileInputStream(log).use { assertEquals(b.size, it.read(b)) }
+        FileInputStream(log).use { Assert.assertEquals(b.size, it.read(b)) }
         return String(b, StandardCharsets.US_ASCII)
     }
 

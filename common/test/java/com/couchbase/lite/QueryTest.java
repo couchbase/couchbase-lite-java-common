@@ -33,6 +33,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 import com.couchbase.lite.internal.utils.FlakyTest;
@@ -40,13 +41,6 @@ import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.MathUtils;
 import com.couchbase.lite.internal.utils.Report;
 import com.couchbase.lite.internal.utils.SlowTest;
-
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 
 
 @SuppressWarnings("ConstantConditions")
@@ -106,12 +100,12 @@ public class QueryTest extends BaseQueryTest {
         try (ResultSet rs = queryBuild.execute()) {
             Result result;
             while ((result = rs.next()) != null) {
-                assertEquals("{\"key\":\"value\"}", result.toJSON());
-                assertEquals(arrayResult, result.toList());
-                assertEquals(mapResult, result.toMap());
-                assertEquals("value", result.getValue(TEST_DOC_TAG_KEY).toString());
-                assertEquals("value", result.getString(TEST_DOC_TAG_KEY));
-                assertEquals("value", result.getString(32));
+                Assert.assertEquals("{\"key\":\"value\"}", result.toJSON());
+                Assert.assertEquals(arrayResult, result.toList());
+                Assert.assertEquals(mapResult, result.toMap());
+                Assert.assertEquals("value", result.getValue(TEST_DOC_TAG_KEY).toString());
+                Assert.assertEquals("value", result.getString(TEST_DOC_TAG_KEY));
+                Assert.assertEquals("value", result.getString(32));
             }
         }
     }
@@ -164,7 +158,7 @@ public class QueryTest extends BaseQueryTest {
             .from(DataSource.collection(getTestCollection()))
             .where(Meta.expiration.lessThan(Expression.longValue(now + 6000L)));
 
-        assertEquals(3, verifyQueryWithEnumerator(query, (r, n) -> { }));
+        Assert.assertEquals(3, verifyQueryWithEnumerator(query, (r, n) -> { }));
     }
 
     @Test
@@ -179,13 +173,13 @@ public class QueryTest extends BaseQueryTest {
             .where(Meta.id.equalTo(Expression.string(doc1a.getId()))
                 .and(Meta.deleted.equalTo(Expression.booleanValue(false))));
 
-        assertEquals(
+        Assert.assertEquals(
             1,
             verifyQueryWithEnumerator(
                 query,
                 (n, result) -> {
-                    assertEquals(result.getString(0), doc1a.getId());
-                    assertFalse(result.getBoolean(1));
+                    Assert.assertEquals(result.getString(0), doc1a.getId());
+                    Assert.assertFalse(result.getBoolean(1));
                 }));
     }
 
@@ -203,7 +197,7 @@ public class QueryTest extends BaseQueryTest {
             .where(Meta.deleted.equalTo(Expression.booleanValue(true))
                 .and(Meta.id.equalTo(Expression.string(doc.getId()))));
 
-        assertEquals(1, verifyQueryWithEnumerator(query, (n, result) -> { }));
+        Assert.assertEquals(1, verifyQueryWithEnumerator(query, (n, result) -> { }));
     }
 
     @Test
@@ -219,13 +213,13 @@ public class QueryTest extends BaseQueryTest {
                 String expectedID = jsonDocId(n);
                 int sequence = result.getInt(1);
 
-                assertEquals(expectedID, docID);
+                Assert.assertEquals(expectedID, docID);
 
-                assertEquals(n, sequence);
+                Assert.assertEquals(n, sequence);
 
                 Document doc = getTestCollection().getDocument(docID);
-                assertEquals(expectedID, doc.getId());
-                assertEquals(n, doc.getSequence());
+                Assert.assertEquals(expectedID, doc.getId());
+                Assert.assertEquals(n, doc.getSequence());
             });
     }
 
@@ -240,14 +234,16 @@ public class QueryTest extends BaseQueryTest {
                 Expression.property(TEST_DOC_SORT_KEY).greaterThanOrEqualTo(Expression.intValue(3)),
                 docIds,
                 3, 4, 5, 6, 7, 8, 9, 10),
-            new TestCase(Expression.property(TEST_DOC_SORT_KEY).lessThanOrEqualTo(Expression.intValue(3)),
+            new TestCase(
+                Expression.property(TEST_DOC_SORT_KEY).lessThanOrEqualTo(Expression.intValue(3)),
                 docIds,
                 1, 2, 3),
             new TestCase(
                 Expression.property(TEST_DOC_SORT_KEY).greaterThan(Expression.intValue(3)),
                 docIds,
                 4, 5, 6, 7, 8, 9, 10),
-            new TestCase(Expression.property(TEST_DOC_SORT_KEY).greaterThan(Expression.intValue(6)),
+            new TestCase(
+                Expression.property(TEST_DOC_SORT_KEY).greaterThan(Expression.intValue(6)),
                 docIds,
                 7, 8, 9, 10),
             new TestCase(
@@ -258,7 +254,8 @@ public class QueryTest extends BaseQueryTest {
                 Expression.property(TEST_DOC_SORT_KEY).greaterThanOrEqualTo(Expression.intValue(6)),
                 docIds,
                 6, 7, 8, 9, 10),
-            new TestCase(Expression.property(TEST_DOC_SORT_KEY).lessThan(Expression.intValue(6)),
+            new TestCase(
+                Expression.property(TEST_DOC_SORT_KEY).lessThan(Expression.intValue(6)),
                 docIds,
                 1, 2, 3, 4, 5),
             new TestCase(Expression.property(TEST_DOC_SORT_KEY).equalTo(Expression.intValue(7)), docIds, 7),
@@ -378,7 +375,13 @@ public class QueryTest extends BaseQueryTest {
                     .from(DataSource.collection(getTestCollection()))
                     .where(testCase.expr),
                 nIds,
-                (n, result) -> { if (n <= nIds) { assertEquals(testCase.docIds.get(n - 1), result.getString(0)); } });
+                (n, result) -> {
+                    if (n <= nIds) {
+                        Assert.assertEquals(
+                            testCase.docIds.get(n - 1),
+                            result.getString(0));
+                    }
+                });
         }
     }
 
@@ -399,9 +402,9 @@ public class QueryTest extends BaseQueryTest {
             1,
             (n, result) -> {
                 String docID = result.getString(0);
-                assertEquals(doc1.getId(), docID);
+                Assert.assertEquals(doc1.getId(), docID);
                 Document doc = getTestCollection().getDocument(docID);
-                assertEquals(doc1.getValue("string"), doc.getValue("string"));
+                Assert.assertEquals(doc1.getValue("string"), doc.getValue("string"));
             });
     }
 
@@ -421,9 +424,9 @@ public class QueryTest extends BaseQueryTest {
             1,
             (n, result) -> {
                 String docID = result.getString(0);
-                assertEquals(doc1.getId(), docID);
+                Assert.assertEquals(doc1.getId(), docID);
                 Document doc = getTestCollection().getDocument(docID);
-                assertEquals(doc1.getValue("string"), doc.getValue("string"));
+                Assert.assertEquals(doc1.getValue("string"), doc.getValue("string"));
             });
     }
 
@@ -432,8 +435,9 @@ public class QueryTest extends BaseQueryTest {
     @Test
     public void testWhereBetween() throws Exception {
         List<String> docIds = Fn.mapToList(loadDocuments(10), Document::getId);
-        runTests(new TestCase(Expression.property(TEST_DOC_SORT_KEY)
-            .between(Expression.intValue(3), Expression.intValue(7)), docIds, 3, 4, 5, 6, 7));
+        runTests(new TestCase(
+            Expression.property(TEST_DOC_SORT_KEY)
+                .between(Expression.intValue(3), Expression.intValue(7)), docIds, 3, 4, 5, 6, 7));
     }
 
     @Test
@@ -452,7 +456,7 @@ public class QueryTest extends BaseQueryTest {
             .where(Expression.property("name.first").in(expected))
             .orderBy(Ordering.property("name.first"));
 
-        verifyQuery(query, 5, (n, result) -> assertEquals(expected[n - 1].asJSON(), result.getString(0)));
+        verifyQuery(query, 5, (n, result) -> Assert.assertEquals(expected[n - 1].asJSON(), result.getString(0)));
     }
 
     @Test
@@ -467,7 +471,7 @@ public class QueryTest extends BaseQueryTest {
             .orderBy(Ordering.property("name.first").ascending());
 
         final List<String> firstNames = new ArrayList<>();
-        assertEquals(
+        Assert.assertEquals(
             5,
             verifyQueryWithEnumerator(
                 query,
@@ -478,7 +482,7 @@ public class QueryTest extends BaseQueryTest {
                     String firstName = (String) name.get("first");
                     if (firstName != null) { firstNames.add(firstName); }
                 }));
-        assertEquals(5, firstNames.size());
+        Assert.assertEquals(5, firstNames.size());
     }
 
     @Test
@@ -492,7 +496,7 @@ public class QueryTest extends BaseQueryTest {
             .orderBy(Ordering.property("name.first").ascending());
 
         final List<String> firstNames = new ArrayList<>();
-        assertEquals(
+        Assert.assertEquals(
             5,
             verifyQueryWithEnumerator(
                 query,
@@ -503,17 +507,17 @@ public class QueryTest extends BaseQueryTest {
                     String firstName = (String) name.get("first");
                     if (firstName != null) { firstNames.add(firstName); }
                 }));
-        assertEquals(5, firstNames.size());
+        Assert.assertEquals(5, firstNames.size());
     }
 
     @Test
     public void testRank() {
         Expression expr = FullTextFunction.rank(Expression.fullTextIndex("abc"));
-        assertNotNull(expr);
+        Assert.assertNotNull(expr);
         Object obj = expr.asJSON();
-        assertNotNull(obj);
-        assertTrue(obj instanceof List);
-        assertEquals(Arrays.asList("RANK()", "abc"), obj);
+        Assert.assertNotNull(obj);
+        Assert.assertTrue(obj instanceof List);
+        Assert.assertEquals(Arrays.asList("RANK()", "abc"), obj);
     }
 
     @Test
@@ -533,8 +537,8 @@ public class QueryTest extends BaseQueryTest {
             query,
             2,
             (n, result) -> {
-                assertNotNull(result.getString(0));
-                assertNotNull(result.getString(1));
+                Assert.assertNotNull(result.getString(0));
+                Assert.assertNotNull(result.getString(1));
             });
     }
 
@@ -555,19 +559,19 @@ public class QueryTest extends BaseQueryTest {
             query,
             2,
             (n, result) -> {
-                assertNotNull(result.getString(0));
-                assertNotNull(result.getString(1));
+                Assert.assertNotNull(result.getString(0));
+                Assert.assertNotNull(result.getString(1));
             });
     }
 
     @Test
     public void testFullTextIndexConfigDefaults() {
         final FullTextIndexConfiguration idxConfig = new FullTextIndexConfiguration("sentence", "nonsense");
-        assertEquals(Defaults.FullTextIndex.IGNORE_ACCENTS, idxConfig.isIgnoringAccents());
-        assertEquals(Locale.getDefault().getLanguage(), idxConfig.getLanguage());
+        Assert.assertEquals(Defaults.FullTextIndex.IGNORE_ACCENTS, idxConfig.isIgnoringAccents());
+        Assert.assertEquals(Locale.getDefault().getLanguage(), idxConfig.getLanguage());
 
         idxConfig.setLanguage(null);
-        assertNull(idxConfig.getLanguage());
+        Assert.assertNull(idxConfig.getLanguage());
     }
 
     @Test
@@ -577,8 +581,8 @@ public class QueryTest extends BaseQueryTest {
         final FullTextIndexConfiguration idxConfig = new FullTextIndexConfiguration("sentence", "nonsense")
             .setLanguage("en-ca")
             .ignoreAccents(true);
-        assertEquals("en-ca", idxConfig.getLanguage());
-        assertTrue(idxConfig.isIgnoringAccents());
+        Assert.assertEquals("en-ca", idxConfig.getLanguage());
+        Assert.assertTrue(idxConfig.isIgnoringAccents());
 
         getTestCollection().createIndex("sentence", idxConfig);
         IndexExpression idx = Expression.fullTextIndex("sentence");
@@ -593,8 +597,8 @@ public class QueryTest extends BaseQueryTest {
             query,
             2,
             (n, result) -> {
-                assertNotNull(result.getString(0));
-                assertNotNull(result.getString(1));
+                Assert.assertNotNull(result.getString(0));
+                Assert.assertNotNull(result.getString(1));
             });
     }
 
@@ -609,7 +613,7 @@ public class QueryTest extends BaseQueryTest {
             "SELECT _id FROM " + BaseDbTestKt.getQualifiedName(getTestCollection())
                 + " WHERE MATCH(sentence, 'Dummie woman')");
 
-        verifyQuery(query, 2, (n, result) -> assertNotNull(result.getString(0)));
+        verifyQuery(query, 2, (n, result) -> Assert.assertNotNull(result.getString(0)));
     }
 
     @Test
@@ -641,7 +645,7 @@ public class QueryTest extends BaseQueryTest {
             QueryBuilder.selectDistinct(SelectResult.property("number"))
                 .from(DataSource.collection(getTestCollection())),
             1,
-            (n, result) -> assertEquals(20, result.getInt(0)));
+            (n, result) -> Assert.assertEquals(20, result.getInt(0)));
     }
 
     @Test
@@ -666,7 +670,7 @@ public class QueryTest extends BaseQueryTest {
             (n, result) -> {
                 String docID = result.getString(0);
                 Document doc = getTestCollection().getDocument(docID);
-                assertEquals(42, doc.getInt(TEST_DOC_SORT_KEY));
+                Assert.assertEquals(42, doc.getInt(TEST_DOC_SORT_KEY));
             });
     }
 
@@ -691,12 +695,12 @@ public class QueryTest extends BaseQueryTest {
             101,
             (n, result) -> {
                 if (n == 41) {
-                    assertEquals(59, result.getInt(0));
-                    assertNull(result.getValue(1));
+                    Assert.assertEquals(59, result.getInt(0));
+                    Assert.assertNull(result.getValue(1));
                 }
                 if (n == 42) {
-                    assertEquals(58, result.getInt(0));
-                    assertEquals(42, result.getInt(1));
+                    Assert.assertEquals(58, result.getInt(0));
+                    Assert.assertEquals(42, result.getInt(1));
                 }
             });
     }
@@ -717,8 +721,8 @@ public class QueryTest extends BaseQueryTest {
             (n, result) -> {
                 int num1 = result.getInt(0);
                 int num2 = result.getInt(1);
-                assertEquals((num1 - 1) % 10, (n - 1) / 10);
-                assertEquals((10 - num2) % 10, n % 10);
+                Assert.assertEquals((num1 - 1) % 10, (n - 1) / 10);
+                Assert.assertEquals((10 - num2) % 10, n % 10);
             });
     }
 
@@ -749,9 +753,9 @@ public class QueryTest extends BaseQueryTest {
                 long count1 = (long) result.getValue(1);
                 String maxZip1 = (String) result.getValue(2);
                 if (n - 1 < expectedStates.size()) {
-                    assertEquals(expectedStates.get(n - 1), state1);
-                    assertEquals((int) expectedCounts.get(n - 1), count1);
-                    assertEquals(expectedMaxZips.get(n - 1), maxZip1);
+                    Assert.assertEquals(expectedStates.get(n - 1), state1);
+                    Assert.assertEquals((int) expectedCounts.get(n - 1), count1);
+                    Assert.assertEquals(expectedMaxZips.get(n - 1), maxZip1);
                 }
             });
 
@@ -779,9 +783,9 @@ public class QueryTest extends BaseQueryTest {
                 long count12 = (long) result.getValue(1);
                 String maxZip12 = (String) result.getValue(2);
                 if (n - 1 < expectedStates2.size()) {
-                    assertEquals(expectedStates2.get(n - 1), state12);
-                    assertEquals((long) expectedCounts2.get(n - 1), count12);
-                    assertEquals(expectedMaxZips2.get(n - 1), maxZip12);
+                    Assert.assertEquals(expectedStates2.get(n - 1), state12);
+                    Assert.assertEquals((long) expectedCounts2.get(n - 1), count12);
+                    Assert.assertEquals(expectedMaxZips2.get(n - 1), maxZip12);
                 }
             });
     }
@@ -803,7 +807,7 @@ public class QueryTest extends BaseQueryTest {
         query.setParameters(params);
 
         final long[] expectedNumbers = {2, 3, 4, 5};
-        verifyQuery(query, 4, (n, result) -> assertEquals(expectedNumbers[n - 1], (long) result.getValue(0)));
+        verifyQuery(query, 4, (n, result) -> Assert.assertEquals(expectedNumbers[n - 1], (long) result.getValue(0)));
     }
 
     // Throws clause prevents Windows compiler error
@@ -842,22 +846,22 @@ public class QueryTest extends BaseQueryTest {
 
                 long number = (long) result.getValue(3);
 
-                assertEquals(docID1, docID2);
-                assertEquals(docID2, docID3);
-                assertEquals(docID3, docID4);
-                assertEquals(docID4, expected.get(n - 1));
+                Assert.assertEquals(docID1, docID2);
+                Assert.assertEquals(docID2, docID3);
+                Assert.assertEquals(docID3, docID4);
+                Assert.assertEquals(docID4, expected.get(n - 1));
 
-                assertEquals(n, seq1);
-                assertEquals(n, seq2);
-                assertEquals(n, seq3);
-                assertEquals(n, seq4);
+                Assert.assertEquals(n, seq1);
+                Assert.assertEquals(n, seq2);
+                Assert.assertEquals(n, seq3);
+                Assert.assertEquals(n, seq4);
 
-                assertEquals(revId1, revId2);
-                assertEquals(revId2, revId3);
-                assertEquals(revId3, revId4);
-                assertEquals(revId4, getTestCollection().getDocument(docID1).getRevisionID());
+                Assert.assertEquals(revId1, revId2);
+                Assert.assertEquals(revId2, revId3);
+                Assert.assertEquals(revId3, revId4);
+                Assert.assertEquals(revId4, getTestCollection().getDocument(docID1).getRevisionID());
 
-                assertEquals(n, number);
+                Assert.assertEquals(n, number);
             });
     }
 
@@ -871,7 +875,7 @@ public class QueryTest extends BaseQueryTest {
             .from(DataSource.collection(getTestCollection()))
             .where(Meta.id.equalTo(Expression.string(doc.getId())));
 
-        verifyQuery(query, 1, (n, result) -> assertEquals(doc.getRevisionID(), result.getString(0)));
+        verifyQuery(query, 1, (n, result) -> Assert.assertEquals(doc.getRevisionID(), result.getString(0)));
     }
 
     @Test
@@ -889,7 +893,7 @@ public class QueryTest extends BaseQueryTest {
             .from(DataSource.collection(getTestCollection()))
             .where(Meta.id.equalTo(Expression.string(doc.getId())));
 
-        verifyQuery(query, 1, (n, result) -> assertEquals(revId, result.getString(0)));
+        verifyQuery(query, 1, (n, result) -> Assert.assertEquals(revId, result.getString(0)));
     }
 
     @Test
@@ -902,7 +906,7 @@ public class QueryTest extends BaseQueryTest {
             .from(DataSource.collection(getTestCollection()))
             .where(Meta.revisionID.equalTo(Expression.string(doc.getRevisionID())));
 
-        verifyQuery(query, 1, (n, result) -> assertEquals(doc.getId(), result.getString(0)));
+        verifyQuery(query, 1, (n, result) -> Assert.assertEquals(doc.getId(), result.getString(0)));
     }
 
     @Test
@@ -911,7 +915,7 @@ public class QueryTest extends BaseQueryTest {
         saveDocInTestCollection(doc);
 
         final Document dbDoc = getTestCollection().getDocument(doc.getId());
-        assertNotNull(dbDoc);
+        Assert.assertNotNull(dbDoc);
 
         getTestCollection().delete(dbDoc);
 
@@ -920,7 +924,7 @@ public class QueryTest extends BaseQueryTest {
             .from(DataSource.collection(getTestCollection()))
             .where(Meta.deleted.equalTo(Expression.booleanValue(true)));
 
-        verifyQuery(query, 1, (n, result) -> assertEquals(dbDoc.getRevisionID(), result.getString(0)));
+        verifyQuery(query, 1, (n, result) -> Assert.assertEquals(dbDoc.getRevisionID(), result.getString(0)));
     }
 
     @Test
@@ -939,7 +943,7 @@ public class QueryTest extends BaseQueryTest {
             5,
             (n, result) -> {
                 long number = (long) result.getValue(0);
-                assertEquals(expectedNumbers[n - 1], number);
+                Assert.assertEquals(expectedNumbers[n - 1], number);
             });
 
         Expression paramExpr = Expression.parameter("LIMIT_NUM");
@@ -957,7 +961,7 @@ public class QueryTest extends BaseQueryTest {
             3,
             (n, result) -> {
                 long number = (long) result.getValue(0);
-                assertEquals(expectedNumbers2[n - 1], number);
+                Assert.assertEquals(expectedNumbers2[n - 1], number);
             });
     }
 
@@ -975,7 +979,7 @@ public class QueryTest extends BaseQueryTest {
         verifyQuery(
             query,
             5,
-            (n, result) -> assertEquals(expectedNumbers[n - 1], (long) result.getValue(0)));
+            (n, result) -> Assert.assertEquals(expectedNumbers[n - 1], (long) result.getValue(0)));
 
         Expression paramLimitExpr = Expression.parameter("LIMIT_NUM");
         Expression paramOffsetExpr = Expression.parameter("OFFSET_NUM");
@@ -993,7 +997,7 @@ public class QueryTest extends BaseQueryTest {
         verifyQuery(
             query,
             3,
-            (n, result) -> assertEquals(expectedNumbers2[n - 1], (long) result.getValue(0)));
+            (n, result) -> Assert.assertEquals(expectedNumbers2[n - 1], (long) result.getValue(0)));
     }
 
     @Test
@@ -1010,11 +1014,11 @@ public class QueryTest extends BaseQueryTest {
             query,
             100,
             (n, result) -> {
-                assertEquals(4, result.count());
-                assertEquals(result.getValue(0), result.getValue("firstname"));
-                assertEquals(result.getValue(1), result.getValue("lastname"));
-                assertEquals(result.getValue(2), result.getValue("gender"));
-                assertEquals(result.getValue(3), result.getValue("city"));
+                Assert.assertEquals(4, result.count());
+                Assert.assertEquals(result.getValue(0), result.getValue("firstname"));
+                Assert.assertEquals(result.getValue(1), result.getValue("lastname"));
+                Assert.assertEquals(result.getValue(2), result.getValue("gender"));
+                Assert.assertEquals(result.getValue(3), result.getValue("city"));
             });
     }
 
@@ -1034,12 +1038,12 @@ public class QueryTest extends BaseQueryTest {
             query,
             1,
             (n, result) -> {
-                assertEquals(5, result.count());
-                assertEquals(result.getValue(0), result.getValue("$1"));
-                assertEquals(result.getValue(1), result.getValue("$2"));
-                assertEquals(result.getValue(2), result.getValue("min"));
-                assertEquals(result.getValue(3), result.getValue("$3"));
-                assertEquals(result.getValue(4), result.getValue("sum"));
+                Assert.assertEquals(5, result.count());
+                Assert.assertEquals(result.getValue(0), result.getValue("$1"));
+                Assert.assertEquals(result.getValue(1), result.getValue("$2"));
+                Assert.assertEquals(result.getValue(2), result.getValue("min"));
+                Assert.assertEquals(result.getValue(3), result.getValue("$3"));
+                Assert.assertEquals(result.getValue(4), result.getValue("sum"));
             });
     }
 
@@ -1061,11 +1065,11 @@ public class QueryTest extends BaseQueryTest {
 
         final AtomicInteger i = new AtomicInteger(0);
         final String[] expected = {"doc-017", "doc-021", "doc-023", "doc-045", "doc-060"};
-        assertEquals(
+        Assert.assertEquals(
             expected.length,
             verifyQueryWithEnumerator(
                 query,
-                (n, result) -> assertEquals(expected[i.getAndIncrement()], result.getString(0))));
+                (n, result) -> Assert.assertEquals(expected[i.getAndIncrement()], result.getString(0))));
 
         // EVERY:
         query = QueryBuilder
@@ -1076,11 +1080,11 @@ public class QueryTest extends BaseQueryTest {
                 .in(exprLikes)
                 .satisfies(exprVarLike.equalTo(Expression.string("taxes"))));
 
-        assertEquals(
+        Assert.assertEquals(
             42,
             verifyQueryWithEnumerator(
                 query,
-                (n, result) -> { if (n == 1) { assertEquals("doc-007", result.getString(0)); } }
+                (n, result) -> { if (n == 1) { Assert.assertEquals("doc-007", result.getString(0)); } }
             ));
 
         // ANY AND EVERY:
@@ -1092,7 +1096,7 @@ public class QueryTest extends BaseQueryTest {
                 .in(exprLikes)
                 .satisfies(exprVarLike.equalTo(Expression.string("taxes"))));
 
-        assertEquals(0, verifyQueryWithEnumerator(query, (n, result) -> { }));
+        Assert.assertEquals(0, verifyQueryWithEnumerator(query, (n, result) -> { }));
     }
 
     @Test
@@ -1111,11 +1115,11 @@ public class QueryTest extends BaseQueryTest {
             query,
             1,
             (n, result) -> {
-                assertEquals(50.5, (Double) result.getValue(0), 0.0F);
-                assertEquals(100L, (long) result.getValue(1));
-                assertEquals(1L, (long) result.getValue(2));
-                assertEquals(100L, (long) result.getValue(3));
-                assertEquals(5050L, (long) result.getValue(4));
+                Assert.assertEquals(50.5, (Double) result.getValue(0), 0.0F);
+                Assert.assertEquals(100L, (long) result.getValue(1));
+                Assert.assertEquals(1L, (long) result.getValue(2));
+                Assert.assertEquals(100L, (long) result.getValue(3));
+                Assert.assertEquals(5050L, (long) result.getValue(4));
             });
     }
 
@@ -1133,7 +1137,7 @@ public class QueryTest extends BaseQueryTest {
         Query query = QueryBuilder.select(SelectResult.expression(ArrayFunction.length(exprArray)))
             .from(DataSource.collection(getTestCollection()));
 
-        verifyQuery(query, 1, (n, result) -> assertEquals(2, result.getInt(0)));
+        verifyQuery(query, 1, (n, result) -> Assert.assertEquals(2, result.getInt(0)));
 
         query = QueryBuilder.select(
                 SelectResult.expression(ArrayFunction.contains(exprArray, Expression.string("650-123-0001"))),
@@ -1144,8 +1148,8 @@ public class QueryTest extends BaseQueryTest {
             query,
             1,
             (n, result) -> {
-                assertTrue(result.getBoolean(0));
-                assertFalse(result.getBoolean(1));
+                Assert.assertTrue(result.getBoolean(0));
+                Assert.assertFalse(result.getBoolean(1));
             });
     }
 
@@ -1153,13 +1157,13 @@ public class QueryTest extends BaseQueryTest {
     public void testArrayFunctionsEmptyArgs() {
         Expression exprArray = Expression.property("array");
 
-        assertThrows(
+        Assert.assertThrows(
             IllegalArgumentException.class,
             () -> ArrayFunction.contains(null, Expression.string("650-123-0001")));
 
-        assertThrows(IllegalArgumentException.class, () -> ArrayFunction.contains(exprArray, null));
+        Assert.assertThrows(IllegalArgumentException.class, () -> ArrayFunction.contains(exprArray, null));
 
-        assertThrows(IllegalArgumentException.class, () -> ArrayFunction.length(null));
+        Assert.assertThrows(IllegalArgumentException.class, () -> ArrayFunction.length(null));
     }
 
     @Test
@@ -1207,7 +1211,7 @@ public class QueryTest extends BaseQueryTest {
             verifyQuery(
                 QueryBuilder.select(SelectResult.expression(f.expr)).from(DataSource.collection(getTestCollection())),
                 1,
-                (n, result) -> assertEquals(f.name, f.expected, result.getDouble(0), 1E-12));
+                (n, result) -> Assert.assertEquals(f.name, f.expected, result.getDouble(0), 1E-12));
         }
     }
 
@@ -1229,15 +1233,15 @@ public class QueryTest extends BaseQueryTest {
             query,
             1,
             (n, result) -> {
-                assertTrue(result.getBoolean(0));
-                assertFalse(result.getBoolean(1));
+                Assert.assertTrue(result.getBoolean(0));
+                Assert.assertFalse(result.getBoolean(1));
             });
 
         // Length
         query = QueryBuilder.select(SelectResult.expression(Function.length(prop)))
             .from(DataSource.collection(getTestCollection()));
 
-        verifyQuery(query, 1, (n, result) -> assertEquals(str.length(), result.getInt(0)));
+        verifyQuery(query, 1, (n, result) -> Assert.assertEquals(str.length(), result.getInt(0)));
 
         // Lower, Ltrim, Rtrim, Trim, Upper:
         query = QueryBuilder.select(
@@ -1252,11 +1256,11 @@ public class QueryTest extends BaseQueryTest {
             query,
             1,
             (n, result) -> {
-                assertEquals(str.toLowerCase(Locale.ENGLISH), result.getString(0));
-                assertEquals(str.replaceAll("^\\s+", ""), result.getString(1));
-                assertEquals(str.replaceAll("\\s+$", ""), result.getString(2));
-                assertEquals(str.trim(), result.getString(3));
-                assertEquals(str.toUpperCase(Locale.ENGLISH), result.getString(4));
+                Assert.assertEquals(str.toLowerCase(Locale.ENGLISH), result.getString(0));
+                Assert.assertEquals(str.replaceAll("^\\s+", ""), result.getString(1));
+                Assert.assertEquals(str.replaceAll("\\s+$", ""), result.getString(2));
+                Assert.assertEquals(str.trim(), result.getString(3));
+                Assert.assertEquals(str.toUpperCase(Locale.ENGLISH), result.getString(4));
             });
     }
 
@@ -1271,13 +1275,13 @@ public class QueryTest extends BaseQueryTest {
             QueryBuilder.select(SelectResult.all()).from(DataSource.collection(getTestCollection())),
             100,
             (n, result) -> {
-                assertEquals(1, result.count());
+                Assert.assertEquals(1, result.count());
                 Dictionary a1 = result.getDictionary(0);
                 Dictionary a2 = result.getDictionary(collectionName);
-                assertEquals(n, a1.getInt(TEST_DOC_SORT_KEY));
-                assertEquals(100 - n, a1.getInt(TEST_DOC_REV_SORT_KEY));
-                assertEquals(n, a2.getInt(TEST_DOC_SORT_KEY));
-                assertEquals(100 - n, a2.getInt(TEST_DOC_REV_SORT_KEY));
+                Assert.assertEquals(n, a1.getInt(TEST_DOC_SORT_KEY));
+                Assert.assertEquals(100 - n, a1.getInt(TEST_DOC_REV_SORT_KEY));
+                Assert.assertEquals(n, a2.getInt(TEST_DOC_SORT_KEY));
+                Assert.assertEquals(100 - n, a2.getInt(TEST_DOC_REV_SORT_KEY));
             });
 
         // SELECT *, number1
@@ -1288,15 +1292,15 @@ public class QueryTest extends BaseQueryTest {
             query,
             100,
             (n, result) -> {
-                assertEquals(2, result.count());
+                Assert.assertEquals(2, result.count());
                 Dictionary a1 = result.getDictionary(0);
                 Dictionary a2 = result.getDictionary(collectionName);
-                assertEquals(n, a1.getInt(TEST_DOC_SORT_KEY));
-                assertEquals(100 - n, a1.getInt(TEST_DOC_REV_SORT_KEY));
-                assertEquals(n, a2.getInt(TEST_DOC_SORT_KEY));
-                assertEquals(100 - n, a2.getInt(TEST_DOC_REV_SORT_KEY));
-                assertEquals(n, result.getInt(1));
-                assertEquals(n, result.getInt(TEST_DOC_SORT_KEY));
+                Assert.assertEquals(n, a1.getInt(TEST_DOC_SORT_KEY));
+                Assert.assertEquals(100 - n, a1.getInt(TEST_DOC_REV_SORT_KEY));
+                Assert.assertEquals(n, a2.getInt(TEST_DOC_SORT_KEY));
+                Assert.assertEquals(100 - n, a2.getInt(TEST_DOC_REV_SORT_KEY));
+                Assert.assertEquals(n, result.getInt(1));
+                Assert.assertEquals(n, result.getInt(TEST_DOC_SORT_KEY));
             });
 
         // SELECT testdb.*
@@ -1307,13 +1311,13 @@ public class QueryTest extends BaseQueryTest {
             query,
             100,
             (n, result) -> {
-                assertEquals(1, result.count());
+                Assert.assertEquals(1, result.count());
                 Dictionary a1 = result.getDictionary(0);
                 Dictionary a2 = result.getDictionary(collectionName);
-                assertEquals(n, a1.getInt(TEST_DOC_SORT_KEY));
-                assertEquals(100 - n, a1.getInt(TEST_DOC_REV_SORT_KEY));
-                assertEquals(n, a2.getInt(TEST_DOC_SORT_KEY));
-                assertEquals(100 - n, a2.getInt(TEST_DOC_REV_SORT_KEY));
+                Assert.assertEquals(n, a1.getInt(TEST_DOC_SORT_KEY));
+                Assert.assertEquals(100 - n, a1.getInt(TEST_DOC_REV_SORT_KEY));
+                Assert.assertEquals(n, a2.getInt(TEST_DOC_SORT_KEY));
+                Assert.assertEquals(100 - n, a2.getInt(TEST_DOC_REV_SORT_KEY));
             });
 
         // SELECT testdb.*, testdb.number1
@@ -1326,15 +1330,15 @@ public class QueryTest extends BaseQueryTest {
             query,
             100,
             (n, result) -> {
-                assertEquals(2, result.count());
+                Assert.assertEquals(2, result.count());
                 Dictionary a1 = result.getDictionary(0);
                 Dictionary a2 = result.getDictionary(collectionName);
-                assertEquals(n, a1.getInt(TEST_DOC_SORT_KEY));
-                assertEquals(100 - n, a1.getInt(TEST_DOC_REV_SORT_KEY));
-                assertEquals(n, a2.getInt(TEST_DOC_SORT_KEY));
-                assertEquals(100 - n, a2.getInt(TEST_DOC_REV_SORT_KEY));
-                assertEquals(n, result.getInt(1));
-                assertEquals(n, result.getInt(TEST_DOC_SORT_KEY));
+                Assert.assertEquals(n, a1.getInt(TEST_DOC_SORT_KEY));
+                Assert.assertEquals(100 - n, a1.getInt(TEST_DOC_REV_SORT_KEY));
+                Assert.assertEquals(n, a2.getInt(TEST_DOC_SORT_KEY));
+                Assert.assertEquals(100 - n, a2.getInt(TEST_DOC_REV_SORT_KEY));
+                Assert.assertEquals(n, result.getInt(1));
+                Assert.assertEquals(n, result.getInt(TEST_DOC_SORT_KEY));
             });
     }
 
@@ -1354,7 +1358,7 @@ public class QueryTest extends BaseQueryTest {
             .orderBy(Ordering.expression(Expression.property("string").collate(noLocale)));
 
         final String[] expected = {"A", "Å", "B", "Z"};
-        verifyQuery(query, expected.length, (n, result) -> assertEquals(expected[n - 1], result.getString(0)));
+        verifyQuery(query, expected.length, (n, result) -> Assert.assertEquals(expected[n - 1], result.getString(0)));
     }
 
     // In the Spanish alphabet, the six characters with diacritics Á, É, Í, Ó, Ú, Ü
@@ -1373,7 +1377,7 @@ public class QueryTest extends BaseQueryTest {
             .orderBy(Ordering.expression(Expression.property("string").collate(localeEspanol)));
 
         final String[] expected = {"A", "Å", "B", "Z"};
-        verifyQuery(query, expected.length, (n, result) -> assertEquals(expected[n - 1], result.getString(0)));
+        verifyQuery(query, expected.length, (n, result) -> Assert.assertEquals(expected[n - 1], result.getString(0)));
     }
 
     // In the Swedish alphabet, there are three extra vowels
@@ -1394,7 +1398,7 @@ public class QueryTest extends BaseQueryTest {
                     .setIgnoreAccents(false))));
 
         String[] expected = {"A", "B", "Z", "Å"};
-        verifyQuery(query, expected.length, (n, result) -> assertEquals(expected[n - 1], result.getString(0)));
+        verifyQuery(query, expected.length, (n, result) -> Assert.assertEquals(expected[n - 1], result.getString(0)));
     }
 
     @Test
@@ -1500,8 +1504,8 @@ public class QueryTest extends BaseQueryTest {
                 QueryBuilder.select().from(DataSource.collection(getTestCollection())).where(comparison),
                 1,
                 (n, result) -> {
-                    assertEquals(1, n);
-                    assertNotNull(result);
+                    Assert.assertEquals(1, n);
+                    Assert.assertNotNull(result);
                 });
 
             getTestCollection().delete(doc);
@@ -1545,13 +1549,13 @@ public class QueryTest extends BaseQueryTest {
         };
 
         try (ListenerToken token = query.addChangeListener(testSerialExecutor, listener)) {
-            assertTrue(latch1.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
+            Assert.assertTrue(latch1.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
 
             // create some more docs
             List<MutableDocument> secondLoad = loadDocuments(10);
 
             // wait till listener sees them all
-            assertTrue(latch2.await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
+            Assert.assertTrue(latch2.await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
 
             // verify that the listener saw, in the second batch
             // the first 10 of the first load of documents
@@ -1560,7 +1564,7 @@ public class QueryTest extends BaseQueryTest {
             expected.addAll(Fn.mapToList(secondLoad, Document::getId));
             Collections.sort(expected);
             Collections.sort(secondBatch);
-            assertEquals(expected, secondBatch);
+            Assert.assertEquals(expected, secondBatch);
         }
         // Catch clause prevents Windows compiler error
         catch (Exception e) { throw new AssertionError("Unexpected exception", e); }
@@ -1589,7 +1593,7 @@ public class QueryTest extends BaseQueryTest {
             QueryBuilder.select(SelectResult.expression(Function.count(Expression.property(TEST_DOC_SORT_KEY))))
                 .from(DataSource.collection(getTestCollection()));
 
-        verifyQuery(query, 1, (n, result) -> assertEquals(100L, (long) result.getValue(0)));
+        verifyQuery(query, 1, (n, result) -> Assert.assertEquals(100L, (long) result.getValue(0)));
     }
 
     @Test
@@ -1639,7 +1643,7 @@ public class QueryTest extends BaseQueryTest {
 
     @Test
     public void testJoinWithEmptyArgs1() {
-        assertThrows(
+        Assert.assertThrows(
             IllegalArgumentException.class,
             () -> QueryBuilder.select(SelectResult.all())
                 .from(DataSource.collection(getTestCollection()).as("main"))
@@ -1648,7 +1652,7 @@ public class QueryTest extends BaseQueryTest {
 
     @Test
     public void testJoinWithEmptyArgs2() {
-        assertThrows(
+        Assert.assertThrows(
             IllegalArgumentException.class,
             () -> QueryBuilder.select(SelectResult.all())
                 .from(DataSource.collection(getTestCollection()).as("main"))
@@ -1657,7 +1661,7 @@ public class QueryTest extends BaseQueryTest {
 
     @Test
     public void testJoinWithEmptyArgs3() {
-        assertThrows(
+        Assert.assertThrows(
             IllegalArgumentException.class,
             () -> QueryBuilder.select(SelectResult.all())
                 .from(DataSource.collection(getTestCollection()).as("main"))
@@ -1666,7 +1670,7 @@ public class QueryTest extends BaseQueryTest {
 
     @Test
     public void testJoinWithEmptyArgs4() {
-        assertThrows(
+        Assert.assertThrows(
             IllegalArgumentException.class,
             () -> QueryBuilder.select(SelectResult.all())
                 .from(DataSource.collection(getTestCollection()).as("main"))
@@ -1675,7 +1679,7 @@ public class QueryTest extends BaseQueryTest {
 
     @Test
     public void testJoinWithEmptyArgs5() {
-        assertThrows(
+        Assert.assertThrows(
             IllegalArgumentException.class,
             () -> QueryBuilder.select(SelectResult.all())
                 .from(DataSource.collection(getTestCollection()).as("main"))
@@ -1684,7 +1688,7 @@ public class QueryTest extends BaseQueryTest {
 
     @Test
     public void testJoinWithEmptyArgs6() {
-        assertThrows(
+        Assert.assertThrows(
             IllegalArgumentException.class,
             () -> QueryBuilder.select(SelectResult.all())
                 .from(DataSource.collection(getTestCollection()).as("main"))
@@ -1717,14 +1721,14 @@ public class QueryTest extends BaseQueryTest {
             1,
             (n, result) -> {
                 Map<String, Object> maps = result.toMap();
-                assertNotNull(maps);
+                Assert.assertNotNull(maps);
                 Map<?, ?> map = (Map<?, ?>) maps.get(collectionName);
-                assertNotNull(map);
+                Assert.assertNotNull(map);
                 if ("There are 45 states in the US.".equals(map.get("question"))) {
-                    assertFalse((Boolean) map.get("answer"));
+                    Assert.assertFalse((Boolean) map.get("answer"));
                 }
                 if ("There are 100 senators in the US.".equals(map.get("question"))) {
-                    assertTrue((Boolean) map.get("answer"));
+                    Assert.assertTrue((Boolean) map.get("answer"));
                 }
             });
     }
@@ -1748,7 +1752,7 @@ public class QueryTest extends BaseQueryTest {
             .from(DataSource.collection(getTestCollection()))
             .where(Meta.id.equalTo(Expression.string(mDoc.getId())));
 
-        verifyQuery(query, 1, (n, result) -> assertTrue((Boolean) result.toMap().get("answer")));
+        verifyQuery(query, 1, (n, result) -> Assert.assertTrue((Boolean) result.toMap().get("answer")));
     }
 
     // https://github.com/couchbase/couchbase-lite-android/issues/1385
@@ -1757,7 +1761,7 @@ public class QueryTest extends BaseQueryTest {
         // Insert two documents
         Document task1 = createTaskDocument("Task 1", false);
         Document task2 = createTaskDocument("Task 2", false);
-        assertEquals(2, getTestCollection().getCount());
+        Assert.assertEquals(2, getTestCollection().getCount());
 
         // query documents before deletion
         Query query = QueryBuilder.select(SelectResult.expression(Meta.id), SelectResult.all())
@@ -1768,11 +1772,11 @@ public class QueryTest extends BaseQueryTest {
 
         // delete artifacts from task 1
         getTestCollection().delete(task1);
-        assertEquals(1, getTestCollection().getCount());
-        assertNull(getTestCollection().getDocument(task1.getId()));
+        Assert.assertEquals(1, getTestCollection().getCount());
+        Assert.assertNull(getTestCollection().getDocument(task1.getId()));
 
         // query documents again after deletion
-        verifyQuery(query, 1, (n, result) -> assertEquals(task2.getId(), result.getString(0)));
+        verifyQuery(query, 1, (n, result) -> Assert.assertEquals(task2.getId(), result.getString(0)));
     }
 
     // https://github.com/couchbase/couchbase-lite-android/issues/1389
@@ -1782,7 +1786,7 @@ public class QueryTest extends BaseQueryTest {
         createTaskDocument("Task 1", false);
         createTaskDocument("Task 2", true);
         createTaskDocument("Task 3", true);
-        assertEquals(3, getTestCollection().getCount());
+        Assert.assertEquals(3, getTestCollection().getCount());
 
         Expression exprType = Expression.property("type");
         Expression exprComplete = Expression.property("complete");
@@ -1798,11 +1802,11 @@ public class QueryTest extends BaseQueryTest {
             query,
             (n, result) -> {
                 Dictionary dict = result.getDictionary(getTestCollection().getName());
-                assertTrue(dict.getBoolean("complete"));
-                assertEquals("task", dict.getString("type"));
-                assertTrue(dict.getString("title").startsWith("Task "));
+                Assert.assertTrue(dict.getBoolean("complete"));
+                Assert.assertEquals("task", dict.getString("type"));
+                Assert.assertTrue(dict.getString("title").startsWith("Task "));
             });
-        assertEquals(2, numRows);
+        Assert.assertEquals(2, numRows);
 
         // regular query - false
         query = QueryBuilder.select(SelectResult.all())
@@ -1814,11 +1818,11 @@ public class QueryTest extends BaseQueryTest {
             query,
             (n, result) -> {
                 Dictionary dict = result.getDictionary(getTestCollection().getName());
-                assertFalse(dict.getBoolean("complete"));
-                assertEquals("task", dict.getString("type"));
-                assertTrue(dict.getString("title").startsWith("Task "));
+                Assert.assertFalse(dict.getBoolean("complete"));
+                Assert.assertEquals("task", dict.getString("type"));
+                Assert.assertTrue(dict.getString("title").startsWith("Task "));
             });
-        assertEquals(1, numRows);
+        Assert.assertEquals(1, numRows);
 
         // aggregation query - true
         query = QueryBuilder.select(srCount)
@@ -1826,8 +1830,8 @@ public class QueryTest extends BaseQueryTest {
             .where(exprType.equalTo(Expression.string("task"))
                 .and(exprComplete.equalTo(Expression.booleanValue(true))));
 
-        numRows = verifyQueryWithEnumerator(query, (n, result) -> assertEquals(2, result.getInt(0)));
-        assertEquals(1, numRows);
+        numRows = verifyQueryWithEnumerator(query, (n, result) -> Assert.assertEquals(2, result.getInt(0)));
+        Assert.assertEquals(1, numRows);
 
         // aggregation query - false
         query = QueryBuilder.select(srCount)
@@ -1835,8 +1839,8 @@ public class QueryTest extends BaseQueryTest {
             .where(exprType.equalTo(Expression.string("task"))
                 .and(exprComplete.equalTo(Expression.booleanValue(false))));
 
-        numRows = verifyQueryWithEnumerator(query, (n, result) -> assertEquals(1, result.getInt(0)));
-        assertEquals(1, numRows);
+        numRows = verifyQueryWithEnumerator(query, (n, result) -> Assert.assertEquals(1, result.getInt(0)));
+        Assert.assertEquals(1, numRows);
     }
 
     // https://github.com/couchbase/couchbase-lite-android/issues/1413
@@ -1862,12 +1866,12 @@ public class QueryTest extends BaseQueryTest {
                 Dictionary mainAll2 = result.getDictionary("main");
                 Dictionary secondAll1 = result.getDictionary(1);
                 Dictionary secondAll2 = result.getDictionary("secondary");
-                assertEquals(42, mainAll1.getInt(TEST_DOC_SORT_KEY));
-                assertEquals(42, mainAll2.getInt(TEST_DOC_SORT_KEY));
-                assertEquals(58, mainAll1.getInt(TEST_DOC_REV_SORT_KEY));
-                assertEquals(58, mainAll2.getInt(TEST_DOC_REV_SORT_KEY));
-                assertEquals(42, secondAll1.getInt("theone"));
-                assertEquals(42, secondAll2.getInt("theone"));
+                Assert.assertEquals(42, mainAll1.getInt(TEST_DOC_SORT_KEY));
+                Assert.assertEquals(42, mainAll2.getInt(TEST_DOC_SORT_KEY));
+                Assert.assertEquals(58, mainAll1.getInt(TEST_DOC_REV_SORT_KEY));
+                Assert.assertEquals(58, mainAll2.getInt(TEST_DOC_REV_SORT_KEY));
+                Assert.assertEquals(42, secondAll1.getInt("theone"));
+                Assert.assertEquals(42, secondAll2.getInt("theone"));
             });
     }
 
@@ -1894,15 +1898,15 @@ public class QueryTest extends BaseQueryTest {
             query,
             1,
             (n, result) -> {
-                assertEquals(1, n);
+                Assert.assertEquals(1, n);
 
                 Document doc3 = getTestCollection().getDocument(result.getString("mainDocID"));
-                assertEquals(doc1.getInt(TEST_DOC_SORT_KEY), doc3.getInt(TEST_DOC_SORT_KEY));
-                assertEquals(doc1.getInt(TEST_DOC_REV_SORT_KEY), doc3.getInt(TEST_DOC_REV_SORT_KEY));
+                Assert.assertEquals(doc1.getInt(TEST_DOC_SORT_KEY), doc3.getInt(TEST_DOC_SORT_KEY));
+                Assert.assertEquals(doc1.getInt(TEST_DOC_REV_SORT_KEY), doc3.getInt(TEST_DOC_REV_SORT_KEY));
 
                 // data from secondary
-                assertEquals(mDoc.getId(), result.getString("secondaryDocID"));
-                assertEquals(42, result.getInt("theone"));
+                Assert.assertEquals(mDoc.getId(), result.getString("secondaryDocID"));
+                Assert.assertEquals(42, result.getInt("theone"));
             });
     }
 
@@ -1969,7 +1973,7 @@ public class QueryTest extends BaseQueryTest {
         json8.put("DIAC", false);
         expected.add(json8);
 
-        for (int i = 0; i < collations.length; i++) { assertEquals(expected.get(i), collations[i].asJSON()); }
+        for (int i = 0; i < collations.length; i++) { Assert.assertEquals(expected.get(i), collations[i].asJSON()); }
     }
 
     @Test
@@ -1981,9 +1985,11 @@ public class QueryTest extends BaseQueryTest {
             saveDocInTestCollection(doc);
         }
         List<List<Object>> testData = new ArrayList<>();
-        testData.add(Arrays.asList("BINARY collation", Collation.ascii(),
+        testData.add(Arrays.asList(
+            "BINARY collation", Collation.ascii(),
             Arrays.asList("Aardvark", "Apple", "Zebra", "Ångström", "äpple")));
-        testData.add(Arrays.asList("NOCASE collation", Collation.ascii().setIgnoreCase(true),
+        testData.add(Arrays.asList(
+            "NOCASE collation", Collation.ascii().setIgnoreCase(true),
             Arrays.asList("Aardvark", "Apple", "Zebra", "Ångström", "äpple")));
         testData.add(Arrays.asList(
             "Unicode case-sensitive, diacritic-sensitive collation",
@@ -2010,7 +2016,7 @@ public class QueryTest extends BaseQueryTest {
 
             final List<String> list = new ArrayList<>();
             verifyQueryWithEnumerator(query, (n, result) -> list.add(result.getString(0)));
-            assertEquals(data.get(2), list);
+            Assert.assertEquals(data.get(2), list);
         }
     }
 
@@ -2022,7 +2028,7 @@ public class QueryTest extends BaseQueryTest {
             .from(DataSource.collection(getTestCollection()));
 
         try (ListenerToken token = query.addChangeListener(testSerialExecutor, change -> latch1.countDown())) {
-            assertTrue(latch1.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
+            Assert.assertTrue(latch1.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
             deleteDb(getTestDatabase());
         }
     }
@@ -2036,7 +2042,7 @@ public class QueryTest extends BaseQueryTest {
 
         ListenerToken token = query.addChangeListener(testSerialExecutor, change -> latch.countDown());
         try {
-            assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
+            Assert.assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
             closeDb(getTestDatabase());
         }
         finally { token.remove(); }
@@ -2066,13 +2072,13 @@ public class QueryTest extends BaseQueryTest {
             query,
             1,
             (n, result) -> {
-                assertEquals(100L, (long) result.getValue(0));
-                assertEquals(101L, (long) result.getValue(1));
-                assertEquals(101L, (long) result.getValue(2));
-                assertEquals(101L, (long) result.getValue(3));
-                assertEquals(1L, (long) result.getValue(4));
-                assertEquals(1L, (long) result.getValue(5));
-                assertEquals(0L, (long) result.getValue(6));
+                Assert.assertEquals(100L, (long) result.getValue(0));
+                Assert.assertEquals(101L, (long) result.getValue(1));
+                Assert.assertEquals(101L, (long) result.getValue(2));
+                Assert.assertEquals(101L, (long) result.getValue(3));
+                Assert.assertEquals(1L, (long) result.getValue(4));
+                Assert.assertEquals(1L, (long) result.getValue(5));
+                Assert.assertEquals(0L, (long) result.getValue(6));
             });
     }
 
@@ -2088,8 +2094,8 @@ public class QueryTest extends BaseQueryTest {
             query,
             1,
             (n, result) -> {
-                assertEquals(1, result.count());
-                assertEquals(100L, (long) result.getValue(0));
+                Assert.assertEquals(1, result.count());
+                Assert.assertEquals(100L, (long) result.getValue(0));
             });
 
         // SELECT count(testdb.*)
@@ -2101,8 +2107,8 @@ public class QueryTest extends BaseQueryTest {
             query,
             1,
             (n, result) -> {
-                assertEquals(1, result.count());
-                assertEquals(100L, (long) result.getValue(0));
+                Assert.assertEquals(1, result.count());
+                Assert.assertEquals(100L, (long) result.getValue(0));
             });
     }
 
@@ -2120,24 +2126,24 @@ public class QueryTest extends BaseQueryTest {
         Result result;
         try (ResultSet rs = query.execute()) {
             while ((result = rs.next()) != null) {
-                assertTrue(docIds.contains(result.getString(0)));
+                Assert.assertTrue(docIds.contains(result.getString(0)));
                 i++;
             }
-            assertEquals(docIds.size(), i);
-            assertNull(rs.next());
-            assertEquals(0, rs.allResults().size());
+            Assert.assertEquals(docIds.size(), i);
+            Assert.assertNull(rs.next());
+            Assert.assertEquals(0, rs.allResults().size());
         }
 
         // Type 2: Enumeration by ResultSet.iterator()
         i = 0;
         try (ResultSet rs = query.execute()) {
             for (Result r: rs) {
-                assertTrue(docIds.contains(r.getString(0)));
+                Assert.assertTrue(docIds.contains(r.getString(0)));
                 i++;
             }
-            assertEquals(docIds.size(), i);
-            assertNull(rs.next());
-            assertEquals(0, rs.allResults().size());
+            Assert.assertEquals(docIds.size(), i);
+            Assert.assertNull(rs.next());
+            Assert.assertEquals(0, rs.allResults().size());
         }
 
         // Type 3: Enumeration by ResultSet.allResults().get(int index)
@@ -2145,24 +2151,24 @@ public class QueryTest extends BaseQueryTest {
         try (ResultSet rs = query.execute()) {
             List<Result> list = rs.allResults();
             for (Result r: list) {
-                assertTrue(docIds.contains(r.getString(0)));
+                Assert.assertTrue(docIds.contains(r.getString(0)));
                 i++;
             }
-            assertEquals(docIds.size(), i);
-            assertNull(rs.next());
-            assertEquals(0, rs.allResults().size());
+            Assert.assertEquals(docIds.size(), i);
+            Assert.assertNull(rs.next());
+            Assert.assertEquals(0, rs.allResults().size());
         }
 
         // Type 4: Enumeration by ResultSet.allResults().iterator()
         i = 0;
         try (ResultSet rs = query.execute()) {
             for (Result r: rs.allResults()) {
-                assertTrue(docIds.contains(r.getString(0)));
+                Assert.assertTrue(docIds.contains(r.getString(0)));
                 i++;
             }
-            assertEquals(docIds.size(), i);
-            assertNull(rs.next());
-            assertEquals(0, rs.allResults().size());
+            Assert.assertEquals(docIds.size(), i);
+            Assert.assertNull(rs.next());
+            Assert.assertEquals(0, rs.allResults().size());
         }
     }
 
@@ -2182,13 +2188,13 @@ public class QueryTest extends BaseQueryTest {
         try (ResultSet rs = query.execute()) {
             results = rs.allResults();
             for (int j = 0; j < results.size(); j++) {
-                assertTrue(docIds.contains(results.get(j).getString(0)));
+                Assert.assertTrue(docIds.contains(results.get(j).getString(0)));
                 i++;
             }
-            assertEquals(docIds.size(), results.size());
-            assertEquals(docIds.size(), i);
-            assertNull(rs.next());
-            assertEquals(0, rs.allResults().size());
+            Assert.assertEquals(docIds.size(), results.size());
+            Assert.assertEquals(docIds.size(), i);
+            Assert.assertNull(rs.next());
+            Assert.assertEquals(0, rs.allResults().size());
         }
 
         // Get all results by iterator
@@ -2196,29 +2202,29 @@ public class QueryTest extends BaseQueryTest {
         try (ResultSet rs = query.execute()) {
             results = rs.allResults();
             for (Result r: results) {
-                assertTrue(docIds.contains(r.getString(0)));
+                Assert.assertTrue(docIds.contains(r.getString(0)));
                 i++;
             }
-            assertEquals(docIds.size(), results.size());
-            assertEquals(docIds.size(), i);
-            assertNull(rs.next());
-            assertEquals(0, rs.allResults().size());
+            Assert.assertEquals(docIds.size(), results.size());
+            Assert.assertEquals(docIds.size(), i);
+            Assert.assertNull(rs.next());
+            Assert.assertEquals(0, rs.allResults().size());
         }
 
         // Partial enumerating then get all results:
         i = 0;
         try (ResultSet rs = query.execute()) {
-            assertNotNull(rs.next());
-            assertNotNull(rs.next());
+            Assert.assertNotNull(rs.next());
+            Assert.assertNotNull(rs.next());
             results = rs.allResults();
             for (Result r: results) {
-                assertTrue(docIds.contains(r.getString(0)));
+                Assert.assertTrue(docIds.contains(r.getString(0)));
                 i++;
             }
-            assertEquals(docIds.size() - 2, results.size());
-            assertEquals(docIds.size() - 2, i);
-            assertNull(rs.next());
-            assertEquals(0, rs.allResults().size());
+            Assert.assertEquals(docIds.size() - 2, results.size());
+            Assert.assertEquals(docIds.size() - 2, i);
+            Assert.assertNull(rs.next());
+            Assert.assertEquals(0, rs.allResults().size());
         }
     }
 
@@ -2236,18 +2242,18 @@ public class QueryTest extends BaseQueryTest {
         int i = 0;
         try (ResultSet rs = query.execute()) {
             while (rs.next() != null) { i++; }
-            assertEquals(0, i);
-            assertNull(rs.next());
-            assertEquals(0, rs.allResults().size());
+            Assert.assertEquals(0, i);
+            Assert.assertNull(rs.next());
+            Assert.assertEquals(0, rs.allResults().size());
         }
 
         // Type 2: Enumeration by ResultSet.iterator()
         i = 0;
         try (ResultSet rs = query.execute()) {
             for (Result ignored: rs) { i++; }
-            assertEquals(0, i);
-            assertNull(rs.next());
-            assertEquals(0, rs.allResults().size());
+            Assert.assertEquals(0, i);
+            Assert.assertNull(rs.next());
+            Assert.assertEquals(0, rs.allResults().size());
         }
 
         // Type 3: Enumeration by ResultSet.allResults().get(int index)
@@ -2258,18 +2264,18 @@ public class QueryTest extends BaseQueryTest {
                 list.get(j);
                 i++;
             }
-            assertEquals(0, i);
-            assertNull(rs.next());
-            assertEquals(0, rs.allResults().size());
+            Assert.assertEquals(0, i);
+            Assert.assertNull(rs.next());
+            Assert.assertEquals(0, rs.allResults().size());
         }
 
         // Type 4: Enumeration by ResultSet.allResults().iterator()
         i = 0;
         try (ResultSet rs = query.execute()) {
             for (Result ignored: rs.allResults()) { i++; }
-            assertEquals(0, i);
-            assertNull(rs.next());
-            assertEquals(0, rs.allResults().size());
+            Assert.assertEquals(0, i);
+            Assert.assertNull(rs.next());
+            Assert.assertEquals(0, rs.allResults().size());
         }
     }
 
@@ -2291,11 +2297,11 @@ public class QueryTest extends BaseQueryTest {
             query,
             1,
             (n, result) -> {
-                assertEquals(3, result.count());
-                assertEquals("Scott", result.getString(0));
-                assertNull(result.getValue(1));
-                assertNull(result.getValue(2));
-                assertEquals(Arrays.asList("Scott", null, null), result.toList());
+                Assert.assertEquals(3, result.count());
+                Assert.assertEquals("Scott", result.getString(0));
+                Assert.assertNull(result.getValue(1));
+                Assert.assertNull(result.getValue(2));
+                Assert.assertEquals(Arrays.asList("Scott", null, null), result.toList());
             });
 
         // Dictionary:
@@ -2303,15 +2309,15 @@ public class QueryTest extends BaseQueryTest {
             query,
             1,
             (n, result) -> {
-                assertEquals("Scott", result.getString("name"));
-                assertNull(result.getString("address"));
-                assertTrue(result.contains("address"));
-                assertNull(result.getString("age"));
-                assertFalse(result.contains("age"));
+                Assert.assertEquals("Scott", result.getString("name"));
+                Assert.assertNull(result.getString("address"));
+                Assert.assertTrue(result.contains("address"));
+                Assert.assertNull(result.getString("age"));
+                Assert.assertFalse(result.contains("age"));
                 Map<String, Object> expected = new HashMap<>();
                 expected.put("name", "Scott");
                 expected.put("address", null);
-                assertEquals(expected, result.toMap());
+                Assert.assertEquals(expected, result.toMap());
             });
     }
 
@@ -2331,8 +2337,8 @@ public class QueryTest extends BaseQueryTest {
             query,
             7,
             (n, result) -> {
-                if (n < 3) { assertEquals(n, result.getInt(TEST_DOC_SORT_KEY)); }
-                else { assertEquals(n + 3, result.getInt(TEST_DOC_SORT_KEY)); }
+                if (n < 3) { Assert.assertEquals(n, result.getInt(TEST_DOC_SORT_KEY)); }
+                else { Assert.assertEquals(n + 3, result.getInt(TEST_DOC_SORT_KEY)); }
             });
     }
 
@@ -2394,8 +2400,8 @@ public class QueryTest extends BaseQueryTest {
             query,
             3,
             (n, result) -> {
-                assertEquals(expectedIDs[n - 1], result.getString("id"));
-                assertEquals(expectedContents[n - 1], result.getString("content"));
+                Assert.assertEquals(expectedIDs[n - 1], result.getString("id"));
+                Assert.assertEquals(expectedContents[n - 1], result.getString("content"));
             });
     }
 
@@ -2426,13 +2432,13 @@ public class QueryTest extends BaseQueryTest {
 
         String[] expected = new String[] {mDoc1.getId(), mDoc2.getId()};
 
-        verifyQuery(query, 2, (n, result) -> assertEquals(expected[n - 1], result.getString(0)));
+        verifyQuery(query, 2, (n, result) -> Assert.assertEquals(expected[n - 1], result.getString(0)));
 
         query = QueryBuilder.select(SelectResult.expression(Meta.id))
             .from(DataSource.collection(getTestCollection()))
             .where(FullTextFunction.match(stemlessIdx, "cat"));
 
-        verifyQuery(query, 1, (n, result) -> assertEquals(expected[n - 1], result.getString(0)));
+        verifyQuery(query, 1, (n, result) -> Assert.assertEquals(expected[n - 1], result.getString(0)));
     }
 
     // 3.1. Set Operations Using The Enhanced Query Syntax
@@ -2468,7 +2474,7 @@ public class QueryTest extends BaseQueryTest {
             .from(DataSource.collection(getTestCollection()))
             .where(FullTextFunction.match(idx, "sqlite AND database"))
             .orderBy(Ordering.property(TEST_DOC_SORT_KEY).ascending());
-        verifyQuery(query, 1, (n, result) -> assertEquals(mDoc3.getId(), result.getString("id")));
+        verifyQuery(query, 1, (n, result) -> Assert.assertEquals(mDoc3.getId(), result.getString("id")));
 
         // implicit AND operator
         query = QueryBuilder
@@ -2476,7 +2482,7 @@ public class QueryTest extends BaseQueryTest {
             .from(DataSource.collection(getTestCollection()))
             .where(FullTextFunction.match(idx, "sqlite database"))
             .orderBy(Ordering.property(TEST_DOC_SORT_KEY).ascending());
-        verifyQuery(query, 1, (n, result) -> assertEquals(mDoc3.getId(), result.getString("id")));
+        verifyQuery(query, 1, (n, result) -> Assert.assertEquals(mDoc3.getId(), result.getString("id")));
 
         // OR operator
         query = QueryBuilder
@@ -2485,14 +2491,14 @@ public class QueryTest extends BaseQueryTest {
             .where(FullTextFunction.match(idx, "sqlite OR database"))
             .orderBy(Ordering.property(TEST_DOC_SORT_KEY).ascending());
         String[] expected = {mDoc1.getId(), mDoc2.getId(), mDoc3.getId()};
-        verifyQuery(query, 3, (n, result) -> assertEquals(expected[n - 1], result.getString("id")));
+        verifyQuery(query, 3, (n, result) -> Assert.assertEquals(expected[n - 1], result.getString("id")));
 
         // NOT operator
         query = QueryBuilder.select(SelectResult.expression(Meta.id), SelectResult.property("content"))
             .from(DataSource.collection(getTestCollection()))
             .where(FullTextFunction.match(idx, "database NOT sqlite"))
             .orderBy(Ordering.property(TEST_DOC_SORT_KEY).ascending());
-        verifyQuery(query, 1, (n, result) -> assertEquals(mDoc1.getId(), result.getString("id")));
+        verifyQuery(query, 1, (n, result) -> Assert.assertEquals(mDoc1.getId(), result.getString("id")));
     }
 
     // https://github.com/couchbase/couchbase-lite-android/issues/1621
@@ -2527,7 +2533,7 @@ public class QueryTest extends BaseQueryTest {
             .where(FullTextFunction.match(idx, "sqlite AND software AND system"))
             .orderBy(Ordering.property(TEST_DOC_SORT_KEY).ascending());
 
-        verifyQuery(query, 1, (n, result) -> assertEquals(mDoc2.getId(), result.getString("id")));
+        verifyQuery(query, 1, (n, result) -> Assert.assertEquals(mDoc2.getId(), result.getString("id")));
 
 
         // (A AND B) OR C
@@ -2537,7 +2543,7 @@ public class QueryTest extends BaseQueryTest {
             .orderBy(Ordering.property(TEST_DOC_SORT_KEY).ascending());
 
         String[] expectedIDs2 = {mDoc1.getId(), mDoc2.getId(), mDoc3.getId()};
-        verifyQuery(query, 3, (n, result) -> assertEquals(expectedIDs2[n - 1], result.getString("id")));
+        verifyQuery(query, 3, (n, result) -> Assert.assertEquals(expectedIDs2[n - 1], result.getString("id")));
 
         query = QueryBuilder.select(SelectResult.expression(Meta.id), SelectResult.property("content"))
             .from(DataSource.collection(getTestCollection()))
@@ -2545,7 +2551,7 @@ public class QueryTest extends BaseQueryTest {
             .orderBy(Ordering.property(TEST_DOC_SORT_KEY).ascending());
 
         String[] expectedIDs3 = {mDoc1.getId(), mDoc2.getId()};
-        verifyQuery(query, 2, (n, result) -> assertEquals(expectedIDs3[n - 1], result.getString("id")));
+        verifyQuery(query, 2, (n, result) -> Assert.assertEquals(expectedIDs3[n - 1], result.getString("id")));
 
         // (A OR B) AND C
         query = QueryBuilder.select(SelectResult.expression(Meta.id), SelectResult.property("content"))
@@ -2554,7 +2560,7 @@ public class QueryTest extends BaseQueryTest {
             .orderBy(Ordering.property(TEST_DOC_SORT_KEY).ascending());
 
         String[] expectedIDs4 = {mDoc1.getId(), mDoc3.getId()};
-        verifyQuery(query, 2, (n, result) -> assertEquals(expectedIDs4[n - 1], result.getString("id")));
+        verifyQuery(query, 2, (n, result) -> Assert.assertEquals(expectedIDs4[n - 1], result.getString("id")));
 
         query = QueryBuilder.select(SelectResult.expression(Meta.id), SelectResult.property("content"))
             .from(DataSource.collection(getTestCollection()))
@@ -2562,7 +2568,7 @@ public class QueryTest extends BaseQueryTest {
             .orderBy(Ordering.property(TEST_DOC_SORT_KEY).ascending());
 
         String[] expectedIDs5 = {mDoc1.getId(), mDoc2.getId()};
-        verifyQuery(query, 2, (n, result) -> assertEquals(expectedIDs5[n - 1], result.getString("id")));
+        verifyQuery(query, 2, (n, result) -> Assert.assertEquals(expectedIDs5[n - 1], result.getString("id")));
 
         // A OR B OR C
         query = QueryBuilder.select(SelectResult.expression(Meta.id), SelectResult.property("content"))
@@ -2571,7 +2577,7 @@ public class QueryTest extends BaseQueryTest {
             .orderBy(Ordering.property(TEST_DOC_SORT_KEY).ascending());
 
         String[] expectedIDs6 = {mDoc1.getId(), mDoc2.getId(), mDoc3.getId()};
-        verifyQuery(query, 3, (n, result) -> assertEquals(expectedIDs6[n - 1], result.getString("id")));
+        verifyQuery(query, 3, (n, result) -> Assert.assertEquals(expectedIDs6[n - 1], result.getString("id")));
     }
 
     // https://github.com/couchbase/couchbase-lite-android/issues/1628
@@ -2603,11 +2609,11 @@ public class QueryTest extends BaseQueryTest {
         };
 
         try (ListenerToken token = query.addChangeListener(testSerialExecutor, listener)) {
-            assertTrue(latch1.await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
+            Assert.assertTrue(latch1.await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
 
             loadDocuments(51, 50, getTestCollection());
 
-            assertTrue(latch2.await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
+            Assert.assertTrue(latch2.await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
         }
     }
 
@@ -2639,13 +2645,13 @@ public class QueryTest extends BaseQueryTest {
         };
 
         try (ListenerToken token = query.addChangeListener(testSerialExecutor, listener)) {
-            assertTrue(latch1.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
+            Assert.assertTrue(latch1.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
 
             doc = getTestCollection().getDocument(doc.getId()).toMutable();
             doc.setInt(TEST_DOC_SORT_KEY, 15);
             saveDocInTestCollection(doc);
 
-            assertTrue(latch2.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
+            Assert.assertTrue(latch2.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
         }
     }
 
@@ -2686,9 +2692,9 @@ public class QueryTest extends BaseQueryTest {
             query,
             2,
             (n, result) -> {
-                assertEquals(1, result.count());
-                if (n == 1) { assertEquals(mDoc1.getId(), result.getString(0)); }
-                else { assertEquals(mDoc2.getId(), result.getString(0)); }
+                Assert.assertEquals(1, result.count());
+                if (n == 1) { Assert.assertEquals(mDoc1.getId(), result.getString(0)); }
+                else { Assert.assertEquals(mDoc2.getId(), result.getString(0)); }
             });
 
         // EQUAL operator only
@@ -2701,9 +2707,9 @@ public class QueryTest extends BaseQueryTest {
             query,
             2,
             (n, result) -> {
-                assertEquals(1, result.count());
-                if (n == 1) { assertEquals(mDoc1.getId(), result.getString(0)); }
-                else { assertEquals(mDoc4.getId(), result.getString(0)); }
+                Assert.assertEquals(1, result.count());
+                if (n == 1) { Assert.assertEquals(mDoc1.getId(), result.getString(0)); }
+                else { Assert.assertEquals(mDoc4.getId(), result.getString(0)); }
             });
 
         // AND and LIKE operators
@@ -2717,8 +2723,8 @@ public class QueryTest extends BaseQueryTest {
             query,
             1,
             (n, result) -> {
-                assertEquals(1, result.count());
-                assertEquals(mDoc1.getId(), result.getString(0));
+                Assert.assertEquals(1, result.count());
+                Assert.assertEquals(mDoc1.getId(), result.getString(0));
             });
     }
 
@@ -2744,12 +2750,12 @@ public class QueryTest extends BaseQueryTest {
             101,
             (n, result) -> {
                 if (n == 41) {
-                    assertEquals(59, result.getDictionary("main").getInt(TEST_DOC_REV_SORT_KEY));
-                    assertNull(result.getDictionary("secondary"));
+                    Assert.assertEquals(59, result.getDictionary("main").getInt(TEST_DOC_REV_SORT_KEY));
+                    Assert.assertNull(result.getDictionary("secondary"));
                 }
                 if (n == 42) {
-                    assertEquals(58, result.getDictionary("main").getInt(TEST_DOC_REV_SORT_KEY));
-                    assertEquals(42, result.getDictionary("secondary").getInt("theone"));
+                    Assert.assertEquals(58, result.getDictionary("main").getInt(TEST_DOC_REV_SORT_KEY));
+                    Assert.assertEquals(42, result.getDictionary("secondary").getInt("theone"));
                 }
             });
     }
@@ -2766,8 +2772,8 @@ public class QueryTest extends BaseQueryTest {
             .where(Meta.id.equalTo(Expression.string(doc1a.getId())));
 
         try (ResultSet rs = query.execute()) {
-            assertEquals(1, rs.allResults().size());
-            assertEquals(0, rs.allResults().size());
+            Assert.assertEquals(1, rs.allResults().size());
+            Assert.assertEquals(0, rs.allResults().size());
         }
     }
 
@@ -2775,91 +2781,91 @@ public class QueryTest extends BaseQueryTest {
     public void testAggregateFunctionEmptyArgs() {
         Function.count(null);
 
-        assertThrows(IllegalArgumentException.class, () -> Function.avg(null));
+        Assert.assertThrows(IllegalArgumentException.class, () -> Function.avg(null));
 
-        assertThrows(IllegalArgumentException.class, () -> Function.min(null));
+        Assert.assertThrows(IllegalArgumentException.class, () -> Function.min(null));
 
-        assertThrows(IllegalArgumentException.class, () -> Function.max(null));
+        Assert.assertThrows(IllegalArgumentException.class, () -> Function.max(null));
 
-        assertThrows(IllegalArgumentException.class, () -> Function.sum(null));
+        Assert.assertThrows(IllegalArgumentException.class, () -> Function.sum(null));
     }
 
     @Test
     public void testMathFunctionEmptyArgs() {
-        assertThrows(IllegalArgumentException.class, () -> Function.abs(null));
+        Assert.assertThrows(IllegalArgumentException.class, () -> Function.abs(null));
 
-        assertThrows(IllegalArgumentException.class, () -> Function.acos(null));
+        Assert.assertThrows(IllegalArgumentException.class, () -> Function.acos(null));
 
-        assertThrows(IllegalArgumentException.class, () -> Function.asin(null));
+        Assert.assertThrows(IllegalArgumentException.class, () -> Function.asin(null));
 
-        assertThrows(IllegalArgumentException.class, () -> Function.atan(null));
+        Assert.assertThrows(IllegalArgumentException.class, () -> Function.atan(null));
 
-        assertThrows(IllegalArgumentException.class, () -> Function.atan2(null, Expression.doubleValue(0.7)));
+        Assert.assertThrows(IllegalArgumentException.class, () -> Function.atan2(null, Expression.doubleValue(0.7)));
 
-        assertThrows(IllegalArgumentException.class, () -> Function.atan2(Expression.doubleValue(0.7), null));
+        Assert.assertThrows(IllegalArgumentException.class, () -> Function.atan2(Expression.doubleValue(0.7), null));
 
-        assertThrows(IllegalArgumentException.class, () -> Function.ceil(null));
+        Assert.assertThrows(IllegalArgumentException.class, () -> Function.ceil(null));
 
-        assertThrows(IllegalArgumentException.class, () -> Function.cos(null));
+        Assert.assertThrows(IllegalArgumentException.class, () -> Function.cos(null));
 
-        assertThrows(IllegalArgumentException.class, () -> Function.degrees(null));
+        Assert.assertThrows(IllegalArgumentException.class, () -> Function.degrees(null));
 
-        assertThrows(IllegalArgumentException.class, () -> Function.exp(null));
+        Assert.assertThrows(IllegalArgumentException.class, () -> Function.exp(null));
 
-        assertThrows(IllegalArgumentException.class, () -> Function.floor(null));
+        Assert.assertThrows(IllegalArgumentException.class, () -> Function.floor(null));
 
-        assertThrows(IllegalArgumentException.class, () -> Function.ln(null));
+        Assert.assertThrows(IllegalArgumentException.class, () -> Function.ln(null));
 
-        assertThrows(IllegalArgumentException.class, () -> Function.log(null));
+        Assert.assertThrows(IllegalArgumentException.class, () -> Function.log(null));
 
-        assertThrows(IllegalArgumentException.class, () -> Function.power(null, Expression.intValue(2)));
+        Assert.assertThrows(IllegalArgumentException.class, () -> Function.power(null, Expression.intValue(2)));
 
-        assertThrows(IllegalArgumentException.class, () -> Function.power(Expression.intValue(2), null));
+        Assert.assertThrows(IllegalArgumentException.class, () -> Function.power(Expression.intValue(2), null));
 
-        assertThrows(IllegalArgumentException.class, () -> Function.radians(null));
+        Assert.assertThrows(IllegalArgumentException.class, () -> Function.radians(null));
 
-        assertThrows(IllegalArgumentException.class, () -> Function.round(null));
+        Assert.assertThrows(IllegalArgumentException.class, () -> Function.round(null));
 
-        assertThrows(IllegalArgumentException.class, () -> Function.round(null, Expression.intValue(2)));
+        Assert.assertThrows(IllegalArgumentException.class, () -> Function.round(null, Expression.intValue(2)));
 
-        assertThrows(IllegalArgumentException.class, () -> Function.round(Expression.doubleValue(0.567), null));
+        Assert.assertThrows(IllegalArgumentException.class, () -> Function.round(Expression.doubleValue(0.567), null));
 
-        assertThrows(IllegalArgumentException.class, () -> Function.sign(null));
+        Assert.assertThrows(IllegalArgumentException.class, () -> Function.sign(null));
 
-        assertThrows(IllegalArgumentException.class, () -> Function.sin(null));
+        Assert.assertThrows(IllegalArgumentException.class, () -> Function.sin(null));
 
-        assertThrows(IllegalArgumentException.class, () -> Function.sqrt(null));
+        Assert.assertThrows(IllegalArgumentException.class, () -> Function.sqrt(null));
 
-        assertThrows(IllegalArgumentException.class, () -> Function.tan(null));
+        Assert.assertThrows(IllegalArgumentException.class, () -> Function.tan(null));
 
-        assertThrows(IllegalArgumentException.class, () -> Function.trunc(null));
+        Assert.assertThrows(IllegalArgumentException.class, () -> Function.trunc(null));
 
-        assertThrows(IllegalArgumentException.class, () -> Function.trunc(null, Expression.intValue(1)));
+        Assert.assertThrows(IllegalArgumentException.class, () -> Function.trunc(null, Expression.intValue(1)));
 
-        assertThrows(IllegalArgumentException.class, () -> Function.trunc(Expression.doubleValue(79.15), null));
+        Assert.assertThrows(IllegalArgumentException.class, () -> Function.trunc(Expression.doubleValue(79.15), null));
     }
 
     @Test
     public void testStringFunctionEmptyArgs() {
-        assertThrows(
+        Assert.assertThrows(
             IllegalArgumentException.class,
             () -> Function.contains(null, Expression.string("someSubString")));
 
-        assertThrows(
+        Assert.assertThrows(
             IllegalArgumentException.class,
             () -> Function.contains(Expression.string("somestring"), null));
 
-        assertThrows(IllegalArgumentException.class, () -> Function.length(null));
+        Assert.assertThrows(IllegalArgumentException.class, () -> Function.length(null));
 
-        assertThrows(IllegalArgumentException.class, () -> Function.lower(null));
+        Assert.assertThrows(IllegalArgumentException.class, () -> Function.lower(null));
 
-        assertThrows(IllegalArgumentException.class, () -> Function.ltrim(null));
+        Assert.assertThrows(IllegalArgumentException.class, () -> Function.ltrim(null));
 
-        assertThrows(IllegalArgumentException.class, () -> Function.rtrim(null));
+        Assert.assertThrows(IllegalArgumentException.class, () -> Function.rtrim(null));
 
-        assertThrows(IllegalArgumentException.class, () -> Function.trim(null));
+        Assert.assertThrows(IllegalArgumentException.class, () -> Function.trim(null));
 
-        assertThrows(IllegalArgumentException.class, () -> Function.upper(null));
+        Assert.assertThrows(IllegalArgumentException.class, () -> Function.upper(null));
     }
 
     @Test
@@ -2917,12 +2923,12 @@ public class QueryTest extends BaseQueryTest {
             query,
             6,
             (n, result) -> {
-                assertEquals(expectedLocal.get(n - 1), result.getNumber(0));
-                assertEquals(expectedJST.get(n - 1), result.getNumber(1));
-                assertEquals(expectedJST.get(n - 1), result.getNumber(2));
-                assertEquals(expectedPST.get(n - 1), result.getNumber(3));
-                assertEquals(expectedPST.get(n - 1), result.getNumber(4));
-                assertEquals(expectedUTC.get(n - 1), result.getNumber(5));
+                Assert.assertEquals(expectedLocal.get(n - 1), result.getNumber(0));
+                Assert.assertEquals(expectedJST.get(n - 1), result.getNumber(1));
+                Assert.assertEquals(expectedJST.get(n - 1), result.getNumber(2));
+                Assert.assertEquals(expectedPST.get(n - 1), result.getNumber(3));
+                Assert.assertEquals(expectedPST.get(n - 1), result.getNumber(4));
+                Assert.assertEquals(expectedUTC.get(n - 1), result.getNumber(5));
             });
     }
 
@@ -2977,12 +2983,12 @@ public class QueryTest extends BaseQueryTest {
             query,
             6,
             (n, result) -> {
-                assertEquals(expectedLocal.get(n - 1), result.getString(0));
-                assertEquals(expectedJST.get(n - 1), result.getString(1));
-                assertEquals(expectedJST.get(n - 1), result.getString(2));
-                assertEquals(expectedPST.get(n - 1), result.getString(3));
-                assertEquals(expectedPST.get(n - 1), result.getString(4));
-                assertEquals(expectedUTC.get(n - 1), result.getString(5));
+                Assert.assertEquals(expectedLocal.get(n - 1), result.getString(0));
+                Assert.assertEquals(expectedJST.get(n - 1), result.getString(1));
+                Assert.assertEquals(expectedJST.get(n - 1), result.getString(2));
+                Assert.assertEquals(expectedPST.get(n - 1), result.getString(3));
+                Assert.assertEquals(expectedPST.get(n - 1), result.getString(4));
+                Assert.assertEquals(expectedUTC.get(n - 1), result.getString(5));
             });
     }
 
@@ -3018,7 +3024,7 @@ public class QueryTest extends BaseQueryTest {
             6,
             (n, result) -> {
                 final int i = n - 1;
-                assertEquals(expectedUTC.get(i), result.getString(1));
+                Assert.assertEquals(expectedUTC.get(i), result.getString(1));
             });
     }
 
@@ -3053,8 +3059,8 @@ public class QueryTest extends BaseQueryTest {
                 String p = r.getString("$price");
                 if (Integer.parseInt(p.substring(1)) < 100) { cheapBooks++; }
             }
-            assertEquals(2, books);
-            assertEquals(1, cheapBooks);
+            Assert.assertEquals(2, books);
+            Assert.assertEquals(1, cheapBooks);
         }
     }
 
@@ -3070,10 +3076,10 @@ public class QueryTest extends BaseQueryTest {
             query,
             100,
             (n, result) -> {
-                assertEquals(n, result.getInt(TEST_DOC_SORT_KEY));
-                assertEquals(n, result.getInt(0));
-                assertEquals(100 - n, result.getInt(TEST_DOC_REV_SORT_KEY));
-                assertEquals(100 - n, result.getInt(1));
+                Assert.assertEquals(n, result.getInt(TEST_DOC_SORT_KEY));
+                Assert.assertEquals(n, result.getInt(0));
+                Assert.assertEquals(100 - n, result.getInt(TEST_DOC_REV_SORT_KEY));
+                Assert.assertEquals(100 - n, result.getInt(1));
             });
     }
 
@@ -3084,13 +3090,13 @@ public class QueryTest extends BaseQueryTest {
             getTestDatabase().createQuery("SELECT * FROM _default"),
             100,
             (n, result) -> {
-                assertEquals(1, result.count());
+                Assert.assertEquals(1, result.count());
                 Dictionary a1 = result.getDictionary(0);
                 Dictionary a2 = result.getDictionary("_default");
-                assertEquals(n, a1.getInt(TEST_DOC_SORT_KEY));
-                assertEquals(100 - n, a1.getInt(TEST_DOC_REV_SORT_KEY));
-                assertEquals(n, a2.getInt(TEST_DOC_SORT_KEY));
-                assertEquals(100 - n, a2.getInt(TEST_DOC_REV_SORT_KEY));
+                Assert.assertEquals(n, a1.getInt(TEST_DOC_SORT_KEY));
+                Assert.assertEquals(100 - n, a1.getInt(TEST_DOC_REV_SORT_KEY));
+                Assert.assertEquals(n, a2.getInt(TEST_DOC_SORT_KEY));
+                Assert.assertEquals(100 - n, a2.getInt(TEST_DOC_REV_SORT_KEY));
             });
     }
 
@@ -3102,13 +3108,13 @@ public class QueryTest extends BaseQueryTest {
             getTestDatabase().createQuery("SELECT * FROM " + BaseDbTestKt.getQualifiedName(getTestCollection())),
             100,
             (n, result) -> {
-                assertEquals(1, result.count());
+                Assert.assertEquals(1, result.count());
                 Dictionary a1 = result.getDictionary(0);
                 Dictionary a2 = result.getDictionary(getTestCollection().getName());
-                assertEquals(n, a1.getInt(TEST_DOC_SORT_KEY));
-                assertEquals(100 - n, a1.getInt(TEST_DOC_REV_SORT_KEY));
-                assertEquals(n, a2.getInt(TEST_DOC_SORT_KEY));
-                assertEquals(100 - n, a2.getInt(TEST_DOC_REV_SORT_KEY));
+                Assert.assertEquals(n, a1.getInt(TEST_DOC_SORT_KEY));
+                Assert.assertEquals(100 - n, a1.getInt(TEST_DOC_REV_SORT_KEY));
+                Assert.assertEquals(n, a2.getInt(TEST_DOC_SORT_KEY));
+                Assert.assertEquals(100 - n, a2.getInt(TEST_DOC_REV_SORT_KEY));
             });
     }
 
@@ -3119,13 +3125,13 @@ public class QueryTest extends BaseQueryTest {
             getTestDatabase().createQuery("SELECT * FROM _"),
             100,
             (n, result) -> {
-                assertEquals(1, result.count());
+                Assert.assertEquals(1, result.count());
                 Dictionary a1 = result.getDictionary(0);
                 Dictionary a2 = result.getDictionary("_");
-                assertEquals(n, a1.getInt(TEST_DOC_SORT_KEY));
-                assertEquals(100 - n, a1.getInt(TEST_DOC_REV_SORT_KEY));
-                assertEquals(n, a2.getInt(TEST_DOC_SORT_KEY));
-                assertEquals(100 - n, a2.getInt(TEST_DOC_REV_SORT_KEY));
+                Assert.assertEquals(n, a1.getInt(TEST_DOC_SORT_KEY));
+                Assert.assertEquals(100 - n, a1.getInt(TEST_DOC_REV_SORT_KEY));
+                Assert.assertEquals(n, a2.getInt(TEST_DOC_SORT_KEY));
+                Assert.assertEquals(100 - n, a2.getInt(TEST_DOC_REV_SORT_KEY));
             });
     }
 
@@ -3165,7 +3171,7 @@ public class QueryTest extends BaseQueryTest {
                 testCase.docIds.size(),
                 (n, result) -> {
                     if (n <= testCase.docIds.size()) {
-                        assertEquals(testCase.docIds.get(n - 1), result.getString(0));
+                        Assert.assertEquals(testCase.docIds.get(n - 1), result.getString(0));
                     }
                 });
         }
@@ -3188,8 +3194,8 @@ public class QueryTest extends BaseQueryTest {
             query,
             2,
             (n, result) -> {
-                assertNotNull(result.getString(0));
-                assertNotNull(result.getString(1));
+                Assert.assertNotNull(result.getString(0));
+                Assert.assertNotNull(result.getString(1));
             });
     }
 
@@ -3239,11 +3245,11 @@ public class QueryTest extends BaseQueryTest {
         t1.start();
         t2.start();
 
-        latch3.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS);
+        Assert.assertTrue(latch3.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
 
         Exception e = err.get();
-        assertEquals("Events did not occur in expected order", 4, n.get());
-        assertTrue("Latch 2 should have timed out", timeout.get());
+        Assert.assertEquals("Events did not occur in expected order", 4, n.get());
+        Assert.assertTrue("Latch 2 should have timed out", timeout.get());
         if (e != null) { throw new AssertionError("Operation failed", e); }
     }
 
@@ -3269,7 +3275,7 @@ public class QueryTest extends BaseQueryTest {
                 testCase.docIds.size(),
                 (n, result) -> docIdList.remove(result.getString(0)));
 
-            assertEquals(0, docIdList.size());
+            Assert.assertEquals(0, docIdList.size());
         }
     }
 
@@ -3285,12 +3291,12 @@ public class QueryTest extends BaseQueryTest {
                 String firstName = (String) name.get("first");
                 firstNames.add(firstName);
             });
-        assertEquals(100, numRows);
-        assertEquals(100, firstNames.size());
+        Assert.assertEquals(100, numRows);
+        Assert.assertEquals(100, firstNames.size());
 
         List<String> sorted = new ArrayList<>(firstNames);
-        Collections.sort(sorted, cmp);
-        assertArrayEquals(sorted.toArray(new String[0]), firstNames.toArray(new String[0]));
+        sorted.sort(cmp);
+        Assert.assertArrayEquals(sorted.toArray(new String[0]), firstNames.toArray(new String[0]));
     }
 
     private void createAlphaDocs() {
@@ -3356,7 +3362,7 @@ public class QueryTest extends BaseQueryTest {
         };
 
         try (ListenerToken token = query.addChangeListener(testSerialExecutor, listener)) {
-            assertTrue(latch1.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
+            Assert.assertTrue(latch1.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
 
             // create more docs
             loadDocuments(101, 100);
@@ -3364,8 +3370,8 @@ public class QueryTest extends BaseQueryTest {
             // Wait 5 seconds
             // The latch should not pop, because the listener should be called only once
             // ??? This is a very expensive way to test
-            assertFalse(latch2.await(5 * 1000, TimeUnit.MILLISECONDS));
-            assertEquals(1, latch2.getCount());
+            Assert.assertFalse(latch2.await(5 * 1000, TimeUnit.MILLISECONDS));
+            Assert.assertEquals(1, latch2.getCount());
         }
     }
 }

@@ -26,18 +26,11 @@ import java.util.Map;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.junit.Ignore;
+import org.junit.Assert;
 import org.junit.Test;
 
 import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.JSONUtils;
-
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 
 
 @SuppressWarnings("ConstantConditions")
@@ -50,28 +43,28 @@ public class ResultTest extends BaseQueryTest {
             int rows = verifyQueryWithEnumerator(
                 query,
                 (n, r) -> {
-                    assertEquals(13, r.count());
+                    Assert.assertEquals(13, r.count());
 
-                    assertNull(r.getValue("null"));
-                    assertEquals(true, r.getValue("true"));
-                    assertEquals(false, r.getValue("false"));
-                    assertEquals("string", r.getValue("string"));
-                    assertEquals(0L, r.getValue("zero"));
-                    assertEquals(1L, r.getValue("one"));
-                    assertEquals(-1L, r.getValue("minus_one"));
-                    assertEquals(1.1, r.getValue("one_dot_one"));
-                    assertEquals(TEST_DATE, r.getValue("date"));
-                    assertTrue(r.getValue("dict") instanceof Dictionary);
-                    assertTrue(r.getValue("array") instanceof Array);
-                    assertTrue(r.getValue("blob") instanceof Blob);
-                    assertNull(r.getValue("non_existing_key"));
+                    Assert.assertNull(r.getValue("null"));
+                    Assert.assertEquals(true, r.getValue("true"));
+                    Assert.assertEquals(false, r.getValue("false"));
+                    Assert.assertEquals("string", r.getValue("string"));
+                    Assert.assertEquals(0L, r.getValue("zero"));
+                    Assert.assertEquals(1L, r.getValue("one"));
+                    Assert.assertEquals(-1L, r.getValue("minus_one"));
+                    Assert.assertEquals(1.1, r.getValue("one_dot_one"));
+                    Assert.assertEquals(TEST_DATE, r.getValue("date"));
+                    Assert.assertTrue(r.getValue("dict") instanceof Dictionary);
+                    Assert.assertTrue(r.getValue("array") instanceof Array);
+                    Assert.assertTrue(r.getValue("blob") instanceof Blob);
+                    Assert.assertNull(r.getValue("non_existing_key"));
 
-                    assertThrows(IllegalArgumentException.class, () -> r.getValue(null));
+                    Assert.assertThrows(IllegalArgumentException.class, () -> r.getValue(null));
 
-                    assertNull(r.getValue("not_in_query_select"));
+                    Assert.assertNull(r.getValue("not_in_query_select"));
                 });
 
-            assertEquals(1, rows);
+            Assert.assertEquals(1, rows);
         });
     }
 
@@ -92,29 +85,30 @@ public class ResultTest extends BaseQueryTest {
             Query query = generateQuery(docID);
 
             // run query
-            int rows = verifyQueryWithEnumerator(query, (n, r) -> {
-                assertEquals(13, r.count());
+            int rows = verifyQueryWithEnumerator(
+                query, (n, r) -> {
+                    Assert.assertEquals(13, r.count());
 
-                assertNull(r.getValue(0));
-                assertEquals(true, r.getValue(1));
-                assertEquals(false, r.getValue(2));
-                assertEquals("string", r.getValue(3));
-                assertEquals(0L, r.getValue(4));
-                assertEquals(1L, r.getValue(5));
-                assertEquals(-1L, r.getValue(6));
-                assertEquals(1.1, r.getValue(7));
-                assertEquals(TEST_DATE, r.getValue(8));
-                assertTrue(r.getValue(9) instanceof Dictionary);
-                assertTrue(r.getValue(10) instanceof Array);
-                assertTrue(r.getValue(11) instanceof Blob);
-                assertNull(r.getValue(12));
+                    Assert.assertNull(r.getValue(0));
+                    Assert.assertEquals(true, r.getValue(1));
+                    Assert.assertEquals(false, r.getValue(2));
+                    Assert.assertEquals("string", r.getValue(3));
+                    Assert.assertEquals(0L, r.getValue(4));
+                    Assert.assertEquals(1L, r.getValue(5));
+                    Assert.assertEquals(-1L, r.getValue(6));
+                    Assert.assertEquals(1.1, r.getValue(7));
+                    Assert.assertEquals(TEST_DATE, r.getValue(8));
+                    Assert.assertTrue(r.getValue(9) instanceof Dictionary);
+                    Assert.assertTrue(r.getValue(10) instanceof Array);
+                    Assert.assertTrue(r.getValue(11) instanceof Blob);
+                    Assert.assertNull(r.getValue(12));
 
-                assertThrows(ArrayIndexOutOfBoundsException.class, () -> r.getValue(-1));
+                    Assert.assertThrows(ArrayIndexOutOfBoundsException.class, () -> r.getValue(-1));
 
-                assertThrows(ArrayIndexOutOfBoundsException.class, () -> r.getValue(100));
-            });
+                    Assert.assertThrows(ArrayIndexOutOfBoundsException.class, () -> r.getValue(100));
+                });
 
-            assertEquals(1, rows);
+            Assert.assertEquals(1, rows);
         }
     }
 
@@ -124,29 +118,30 @@ public class ResultTest extends BaseQueryTest {
             String docID = prepareData(i);
             Query query = generateQuery(docID);
 
-            int rows = verifyQueryWithEnumerator(query, (n, r) -> {
-                assertEquals(13, r.count());
+            int rows = verifyQueryWithEnumerator(
+                query, (n, r) -> {
+                    Assert.assertEquals(13, r.count());
 
-                assertNull(r.getString("null"));
-                assertNull(r.getString("true"));
-                assertNull(r.getString("false"));
-                assertEquals("string", r.getString("string"));
-                assertNull(r.getString("zero"));
-                assertNull(r.getString("one"));
-                assertNull(r.getString("minus_one"));
-                assertNull(r.getString("one_dot_one"));
-                assertEquals(TEST_DATE, r.getString("date"));
-                assertNull(r.getString("dict"));
-                assertNull(r.getString("array"));
-                assertNull(r.getString("blob"));
-                assertNull(r.getString("non_existing_key"));
+                    Assert.assertNull(r.getString("null"));
+                    Assert.assertNull(r.getString("true"));
+                    Assert.assertNull(r.getString("false"));
+                    Assert.assertEquals("string", r.getString("string"));
+                    Assert.assertNull(r.getString("zero"));
+                    Assert.assertNull(r.getString("one"));
+                    Assert.assertNull(r.getString("minus_one"));
+                    Assert.assertNull(r.getString("one_dot_one"));
+                    Assert.assertEquals(TEST_DATE, r.getString("date"));
+                    Assert.assertNull(r.getString("dict"));
+                    Assert.assertNull(r.getString("array"));
+                    Assert.assertNull(r.getString("blob"));
+                    Assert.assertNull(r.getString("non_existing_key"));
 
-                assertThrows(IllegalArgumentException.class, () -> r.getString(null));
+                    Assert.assertThrows(IllegalArgumentException.class, () -> r.getString(null));
 
-                assertNull(r.getString("not_in_query_select"));
-            });
+                    Assert.assertNull(r.getString("not_in_query_select"));
+                });
 
-            assertEquals(1, rows);
+            Assert.assertEquals(1, rows);
         }
     }
 
@@ -156,29 +151,30 @@ public class ResultTest extends BaseQueryTest {
             String docID = prepareData(i);
             Query query = generateQuery(docID);
 
-            int rows = verifyQueryWithEnumerator(query, (n, r) -> {
-                assertEquals(13, r.count());
+            int rows = verifyQueryWithEnumerator(
+                query, (n, r) -> {
+                    Assert.assertEquals(13, r.count());
 
-                assertNull(r.getString(0));
-                assertNull(r.getString(1));
-                assertNull(r.getString(2));
-                assertEquals("string", r.getString(3));
-                assertNull(r.getString(4));
-                assertNull(r.getString(5));
-                assertNull(r.getString(6));
-                assertNull(r.getString(7));
-                assertEquals(TEST_DATE, r.getString(8));
-                assertNull(r.getString(9));
-                assertNull(r.getString(10));
-                assertNull(r.getString(11));
-                assertNull(r.getString(12));
+                    Assert.assertNull(r.getString(0));
+                    Assert.assertNull(r.getString(1));
+                    Assert.assertNull(r.getString(2));
+                    Assert.assertEquals("string", r.getString(3));
+                    Assert.assertNull(r.getString(4));
+                    Assert.assertNull(r.getString(5));
+                    Assert.assertNull(r.getString(6));
+                    Assert.assertNull(r.getString(7));
+                    Assert.assertEquals(TEST_DATE, r.getString(8));
+                    Assert.assertNull(r.getString(9));
+                    Assert.assertNull(r.getString(10));
+                    Assert.assertNull(r.getString(11));
+                    Assert.assertNull(r.getString(12));
 
-                assertThrows(ArrayIndexOutOfBoundsException.class, () -> r.getString(-1));
+                    Assert.assertThrows(ArrayIndexOutOfBoundsException.class, () -> r.getString(-1));
 
-                assertThrows(ArrayIndexOutOfBoundsException.class, () -> r.getString(100));
-            });
+                    Assert.assertThrows(ArrayIndexOutOfBoundsException.class, () -> r.getString(100));
+                });
 
-            assertEquals(1, rows);
+            Assert.assertEquals(1, rows);
         }
     }
 
@@ -189,29 +185,30 @@ public class ResultTest extends BaseQueryTest {
             String docID = prepareData(i);
             Query query = generateQuery(docID);
 
-            int rows = verifyQueryWithEnumerator(query, (n, r) -> {
-                assertEquals(13, r.count());
+            int rows = verifyQueryWithEnumerator(
+                query, (n, r) -> {
+                    Assert.assertEquals(13, r.count());
 
-                assertNull(r.getNumber("null"));
-                assertEquals(1, r.getNumber("true").intValue());
-                assertEquals(0, r.getNumber("false").intValue());
-                assertNull(r.getNumber("string"));
-                assertEquals(0, r.getNumber("zero").intValue());
-                assertEquals(1, r.getNumber("one").intValue());
-                assertEquals(-1, r.getNumber("minus_one").intValue());
-                assertEquals(1.1, r.getNumber("one_dot_one"));
-                assertNull(r.getNumber("date"));
-                assertNull(r.getNumber("dict"));
-                assertNull(r.getNumber("array"));
-                assertNull(r.getNumber("blob"));
-                assertNull(r.getNumber("non_existing_key"));
+                    Assert.assertNull(r.getNumber("null"));
+                    Assert.assertEquals(1, r.getNumber("true").intValue());
+                    Assert.assertEquals(0, r.getNumber("false").intValue());
+                    Assert.assertNull(r.getNumber("string"));
+                    Assert.assertEquals(0, r.getNumber("zero").intValue());
+                    Assert.assertEquals(1, r.getNumber("one").intValue());
+                    Assert.assertEquals(-1, r.getNumber("minus_one").intValue());
+                    Assert.assertEquals(1.1, r.getNumber("one_dot_one"));
+                    Assert.assertNull(r.getNumber("date"));
+                    Assert.assertNull(r.getNumber("dict"));
+                    Assert.assertNull(r.getNumber("array"));
+                    Assert.assertNull(r.getNumber("blob"));
+                    Assert.assertNull(r.getNumber("non_existing_key"));
 
-                assertThrows(IllegalArgumentException.class, () -> r.getNumber(null));
+                    Assert.assertThrows(IllegalArgumentException.class, () -> r.getNumber(null));
 
-                assertNull(r.getNumber("not_in_query_select"));
-            });
+                    Assert.assertNull(r.getNumber("not_in_query_select"));
+                });
 
-            assertEquals(1, rows);
+            Assert.assertEquals(1, rows);
         }
     }
 
@@ -221,29 +218,30 @@ public class ResultTest extends BaseQueryTest {
             String docID = prepareData(i);
             Query query = generateQuery(docID);
 
-            int rows = verifyQueryWithEnumerator(query, (n, r) -> {
-                assertEquals(13, r.count());
+            int rows = verifyQueryWithEnumerator(
+                query, (n, r) -> {
+                    Assert.assertEquals(13, r.count());
 
-                assertNull(r.getNumber(0));  // null
-                assertEquals(1, r.getNumber(1).intValue());  // true
-                assertEquals(0, r.getNumber(2).intValue());  // false
-                assertNull(r.getNumber(3));  // string
-                assertEquals(0, r.getNumber(4).intValue());
-                assertEquals(1, r.getNumber(5).intValue());
-                assertEquals(-1, r.getNumber(6).intValue());
-                assertEquals(1.1, r.getNumber(7));
-                assertNull(r.getNumber(8));
-                assertNull(r.getNumber(9));
-                assertNull(r.getNumber(10));
-                assertNull(r.getNumber(11));
-                assertNull(r.getNumber(12));
+                    Assert.assertNull(r.getNumber(0));  // null
+                    Assert.assertEquals(1, r.getNumber(1).intValue());  // true
+                    Assert.assertEquals(0, r.getNumber(2).intValue());  // false
+                    Assert.assertNull(r.getNumber(3));  // string
+                    Assert.assertEquals(0, r.getNumber(4).intValue());
+                    Assert.assertEquals(1, r.getNumber(5).intValue());
+                    Assert.assertEquals(-1, r.getNumber(6).intValue());
+                    Assert.assertEquals(1.1, r.getNumber(7));
+                    Assert.assertNull(r.getNumber(8));
+                    Assert.assertNull(r.getNumber(9));
+                    Assert.assertNull(r.getNumber(10));
+                    Assert.assertNull(r.getNumber(11));
+                    Assert.assertNull(r.getNumber(12));
 
-                assertThrows(ArrayIndexOutOfBoundsException.class, () -> r.getNumber(-1));
+                    Assert.assertThrows(ArrayIndexOutOfBoundsException.class, () -> r.getNumber(-1));
 
-                assertThrows(ArrayIndexOutOfBoundsException.class, () -> r.getNumber(100));
-            });
+                    Assert.assertThrows(ArrayIndexOutOfBoundsException.class, () -> r.getNumber(100));
+                });
 
-            assertEquals(1, rows);
+            Assert.assertEquals(1, rows);
         }
     }
 
@@ -253,29 +251,30 @@ public class ResultTest extends BaseQueryTest {
             String docID = prepareData(i);
             Query query = generateQuery(docID);
 
-            int rows = verifyQueryWithEnumerator(query, (n, r) -> {
-                assertEquals(13, r.count());
+            int rows = verifyQueryWithEnumerator(
+                query, (n, r) -> {
+                    Assert.assertEquals(13, r.count());
 
-                assertEquals(0, r.getInt("null"));
-                assertEquals(1, r.getInt("true"));
-                assertEquals(0, r.getInt("false"));
-                assertEquals(0, r.getInt("string"));
-                assertEquals(0, r.getInt("zero"));
-                assertEquals(1, r.getInt("one"));
-                assertEquals(-1, r.getInt("minus_one"));
-                assertEquals(1, r.getInt("one_dot_one"));
-                assertEquals(0, r.getInt("date"));
-                assertEquals(0, r.getInt("dict"));
-                assertEquals(0, r.getInt("array"));
-                assertEquals(0, r.getInt("blob"));
-                assertEquals(0, r.getInt("non_existing_key"));
+                    Assert.assertEquals(0, r.getInt("null"));
+                    Assert.assertEquals(1, r.getInt("true"));
+                    Assert.assertEquals(0, r.getInt("false"));
+                    Assert.assertEquals(0, r.getInt("string"));
+                    Assert.assertEquals(0, r.getInt("zero"));
+                    Assert.assertEquals(1, r.getInt("one"));
+                    Assert.assertEquals(-1, r.getInt("minus_one"));
+                    Assert.assertEquals(1, r.getInt("one_dot_one"));
+                    Assert.assertEquals(0, r.getInt("date"));
+                    Assert.assertEquals(0, r.getInt("dict"));
+                    Assert.assertEquals(0, r.getInt("array"));
+                    Assert.assertEquals(0, r.getInt("blob"));
+                    Assert.assertEquals(0, r.getInt("non_existing_key"));
 
-                assertThrows(IllegalArgumentException.class, () -> r.getInt(null));
+                    Assert.assertThrows(IllegalArgumentException.class, () -> r.getInt(null));
 
-                assertEquals(0, r.getInt("not_in_query_select"));
-            });
+                    Assert.assertEquals(0, r.getInt("not_in_query_select"));
+                });
 
-            assertEquals(1, rows);
+            Assert.assertEquals(1, rows);
         }
     }
 
@@ -285,29 +284,30 @@ public class ResultTest extends BaseQueryTest {
             String docID = prepareData(i);
             Query query = generateQuery(docID);
 
-            int rows = verifyQueryWithEnumerator(query, (n, r) -> {
-                assertEquals(13, r.count());
+            int rows = verifyQueryWithEnumerator(
+                query, (n, r) -> {
+                    Assert.assertEquals(13, r.count());
 
-                assertEquals(0, r.getInt(0));
-                assertEquals(1, r.getInt(1));
-                assertEquals(0, r.getInt(2));
-                assertEquals(0, r.getInt(3));
-                assertEquals(0, r.getInt(4));
-                assertEquals(1, r.getInt(5));
-                assertEquals(-1, r.getInt(6));
-                assertEquals(1, r.getInt(7));
-                assertEquals(0, r.getInt(8));
-                assertEquals(0, r.getInt(9));
-                assertEquals(0, r.getInt(10));
-                assertEquals(0, r.getInt(11));
-                assertEquals(0, r.getInt(12));
+                    Assert.assertEquals(0, r.getInt(0));
+                    Assert.assertEquals(1, r.getInt(1));
+                    Assert.assertEquals(0, r.getInt(2));
+                    Assert.assertEquals(0, r.getInt(3));
+                    Assert.assertEquals(0, r.getInt(4));
+                    Assert.assertEquals(1, r.getInt(5));
+                    Assert.assertEquals(-1, r.getInt(6));
+                    Assert.assertEquals(1, r.getInt(7));
+                    Assert.assertEquals(0, r.getInt(8));
+                    Assert.assertEquals(0, r.getInt(9));
+                    Assert.assertEquals(0, r.getInt(10));
+                    Assert.assertEquals(0, r.getInt(11));
+                    Assert.assertEquals(0, r.getInt(12));
 
-                assertThrows(ArrayIndexOutOfBoundsException.class, () -> r.getInt(-1));
+                    Assert.assertThrows(ArrayIndexOutOfBoundsException.class, () -> r.getInt(-1));
 
-                assertThrows(ArrayIndexOutOfBoundsException.class, () -> r.getInt(100));
-            });
+                    Assert.assertThrows(ArrayIndexOutOfBoundsException.class, () -> r.getInt(100));
+                });
 
-            assertEquals(1, rows);
+            Assert.assertEquals(1, rows);
         }
     }
 
@@ -317,29 +317,30 @@ public class ResultTest extends BaseQueryTest {
             String docID = prepareData(i);
             Query query = generateQuery(docID);
 
-            int rows = verifyQueryWithEnumerator(query, (n, r) -> {
-                assertEquals(13, r.count());
+            int rows = verifyQueryWithEnumerator(
+                query, (n, r) -> {
+                    Assert.assertEquals(13, r.count());
 
-                assertEquals(0, r.getLong("null"));
-                assertEquals(1, r.getLong("true"));
-                assertEquals(0, r.getLong("false"));
-                assertEquals(0, r.getLong("string"));
-                assertEquals(0, r.getLong("zero"));
-                assertEquals(1, r.getLong("one"));
-                assertEquals(-1, r.getLong("minus_one"));
-                assertEquals(1, r.getLong("one_dot_one"));
-                assertEquals(0, r.getLong("date"));
-                assertEquals(0, r.getLong("dict"));
-                assertEquals(0, r.getLong("array"));
-                assertEquals(0, r.getLong("blob"));
-                assertEquals(0, r.getLong("non_existing_key"));
+                    Assert.assertEquals(0, r.getLong("null"));
+                    Assert.assertEquals(1, r.getLong("true"));
+                    Assert.assertEquals(0, r.getLong("false"));
+                    Assert.assertEquals(0, r.getLong("string"));
+                    Assert.assertEquals(0, r.getLong("zero"));
+                    Assert.assertEquals(1, r.getLong("one"));
+                    Assert.assertEquals(-1, r.getLong("minus_one"));
+                    Assert.assertEquals(1, r.getLong("one_dot_one"));
+                    Assert.assertEquals(0, r.getLong("date"));
+                    Assert.assertEquals(0, r.getLong("dict"));
+                    Assert.assertEquals(0, r.getLong("array"));
+                    Assert.assertEquals(0, r.getLong("blob"));
+                    Assert.assertEquals(0, r.getLong("non_existing_key"));
 
-                assertThrows(IllegalArgumentException.class, () -> r.getLong(null));
+                    Assert.assertThrows(IllegalArgumentException.class, () -> r.getLong(null));
 
-                assertEquals(0, r.getLong("not_in_query_select"));
-            });
+                    Assert.assertEquals(0, r.getLong("not_in_query_select"));
+                });
 
-            assertEquals(1, rows);
+            Assert.assertEquals(1, rows);
         }
     }
 
@@ -349,29 +350,30 @@ public class ResultTest extends BaseQueryTest {
             String docID = prepareData(i);
             Query query = generateQuery(docID);
 
-            int rows = verifyQueryWithEnumerator(query, (n, r) -> {
-                assertEquals(13, r.count());
+            int rows = verifyQueryWithEnumerator(
+                query, (n, r) -> {
+                    Assert.assertEquals(13, r.count());
 
-                assertEquals(0, r.getLong(0));
-                assertEquals(1, r.getLong(1));
-                assertEquals(0, r.getLong(2));
-                assertEquals(0, r.getLong(3));
-                assertEquals(0, r.getLong(4));
-                assertEquals(1, r.getLong(5));
-                assertEquals(-1, r.getLong(6));
-                assertEquals(1, r.getLong(7));
-                assertEquals(0, r.getLong(8));
-                assertEquals(0, r.getLong(9));
-                assertEquals(0, r.getLong(10));
-                assertEquals(0, r.getLong(11));
-                assertEquals(0, r.getLong(12));
+                    Assert.assertEquals(0, r.getLong(0));
+                    Assert.assertEquals(1, r.getLong(1));
+                    Assert.assertEquals(0, r.getLong(2));
+                    Assert.assertEquals(0, r.getLong(3));
+                    Assert.assertEquals(0, r.getLong(4));
+                    Assert.assertEquals(1, r.getLong(5));
+                    Assert.assertEquals(-1, r.getLong(6));
+                    Assert.assertEquals(1, r.getLong(7));
+                    Assert.assertEquals(0, r.getLong(8));
+                    Assert.assertEquals(0, r.getLong(9));
+                    Assert.assertEquals(0, r.getLong(10));
+                    Assert.assertEquals(0, r.getLong(11));
+                    Assert.assertEquals(0, r.getLong(12));
 
-                assertThrows(ArrayIndexOutOfBoundsException.class, () -> r.getLong(-1));
+                    Assert.assertThrows(ArrayIndexOutOfBoundsException.class, () -> r.getLong(-1));
 
-                assertThrows(ArrayIndexOutOfBoundsException.class, () -> r.getLong(100));
-            });
+                    Assert.assertThrows(ArrayIndexOutOfBoundsException.class, () -> r.getLong(100));
+                });
 
-            assertEquals(1, rows);
+            Assert.assertEquals(1, rows);
         }
     }
 
@@ -381,28 +383,29 @@ public class ResultTest extends BaseQueryTest {
             String docID = prepareData(i);
             Query query = generateQuery(docID);
 
-            int rows = verifyQueryWithEnumerator(query, (n, r) -> {
-                assertEquals(13, r.count());
+            int rows = verifyQueryWithEnumerator(
+                query, (n, r) -> {
+                    Assert.assertEquals(13, r.count());
 
-                assertEquals(0.0f, r.getFloat("null"), 0.0f);
-                assertEquals(1.0f, r.getFloat("true"), 0.0f);
-                assertEquals(0.0f, r.getFloat("false"), 0.0f);
-                assertEquals(0.0f, r.getFloat("string"), 0.0f);
-                assertEquals(0.0f, r.getFloat("zero"), 0.0f);
-                assertEquals(1.0f, r.getFloat("one"), 0.0f);
-                assertEquals(-1.0f, r.getFloat("minus_one"), 0.0f);
-                assertEquals(1.1f, r.getFloat("one_dot_one"), 0.0f);
-                assertEquals(0.0f, r.getFloat("date"), 0.0f);
-                assertEquals(0.0f, r.getFloat("dict"), 0.0f);
-                assertEquals(0.0f, r.getFloat("array"), 0.0f);
-                assertEquals(0.0f, r.getFloat("blob"), 0.0f);
-                assertEquals(0.0f, r.getFloat("non_existing_key"), 0.0f);
+                    Assert.assertEquals(0.0f, r.getFloat("null"), 0.0f);
+                    Assert.assertEquals(1.0f, r.getFloat("true"), 0.0f);
+                    Assert.assertEquals(0.0f, r.getFloat("false"), 0.0f);
+                    Assert.assertEquals(0.0f, r.getFloat("string"), 0.0f);
+                    Assert.assertEquals(0.0f, r.getFloat("zero"), 0.0f);
+                    Assert.assertEquals(1.0f, r.getFloat("one"), 0.0f);
+                    Assert.assertEquals(-1.0f, r.getFloat("minus_one"), 0.0f);
+                    Assert.assertEquals(1.1f, r.getFloat("one_dot_one"), 0.0f);
+                    Assert.assertEquals(0.0f, r.getFloat("date"), 0.0f);
+                    Assert.assertEquals(0.0f, r.getFloat("dict"), 0.0f);
+                    Assert.assertEquals(0.0f, r.getFloat("array"), 0.0f);
+                    Assert.assertEquals(0.0f, r.getFloat("blob"), 0.0f);
+                    Assert.assertEquals(0.0f, r.getFloat("non_existing_key"), 0.0f);
 
-                assertThrows(IllegalArgumentException.class, () -> r.getFloat(null));
+                    Assert.assertThrows(IllegalArgumentException.class, () -> r.getFloat(null));
 
-                assertEquals(0.0f, r.getFloat("not_in_query_select"), 0.0f);
-            });
-            assertEquals(1, rows);
+                    Assert.assertEquals(0.0f, r.getFloat("not_in_query_select"), 0.0f);
+                });
+            Assert.assertEquals(1, rows);
         }
     }
 
@@ -412,29 +415,30 @@ public class ResultTest extends BaseQueryTest {
             String docID = prepareData(i);
             Query query = generateQuery(docID);
 
-            int rows = verifyQueryWithEnumerator(query, (n, r) -> {
-                assertEquals(13, r.count());
+            int rows = verifyQueryWithEnumerator(
+                query, (n, r) -> {
+                    Assert.assertEquals(13, r.count());
 
-                assertEquals(0.0f, r.getFloat(0), 0.0f);
-                assertEquals(1.0f, r.getFloat(1), 0.0f);
-                assertEquals(0.0f, r.getFloat(2), 0.0f);
-                assertEquals(0.0f, r.getFloat(3), 0.0f);
-                assertEquals(0.0f, r.getFloat(4), 0.0f);
-                assertEquals(1.0f, r.getFloat(5), 0.0f);
-                assertEquals(-1.0f, r.getFloat(6), 0.0f);
-                assertEquals(1.1f, r.getFloat(7), 0.0f);
-                assertEquals(0.0f, r.getFloat(8), 0.0f);
-                assertEquals(0.0f, r.getFloat(9), 0.0f);
-                assertEquals(0.0f, r.getFloat(10), 0.0f);
-                assertEquals(0.0f, r.getFloat(11), 0.0f);
-                assertEquals(0.0f, r.getFloat(12), 0.0f);
+                    Assert.assertEquals(0.0f, r.getFloat(0), 0.0f);
+                    Assert.assertEquals(1.0f, r.getFloat(1), 0.0f);
+                    Assert.assertEquals(0.0f, r.getFloat(2), 0.0f);
+                    Assert.assertEquals(0.0f, r.getFloat(3), 0.0f);
+                    Assert.assertEquals(0.0f, r.getFloat(4), 0.0f);
+                    Assert.assertEquals(1.0f, r.getFloat(5), 0.0f);
+                    Assert.assertEquals(-1.0f, r.getFloat(6), 0.0f);
+                    Assert.assertEquals(1.1f, r.getFloat(7), 0.0f);
+                    Assert.assertEquals(0.0f, r.getFloat(8), 0.0f);
+                    Assert.assertEquals(0.0f, r.getFloat(9), 0.0f);
+                    Assert.assertEquals(0.0f, r.getFloat(10), 0.0f);
+                    Assert.assertEquals(0.0f, r.getFloat(11), 0.0f);
+                    Assert.assertEquals(0.0f, r.getFloat(12), 0.0f);
 
-                assertThrows(ArrayIndexOutOfBoundsException.class, () -> r.getFloat(-1));
+                    Assert.assertThrows(ArrayIndexOutOfBoundsException.class, () -> r.getFloat(-1));
 
-                assertThrows(ArrayIndexOutOfBoundsException.class, () -> r.getFloat(100));
-            });
+                    Assert.assertThrows(ArrayIndexOutOfBoundsException.class, () -> r.getFloat(100));
+                });
 
-            assertEquals(1, rows);
+            Assert.assertEquals(1, rows);
         }
     }
 
@@ -444,29 +448,30 @@ public class ResultTest extends BaseQueryTest {
             String docID = prepareData(i);
             Query query = generateQuery(docID);
 
-            int rows = verifyQueryWithEnumerator(query, (n, r) -> {
-                assertEquals(13, r.count());
+            int rows = verifyQueryWithEnumerator(
+                query, (n, r) -> {
+                    Assert.assertEquals(13, r.count());
 
-                assertEquals(0.0, r.getDouble("null"), 0.0);
-                assertEquals(1.0, r.getDouble("true"), 0.0);
-                assertEquals(0.0, r.getDouble("false"), 0.0);
-                assertEquals(0.0, r.getDouble("string"), 0.0);
-                assertEquals(0.0, r.getDouble("zero"), 0.0);
-                assertEquals(1.0, r.getDouble("one"), 0.0);
-                assertEquals(-1.0, r.getDouble("minus_one"), 0.0);
-                assertEquals(1.1, r.getDouble("one_dot_one"), 0.0);
-                assertEquals(0.0, r.getDouble("date"), 0.0);
-                assertEquals(0.0, r.getDouble("dict"), 0.0);
-                assertEquals(0.0, r.getDouble("array"), 0.0);
-                assertEquals(0.0, r.getDouble("blob"), 0.0);
-                assertEquals(0.0, r.getDouble("non_existing_key"), 0.0);
+                    Assert.assertEquals(0.0, r.getDouble("null"), 0.0);
+                    Assert.assertEquals(1.0, r.getDouble("true"), 0.0);
+                    Assert.assertEquals(0.0, r.getDouble("false"), 0.0);
+                    Assert.assertEquals(0.0, r.getDouble("string"), 0.0);
+                    Assert.assertEquals(0.0, r.getDouble("zero"), 0.0);
+                    Assert.assertEquals(1.0, r.getDouble("one"), 0.0);
+                    Assert.assertEquals(-1.0, r.getDouble("minus_one"), 0.0);
+                    Assert.assertEquals(1.1, r.getDouble("one_dot_one"), 0.0);
+                    Assert.assertEquals(0.0, r.getDouble("date"), 0.0);
+                    Assert.assertEquals(0.0, r.getDouble("dict"), 0.0);
+                    Assert.assertEquals(0.0, r.getDouble("array"), 0.0);
+                    Assert.assertEquals(0.0, r.getDouble("blob"), 0.0);
+                    Assert.assertEquals(0.0, r.getDouble("non_existing_key"), 0.0);
 
-                assertThrows(IllegalArgumentException.class, () -> r.getDouble(null));
+                    Assert.assertThrows(IllegalArgumentException.class, () -> r.getDouble(null));
 
-                assertEquals(0.0, r.getDouble("not_in_query_select"), 0.0);
-            });
+                    Assert.assertEquals(0.0, r.getDouble("not_in_query_select"), 0.0);
+                });
 
-            assertEquals(1, rows);
+            Assert.assertEquals(1, rows);
         }
     }
 
@@ -476,29 +481,30 @@ public class ResultTest extends BaseQueryTest {
             String docID = prepareData(i);
             Query query = generateQuery(docID);
 
-            int rows = verifyQueryWithEnumerator(query, (n, r) -> {
-                assertEquals(13, r.count());
+            int rows = verifyQueryWithEnumerator(
+                query, (n, r) -> {
+                    Assert.assertEquals(13, r.count());
 
-                assertEquals(0.0, r.getDouble(0), 0.0);
-                assertEquals(1.0, r.getDouble(1), 0.0);
-                assertEquals(0.0, r.getDouble(2), 0.0);
-                assertEquals(0.0, r.getDouble(3), 0.0);
-                assertEquals(0.0, r.getDouble(4), 0.0);
-                assertEquals(1.0, r.getDouble(5), 0.0);
-                assertEquals(-1.0, r.getDouble(6), 0.0);
-                assertEquals(1.1, r.getDouble(7), 0.0);
-                assertEquals(0.0, r.getDouble(8), 0.0);
-                assertEquals(0.0, r.getDouble(9), 0.0);
-                assertEquals(0.0, r.getDouble(10), 0.0);
-                assertEquals(0.0, r.getDouble(11), 0.0);
-                assertEquals(0.0, r.getDouble(12), 0.0);
+                    Assert.assertEquals(0.0, r.getDouble(0), 0.0);
+                    Assert.assertEquals(1.0, r.getDouble(1), 0.0);
+                    Assert.assertEquals(0.0, r.getDouble(2), 0.0);
+                    Assert.assertEquals(0.0, r.getDouble(3), 0.0);
+                    Assert.assertEquals(0.0, r.getDouble(4), 0.0);
+                    Assert.assertEquals(1.0, r.getDouble(5), 0.0);
+                    Assert.assertEquals(-1.0, r.getDouble(6), 0.0);
+                    Assert.assertEquals(1.1, r.getDouble(7), 0.0);
+                    Assert.assertEquals(0.0, r.getDouble(8), 0.0);
+                    Assert.assertEquals(0.0, r.getDouble(9), 0.0);
+                    Assert.assertEquals(0.0, r.getDouble(10), 0.0);
+                    Assert.assertEquals(0.0, r.getDouble(11), 0.0);
+                    Assert.assertEquals(0.0, r.getDouble(12), 0.0);
 
-                assertThrows(ArrayIndexOutOfBoundsException.class, () -> r.getDouble(-1));
+                    Assert.assertThrows(ArrayIndexOutOfBoundsException.class, () -> r.getDouble(-1));
 
-                assertThrows(ArrayIndexOutOfBoundsException.class, () -> r.getDouble(100));
-            });
+                    Assert.assertThrows(ArrayIndexOutOfBoundsException.class, () -> r.getDouble(100));
+                });
 
-            assertEquals(1, rows);
+            Assert.assertEquals(1, rows);
         }
     }
 
@@ -508,29 +514,30 @@ public class ResultTest extends BaseQueryTest {
             String docID = prepareData(i);
             Query query = generateQuery(docID);
 
-            int rows = verifyQueryWithEnumerator(query, (n, r) -> {
-                assertEquals(13, r.count());
+            int rows = verifyQueryWithEnumerator(
+                query, (n, r) -> {
+                    Assert.assertEquals(13, r.count());
 
-                assertFalse(r.getBoolean("null"));
-                assertTrue(r.getBoolean("true"));
-                assertFalse(r.getBoolean("false"));
-                assertTrue(r.getBoolean("string"));
-                assertFalse(r.getBoolean("zero"));
-                assertTrue(r.getBoolean("one"));
-                assertTrue(r.getBoolean("minus_one"));
-                assertTrue(r.getBoolean("one_dot_one"));
-                assertTrue(r.getBoolean("date"));
-                assertTrue(r.getBoolean("dict"));
-                assertTrue(r.getBoolean("array"));
-                assertTrue(r.getBoolean("blob"));
-                assertFalse(r.getBoolean("non_existing_key"));
+                    Assert.assertFalse(r.getBoolean("null"));
+                    Assert.assertTrue(r.getBoolean("true"));
+                    Assert.assertFalse(r.getBoolean("false"));
+                    Assert.assertTrue(r.getBoolean("string"));
+                    Assert.assertFalse(r.getBoolean("zero"));
+                    Assert.assertTrue(r.getBoolean("one"));
+                    Assert.assertTrue(r.getBoolean("minus_one"));
+                    Assert.assertTrue(r.getBoolean("one_dot_one"));
+                    Assert.assertTrue(r.getBoolean("date"));
+                    Assert.assertTrue(r.getBoolean("dict"));
+                    Assert.assertTrue(r.getBoolean("array"));
+                    Assert.assertTrue(r.getBoolean("blob"));
+                    Assert.assertFalse(r.getBoolean("non_existing_key"));
 
-                assertThrows(IllegalArgumentException.class, () -> r.getBoolean(null));
+                    Assert.assertThrows(IllegalArgumentException.class, () -> r.getBoolean(null));
 
-                assertFalse(r.getBoolean("not_in_query_select"));
-            });
+                    Assert.assertFalse(r.getBoolean("not_in_query_select"));
+                });
 
-            assertEquals(1, rows);
+            Assert.assertEquals(1, rows);
         }
     }
 
@@ -540,29 +547,30 @@ public class ResultTest extends BaseQueryTest {
             String docID = prepareData(i);
             Query query = generateQuery(docID);
 
-            int rows = verifyQueryWithEnumerator(query, (n, r) -> {
-                assertEquals(13, r.count());
+            int rows = verifyQueryWithEnumerator(
+                query, (n, r) -> {
+                    Assert.assertEquals(13, r.count());
 
-                assertFalse(r.getBoolean(0));
-                assertTrue(r.getBoolean(1));
-                assertFalse(r.getBoolean(2));
-                assertTrue(r.getBoolean(3));
-                assertFalse(r.getBoolean(4));
-                assertTrue(r.getBoolean(5));
-                assertTrue(r.getBoolean(6));
-                assertTrue(r.getBoolean(7));
-                assertTrue(r.getBoolean(8));
-                assertTrue(r.getBoolean(9));
-                assertTrue(r.getBoolean(10));
-                assertTrue(r.getBoolean(11));
-                assertFalse(r.getBoolean(12));
+                    Assert.assertFalse(r.getBoolean(0));
+                    Assert.assertTrue(r.getBoolean(1));
+                    Assert.assertFalse(r.getBoolean(2));
+                    Assert.assertTrue(r.getBoolean(3));
+                    Assert.assertFalse(r.getBoolean(4));
+                    Assert.assertTrue(r.getBoolean(5));
+                    Assert.assertTrue(r.getBoolean(6));
+                    Assert.assertTrue(r.getBoolean(7));
+                    Assert.assertTrue(r.getBoolean(8));
+                    Assert.assertTrue(r.getBoolean(9));
+                    Assert.assertTrue(r.getBoolean(10));
+                    Assert.assertTrue(r.getBoolean(11));
+                    Assert.assertFalse(r.getBoolean(12));
 
-                assertThrows(ArrayIndexOutOfBoundsException.class, () -> r.getBoolean(-1));
+                    Assert.assertThrows(ArrayIndexOutOfBoundsException.class, () -> r.getBoolean(-1));
 
-                assertThrows(ArrayIndexOutOfBoundsException.class, () -> r.getBoolean(100));
-            });
+                    Assert.assertThrows(ArrayIndexOutOfBoundsException.class, () -> r.getBoolean(100));
+                });
 
-            assertEquals(1, rows);
+            Assert.assertEquals(1, rows);
         }
     }
 
@@ -572,29 +580,30 @@ public class ResultTest extends BaseQueryTest {
             String docID = prepareData(i);
             Query query = generateQuery(docID);
 
-            int rows = verifyQueryWithEnumerator(query, (n, r) -> {
-                assertEquals(13, r.count());
+            int rows = verifyQueryWithEnumerator(
+                query, (n, r) -> {
+                    Assert.assertEquals(13, r.count());
 
-                assertNull(r.getDate("null"));
-                assertNull(r.getDate("true"));
-                assertNull(r.getDate("false"));
-                assertNull(r.getDate("string"));
-                assertNull(r.getDate("zero"));
-                assertNull(r.getDate("one"));
-                assertNull(r.getDate("minus_one"));
-                assertNull(r.getDate("one_dot_one"));
-                assertEquals(TEST_DATE, JSONUtils.toJSONString(r.getDate("date")));
-                assertNull(r.getDate("dict"));
-                assertNull(r.getDate("array"));
-                assertNull(r.getDate("blob"));
-                assertNull(r.getDate("non_existing_key"));
+                    Assert.assertNull(r.getDate("null"));
+                    Assert.assertNull(r.getDate("true"));
+                    Assert.assertNull(r.getDate("false"));
+                    Assert.assertNull(r.getDate("string"));
+                    Assert.assertNull(r.getDate("zero"));
+                    Assert.assertNull(r.getDate("one"));
+                    Assert.assertNull(r.getDate("minus_one"));
+                    Assert.assertNull(r.getDate("one_dot_one"));
+                    Assert.assertEquals(TEST_DATE, JSONUtils.toJSONString(r.getDate("date")));
+                    Assert.assertNull(r.getDate("dict"));
+                    Assert.assertNull(r.getDate("array"));
+                    Assert.assertNull(r.getDate("blob"));
+                    Assert.assertNull(r.getDate("non_existing_key"));
 
-                assertThrows(IllegalArgumentException.class, () -> r.getDate(null));
+                    Assert.assertThrows(IllegalArgumentException.class, () -> r.getDate(null));
 
-                assertNull(r.getDate("not_in_query_select"));
-            });
+                    Assert.assertNull(r.getDate("not_in_query_select"));
+                });
 
-            assertEquals(1, rows);
+            Assert.assertEquals(1, rows);
         }
     }
 
@@ -604,29 +613,30 @@ public class ResultTest extends BaseQueryTest {
             String docID = prepareData(i);
             Query query = generateQuery(docID);
 
-            int rows = verifyQueryWithEnumerator(query, (n, r) -> {
-                assertEquals(13, r.count());
+            int rows = verifyQueryWithEnumerator(
+                query, (n, r) -> {
+                    Assert.assertEquals(13, r.count());
 
-                assertNull(r.getDate(0));
-                assertNull(r.getDate(1));
-                assertNull(r.getDate(2));
-                assertNull(r.getDate(3));
-                assertNull(r.getDate(4));
-                assertNull(r.getDate(5));
-                assertNull(r.getDate(6));
-                assertNull(r.getDate(7));
-                assertEquals(TEST_DATE, JSONUtils.toJSONString(r.getDate(8)));
-                assertNull(r.getDate(9));
-                assertNull(r.getDate(10));
-                assertNull(r.getDate(11));
-                assertNull(r.getDate(12));
+                    Assert.assertNull(r.getDate(0));
+                    Assert.assertNull(r.getDate(1));
+                    Assert.assertNull(r.getDate(2));
+                    Assert.assertNull(r.getDate(3));
+                    Assert.assertNull(r.getDate(4));
+                    Assert.assertNull(r.getDate(5));
+                    Assert.assertNull(r.getDate(6));
+                    Assert.assertNull(r.getDate(7));
+                    Assert.assertEquals(TEST_DATE, JSONUtils.toJSONString(r.getDate(8)));
+                    Assert.assertNull(r.getDate(9));
+                    Assert.assertNull(r.getDate(10));
+                    Assert.assertNull(r.getDate(11));
+                    Assert.assertNull(r.getDate(12));
 
-                assertThrows(ArrayIndexOutOfBoundsException.class, () -> r.getDate(-1));
+                    Assert.assertThrows(ArrayIndexOutOfBoundsException.class, () -> r.getDate(-1));
 
-                assertThrows(ArrayIndexOutOfBoundsException.class, () -> r.getDate(100));
-            });
+                    Assert.assertThrows(ArrayIndexOutOfBoundsException.class, () -> r.getDate(100));
+                });
 
-            assertEquals(1, rows);
+            Assert.assertEquals(1, rows);
         }
     }
 
@@ -636,32 +646,33 @@ public class ResultTest extends BaseQueryTest {
             String docID = prepareData(i);
             Query query = generateQuery(docID);
 
-            int rows = verifyQueryWithEnumerator(query, (n, r) -> {
-                assertEquals(13, r.count());
+            int rows = verifyQueryWithEnumerator(
+                query, (n, r) -> {
+                    Assert.assertEquals(13, r.count());
 
-                assertNull(r.getBlob("null"));
-                assertNull(r.getBlob("true"));
-                assertNull(r.getBlob("false"));
-                assertNull(r.getBlob("string"));
-                assertNull(r.getBlob("zero"));
-                assertNull(r.getBlob("one"));
-                assertNull(r.getBlob("minus_one"));
-                assertNull(r.getBlob("one_dot_one"));
-                assertNull(r.getBlob("date"));
-                assertNull(r.getBlob("dict"));
-                assertNull(r.getBlob("array"));
-                assertEquals(BLOB_CONTENT, new String(r.getBlob("blob").getContent()));
-                assertArrayEquals(
-                    BLOB_CONTENT.getBytes(StandardCharsets.UTF_8),
-                    r.getBlob("blob").getContent());
-                assertNull(r.getBlob("non_existing_key"));
+                    Assert.assertNull(r.getBlob("null"));
+                    Assert.assertNull(r.getBlob("true"));
+                    Assert.assertNull(r.getBlob("false"));
+                    Assert.assertNull(r.getBlob("string"));
+                    Assert.assertNull(r.getBlob("zero"));
+                    Assert.assertNull(r.getBlob("one"));
+                    Assert.assertNull(r.getBlob("minus_one"));
+                    Assert.assertNull(r.getBlob("one_dot_one"));
+                    Assert.assertNull(r.getBlob("date"));
+                    Assert.assertNull(r.getBlob("dict"));
+                    Assert.assertNull(r.getBlob("array"));
+                    Assert.assertEquals(BLOB_CONTENT, new String(r.getBlob("blob").getContent()));
+                    Assert.assertArrayEquals(
+                        BLOB_CONTENT.getBytes(StandardCharsets.UTF_8),
+                        r.getBlob("blob").getContent());
+                    Assert.assertNull(r.getBlob("non_existing_key"));
 
-                assertThrows(IllegalArgumentException.class, () -> r.getBlob(null));
+                    Assert.assertThrows(IllegalArgumentException.class, () -> r.getBlob(null));
 
-                assertNull(r.getBlob("not_in_query_select"));
-            });
+                    Assert.assertNull(r.getBlob("not_in_query_select"));
+                });
 
-            assertEquals(1, rows);
+            Assert.assertEquals(1, rows);
         }
     }
 
@@ -671,32 +682,33 @@ public class ResultTest extends BaseQueryTest {
             String docID = prepareData(i);
             Query query = generateQuery(docID);
 
-            int rows = verifyQueryWithEnumerator(query, (n, r) -> {
-                assertEquals(13, r.count());
+            int rows = verifyQueryWithEnumerator(
+                query, (n, r) -> {
+                    Assert.assertEquals(13, r.count());
 
-                assertNull(r.getBlob(0));
-                assertNull(r.getBlob(1));
-                assertNull(r.getBlob(2));
-                assertNull(r.getBlob(3));
-                assertNull(r.getBlob(4));
-                assertNull(r.getBlob(5));
-                assertNull(r.getBlob(6));
-                assertNull(r.getBlob(7));
-                assertNull(r.getBlob(8));
-                assertNull(r.getBlob(9));
-                assertNull(r.getBlob(10));
-                assertEquals(BLOB_CONTENT, new String(r.getBlob(11).getContent()));
-                assertArrayEquals(
-                    BLOB_CONTENT.getBytes(StandardCharsets.UTF_8),
-                    r.getBlob(11).getContent());
-                assertNull(r.getBlob(12));
+                    Assert.assertNull(r.getBlob(0));
+                    Assert.assertNull(r.getBlob(1));
+                    Assert.assertNull(r.getBlob(2));
+                    Assert.assertNull(r.getBlob(3));
+                    Assert.assertNull(r.getBlob(4));
+                    Assert.assertNull(r.getBlob(5));
+                    Assert.assertNull(r.getBlob(6));
+                    Assert.assertNull(r.getBlob(7));
+                    Assert.assertNull(r.getBlob(8));
+                    Assert.assertNull(r.getBlob(9));
+                    Assert.assertNull(r.getBlob(10));
+                    Assert.assertEquals(BLOB_CONTENT, new String(r.getBlob(11).getContent()));
+                    Assert.assertArrayEquals(
+                        BLOB_CONTENT.getBytes(StandardCharsets.UTF_8),
+                        r.getBlob(11).getContent());
+                    Assert.assertNull(r.getBlob(12));
 
-                assertThrows(ArrayIndexOutOfBoundsException.class, () -> r.getBlob(-1));
+                    Assert.assertThrows(ArrayIndexOutOfBoundsException.class, () -> r.getBlob(-1));
 
-                assertThrows(ArrayIndexOutOfBoundsException.class, () -> r.getBlob(100));
-            });
+                    Assert.assertThrows(ArrayIndexOutOfBoundsException.class, () -> r.getBlob(100));
+                });
 
-            assertEquals(1, rows);
+            Assert.assertEquals(1, rows);
         }
     }
 
@@ -706,34 +718,35 @@ public class ResultTest extends BaseQueryTest {
             String docID = prepareData(i);
             Query query = generateQuery(docID);
 
-            int rows = verifyQueryWithEnumerator(query, (n, r) -> {
-                assertEquals(13, r.count());
+            int rows = verifyQueryWithEnumerator(
+                query, (n, r) -> {
+                    Assert.assertEquals(13, r.count());
 
-                assertNull(r.getDictionary("null"));
-                assertNull(r.getDictionary("true"));
-                assertNull(r.getDictionary("false"));
-                assertNull(r.getDictionary("string"));
-                assertNull(r.getDictionary("zero"));
-                assertNull(r.getDictionary("one"));
-                assertNull(r.getDictionary("minus_one"));
-                assertNull(r.getDictionary("one_dot_one"));
-                assertNull(r.getDictionary("date"));
-                assertNotNull(r.getDictionary("dict"));
-                Map<String, Object> dict = new HashMap<>();
-                dict.put("street", "1 Main street");
-                dict.put("city", "Mountain View");
-                dict.put("state", "CA");
-                assertEquals(dict, r.getDictionary("dict").toMap());
-                assertNull(r.getDictionary("array"));
-                assertNull(r.getDictionary("blob"));
-                assertNull(r.getDictionary("non_existing_key"));
+                    Assert.assertNull(r.getDictionary("null"));
+                    Assert.assertNull(r.getDictionary("true"));
+                    Assert.assertNull(r.getDictionary("false"));
+                    Assert.assertNull(r.getDictionary("string"));
+                    Assert.assertNull(r.getDictionary("zero"));
+                    Assert.assertNull(r.getDictionary("one"));
+                    Assert.assertNull(r.getDictionary("minus_one"));
+                    Assert.assertNull(r.getDictionary("one_dot_one"));
+                    Assert.assertNull(r.getDictionary("date"));
+                    Assert.assertNotNull(r.getDictionary("dict"));
+                    Map<String, Object> dict = new HashMap<>();
+                    dict.put("street", "1 Main street");
+                    dict.put("city", "Mountain View");
+                    dict.put("state", "CA");
+                    Assert.assertEquals(dict, r.getDictionary("dict").toMap());
+                    Assert.assertNull(r.getDictionary("array"));
+                    Assert.assertNull(r.getDictionary("blob"));
+                    Assert.assertNull(r.getDictionary("non_existing_key"));
 
-                assertThrows(IllegalArgumentException.class, () -> r.getDictionary(null));
+                    Assert.assertThrows(IllegalArgumentException.class, () -> r.getDictionary(null));
 
-                assertNull(r.getDictionary("not_in_query_select"));
-            });
+                    Assert.assertNull(r.getDictionary("not_in_query_select"));
+                });
 
-            assertEquals(1, rows);
+            Assert.assertEquals(1, rows);
         }
     }
 
@@ -743,34 +756,35 @@ public class ResultTest extends BaseQueryTest {
             String docID = prepareData(i);
             Query query = generateQuery(docID);
 
-            int rows = verifyQueryWithEnumerator(query, (n, r) -> {
-                assertEquals(13, r.count());
+            int rows = verifyQueryWithEnumerator(
+                query, (n, r) -> {
+                    Assert.assertEquals(13, r.count());
 
-                assertNull(r.getDictionary(0));
-                assertNull(r.getDictionary(1));
-                assertNull(r.getDictionary(2));
-                assertNull(r.getDictionary(3));
-                assertNull(r.getDictionary(4));
-                assertNull(r.getDictionary(5));
-                assertNull(r.getDictionary(6));
-                assertNull(r.getDictionary(7));
-                assertNull(r.getDictionary(8));
-                assertNotNull(r.getDictionary(9));
-                Map<String, Object> dict = new HashMap<>();
-                dict.put("street", "1 Main street");
-                dict.put("city", "Mountain View");
-                dict.put("state", "CA");
-                assertEquals(dict, r.getDictionary(9).toMap());
-                assertNull(r.getDictionary(10));
-                assertNull(r.getDictionary(11));
-                assertNull(r.getDictionary(12));
+                    Assert.assertNull(r.getDictionary(0));
+                    Assert.assertNull(r.getDictionary(1));
+                    Assert.assertNull(r.getDictionary(2));
+                    Assert.assertNull(r.getDictionary(3));
+                    Assert.assertNull(r.getDictionary(4));
+                    Assert.assertNull(r.getDictionary(5));
+                    Assert.assertNull(r.getDictionary(6));
+                    Assert.assertNull(r.getDictionary(7));
+                    Assert.assertNull(r.getDictionary(8));
+                    Assert.assertNotNull(r.getDictionary(9));
+                    Map<String, Object> dict = new HashMap<>();
+                    dict.put("street", "1 Main street");
+                    dict.put("city", "Mountain View");
+                    dict.put("state", "CA");
+                    Assert.assertEquals(dict, r.getDictionary(9).toMap());
+                    Assert.assertNull(r.getDictionary(10));
+                    Assert.assertNull(r.getDictionary(11));
+                    Assert.assertNull(r.getDictionary(12));
 
-                assertThrows(ArrayIndexOutOfBoundsException.class, () -> r.getDictionary(-1));
+                    Assert.assertThrows(ArrayIndexOutOfBoundsException.class, () -> r.getDictionary(-1));
 
-                assertThrows(ArrayIndexOutOfBoundsException.class, () -> r.getDictionary(100));
-            });
+                    Assert.assertThrows(ArrayIndexOutOfBoundsException.class, () -> r.getDictionary(100));
+                });
 
-            assertEquals(1, rows);
+            Assert.assertEquals(1, rows);
         }
     }
 
@@ -780,30 +794,31 @@ public class ResultTest extends BaseQueryTest {
             String docID = prepareData(i);
             Query query = generateQuery(docID);
 
-            int rows = verifyQueryWithEnumerator(query, (n, r) -> {
-                assertEquals(13, r.count());
+            int rows = verifyQueryWithEnumerator(
+                query, (n, r) -> {
+                    Assert.assertEquals(13, r.count());
 
-                assertNull(r.getArray("null"));
-                assertNull(r.getArray("true"));
-                assertNull(r.getArray("false"));
-                assertNull(r.getArray("string"));
-                assertNull(r.getArray("zero"));
-                assertNull(r.getArray("one"));
-                assertNull(r.getArray("minus_one"));
-                assertNull(r.getArray("one_dot_one"));
-                assertNull(r.getArray("date"));
-                assertNull(r.getArray("dict"));
-                assertNotNull(r.getArray("array"));
-                List<Object> list = Arrays.asList("650-123-0001", "650-123-0002");
-                assertEquals(list, r.getArray("array").toList());
-                assertNull(r.getArray("blob"));
-                assertNull(r.getArray("non_existing_key"));
+                    Assert.assertNull(r.getArray("null"));
+                    Assert.assertNull(r.getArray("true"));
+                    Assert.assertNull(r.getArray("false"));
+                    Assert.assertNull(r.getArray("string"));
+                    Assert.assertNull(r.getArray("zero"));
+                    Assert.assertNull(r.getArray("one"));
+                    Assert.assertNull(r.getArray("minus_one"));
+                    Assert.assertNull(r.getArray("one_dot_one"));
+                    Assert.assertNull(r.getArray("date"));
+                    Assert.assertNull(r.getArray("dict"));
+                    Assert.assertNotNull(r.getArray("array"));
+                    List<Object> list = Arrays.asList("650-123-0001", "650-123-0002");
+                    Assert.assertEquals(list, r.getArray("array").toList());
+                    Assert.assertNull(r.getArray("blob"));
+                    Assert.assertNull(r.getArray("non_existing_key"));
 
-                assertThrows(IllegalArgumentException.class, () -> r.getArray(null));
+                    Assert.assertThrows(IllegalArgumentException.class, () -> r.getArray(null));
 
-                assertNull(r.getArray("not_in_query_select"));
-            });
-            assertEquals(1, rows);
+                    Assert.assertNull(r.getArray("not_in_query_select"));
+                });
+            Assert.assertEquals(1, rows);
         }
     }
 
@@ -813,30 +828,31 @@ public class ResultTest extends BaseQueryTest {
             String docID = prepareData(i);
             Query query = generateQuery(docID);
 
-            int rows = verifyQueryWithEnumerator(query, (n, r) -> {
-                assertEquals(13, r.count());
+            int rows = verifyQueryWithEnumerator(
+                query, (n, r) -> {
+                    Assert.assertEquals(13, r.count());
 
-                assertNull(r.getArray(0));
-                assertNull(r.getArray(1));
-                assertNull(r.getArray(2));
-                assertNull(r.getArray(3));
-                assertNull(r.getArray(4));
-                assertNull(r.getArray(5));
-                assertNull(r.getArray(6));
-                assertNull(r.getArray(7));
-                assertNull(r.getArray(8));
-                assertNull(r.getArray(9));
-                assertNotNull(r.getArray(10));
-                List<Object> list = Arrays.asList("650-123-0001", "650-123-0002");
-                assertEquals(list, r.getArray(10).toList());
-                assertNull(r.getArray(11));
-                assertNull(r.getArray(12));
+                    Assert.assertNull(r.getArray(0));
+                    Assert.assertNull(r.getArray(1));
+                    Assert.assertNull(r.getArray(2));
+                    Assert.assertNull(r.getArray(3));
+                    Assert.assertNull(r.getArray(4));
+                    Assert.assertNull(r.getArray(5));
+                    Assert.assertNull(r.getArray(6));
+                    Assert.assertNull(r.getArray(7));
+                    Assert.assertNull(r.getArray(8));
+                    Assert.assertNull(r.getArray(9));
+                    Assert.assertNotNull(r.getArray(10));
+                    List<Object> list = Arrays.asList("650-123-0001", "650-123-0002");
+                    Assert.assertEquals(list, r.getArray(10).toList());
+                    Assert.assertNull(r.getArray(11));
+                    Assert.assertNull(r.getArray(12));
 
-                assertThrows(ArrayIndexOutOfBoundsException.class, () -> r.getArray(-1));
+                    Assert.assertThrows(ArrayIndexOutOfBoundsException.class, () -> r.getArray(-1));
 
-                assertThrows(ArrayIndexOutOfBoundsException.class, () -> r.getArray(100));
-            });
-            assertEquals(1, rows);
+                    Assert.assertThrows(ArrayIndexOutOfBoundsException.class, () -> r.getArray(100));
+                });
+            Assert.assertEquals(1, rows);
         }
     }
 
@@ -846,39 +862,40 @@ public class ResultTest extends BaseQueryTest {
             String docID = prepareData(i);
             Query query = generateQuery(docID);
 
-            int rows = verifyQueryWithEnumerator(query, (n, r) -> {
-                List<String> keys = r.getKeys();
-                assertNotNull(keys);
-                assertEquals(13, keys.size());
-                Collections.sort(keys);
-                List<String> expected = Arrays.asList(
-                    "null",
-                    "true",
-                    "false",
-                    "string",
-                    "zero",
-                    "one",
-                    "minus_one",
-                    "one_dot_one",
-                    "date",
-                    "dict",
-                    "array",
-                    "blob",
-                    "non_existing_key");
-                Collections.sort(expected);
-                assertEquals(expected, keys);
+            int rows = verifyQueryWithEnumerator(
+                query, (n, r) -> {
+                    List<String> keys = r.getKeys();
+                    Assert.assertNotNull(keys);
+                    Assert.assertEquals(13, keys.size());
+                    Collections.sort(keys);
+                    List<String> expected = Arrays.asList(
+                        "null",
+                        "true",
+                        "false",
+                        "string",
+                        "zero",
+                        "one",
+                        "minus_one",
+                        "one_dot_one",
+                        "date",
+                        "dict",
+                        "array",
+                        "blob",
+                        "non_existing_key");
+                    Collections.sort(expected);
+                    Assert.assertEquals(expected, keys);
 
-                // Result.iterator() test
-                Iterator<String> itr = r.iterator();
-                int i1 = 0;
-                while (itr.hasNext()) {
-                    assertTrue(expected.contains(itr.next()));
-                    i1++;
-                }
+                    // Result.iterator() test
+                    Iterator<String> itr = r.iterator();
+                    int i1 = 0;
+                    while (itr.hasNext()) {
+                        Assert.assertTrue(expected.contains(itr.next()));
+                        i1++;
+                    }
 
-                assertEquals(expected.size(), i1);
-            });
-            assertEquals(1, rows);
+                    Assert.assertEquals(expected.size(), i1);
+                });
+            Assert.assertEquals(1, rows);
         }
     }
 
@@ -888,22 +905,23 @@ public class ResultTest extends BaseQueryTest {
             String docID = prepareData(i);
             Query query = generateQuery(docID);
 
-            int rows = verifyQueryWithEnumerator(query, (n, r) -> {
-                // exists -> true
-                List<String> expected = Arrays.asList(
-                    "null", "true", "false", "string", "zero", "one",
-                    "minus_one", "one_dot_one", "date", "dict", "array",
-                    "blob");
-                for (String key: expected) { assertTrue(r.contains(key)); }
-                // not exists -> false
-                assertFalse(r.contains("non_existing_key"));
+            int rows = verifyQueryWithEnumerator(
+                query, (n, r) -> {
+                    // exists -> true
+                    List<String> expected = Arrays.asList(
+                        "null", "true", "false", "string", "zero", "one",
+                        "minus_one", "one_dot_one", "date", "dict", "array",
+                        "blob");
+                    for (String key: expected) { Assert.assertTrue(r.contains(key)); }
+                    // not exists -> false
+                    Assert.assertFalse(r.contains("non_existing_key"));
 
-                assertThrows(IllegalArgumentException.class, () -> r.contains(null));
+                    Assert.assertThrows(IllegalArgumentException.class, () -> r.contains(null));
 
-                assertFalse(r.contains("not_in_query_select"));
-            });
+                    Assert.assertFalse(r.contains("not_in_query_select"));
+                });
 
-            assertEquals(1, rows);
+            Assert.assertEquals(1, rows);
         }
     }
 
@@ -923,13 +941,13 @@ public class ResultTest extends BaseQueryTest {
             .where(Meta.id.equalTo(Expression.string(docId)));
 
         try (ResultSet results = query.execute()) {
-            assertNotNull(results);
+            Assert.assertNotNull(results);
             for (Result result: results.allResults()) {
-                assertNotNull(result);
-                assertEquals(1, result.toMap().size());
+                Assert.assertNotNull(result);
+                Assert.assertEquals(1, result.toMap().size());
                 Dictionary emptyDict = result.getDictionary(key);
-                assertNotNull(emptyDict);
-                assertTrue(emptyDict.isEmpty());
+                Assert.assertNotNull(emptyDict);
+                Assert.assertTrue(emptyDict.isEmpty());
             }
         }
     }
@@ -943,32 +961,32 @@ public class ResultTest extends BaseQueryTest {
         final Result result;
         final Dictionary dict;
         final Array array;
-        final ResultSet results= QueryBuilder
+        final ResultSet results = QueryBuilder
             .createQuery("SELECT * FROM " + testCollection.getFullName(), testCollection.getDatabase())
             .execute();
 
         result = results.next();
-        assertNotNull(result);
+        Assert.assertNotNull(result);
 
         dict = result.getDictionary(0);
-        assertNotNull(dict);
+        Assert.assertNotNull(dict);
 
         array = dict.getArray("doc-25");
-        assertNotNull(array);
+        Assert.assertNotNull(array);
 
         Object val = array.getString(20);
-        assertNotNull(val);
+        Assert.assertNotNull(val);
 
         results.close();
 
-        assertNull(results.next());
-        assertThrows(CouchbaseLiteError.class, () -> result.getDictionary(0));
-        assertThrows(CouchbaseLiteError.class, () -> dict.getArray("doc-25"));
-        assertThrows(CouchbaseLiteError.class, () -> array.getString(20));
+        Assert.assertNull(results.next());
+        Assert.assertThrows(CouchbaseLiteError.class, () -> result.getDictionary(0));
+        Assert.assertThrows(CouchbaseLiteError.class, () -> dict.getArray("doc-25"));
+        Assert.assertThrows(CouchbaseLiteError.class, () -> array.getString(20));
     }
 
 
-    ///////////////  JSON tests
+    /// ////////////  JSON tests
 
     // JSON 3.8
     @Test
@@ -989,8 +1007,8 @@ public class ResultTest extends BaseQueryTest {
             .execute()) {
 
             Result result = results.next();
-            assertNotNull(result);
-            assertNull(results.next());
+            Assert.assertNotNull(result);
+            Assert.assertNull(results.next());
 
             verifyDocument(result, false);
             verifyDocument(new JSONObject(result.toJSON()));
@@ -998,10 +1016,9 @@ public class ResultTest extends BaseQueryTest {
     }
 
 
-    ///////////////  Tooling
+    /// ////////////  Tooling
 
     // !!! Should be using the standard data tools
-
     private String docId() { return BaseTest.getUniqueName("doc"); }
 
     private String docId(int i) { return String.format(Locale.ENGLISH, "doc-%03d", i); }

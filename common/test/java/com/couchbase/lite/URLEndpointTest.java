@@ -17,21 +17,19 @@ package com.couchbase.lite;
 
 import java.net.URI;
 
+import org.junit.Assert;
 import org.junit.Test;
-
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 
 public class URLEndpointTest extends BaseTest {
     @Test
     public void testEmbeddedUserForbidden() {
-        assertThrows(IllegalArgumentException.class, () -> new URLEndpoint(new URI("ws://user@couchbase.com/sg")));
+        Assert.assertThrows(IllegalArgumentException.class, () -> new URLEndpoint(new URI("ws://user@couchbase.com/sg")));
     }
 
     @Test
     public void testEmbeddedPasswordNotAllowed() {
-        assertThrows(IllegalArgumentException.class, () -> new URLEndpoint(new URI("ws://user:pass@couchbase.com/sg")));
+        Assert.assertThrows(IllegalArgumentException.class, () -> new URLEndpoint(new URI("ws://user:pass@couchbase.com/sg")));
     }
 
     @Test
@@ -40,7 +38,7 @@ public class URLEndpointTest extends BaseTest {
         Exception err = null;
         try { new URLEndpoint(new URI(uri)); }
         catch (Exception e) { err = e; }
-        assertNotNull(err);
-        assertTrue(err.getMessage().contains(uri));
+        Assert.assertNotNull(err);
+        Assert.assertTrue(err.getMessage().contains(uri));
     }
 }

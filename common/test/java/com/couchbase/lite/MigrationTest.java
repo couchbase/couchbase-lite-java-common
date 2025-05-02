@@ -21,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -28,10 +29,6 @@ import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.PlatformUtils;
 import com.couchbase.lite.internal.utils.ZipUtils;
-
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 
 
 public class MigrationTest extends BaseTest {
@@ -61,20 +58,20 @@ public class MigrationTest extends BaseTest {
 
         migrationTestDb = openDatabase();
         Collection migrationTestCollection = migrationTestDb.getDefaultCollection();
-        assertEquals(2, migrationTestCollection.getCount());
+        Assert.assertEquals(2, migrationTestCollection.getCount());
         for (int i = 1; i <= 2; i++) {
             Document doc = migrationTestCollection.getDocument("doc" + i);
-            assertNotNull(doc);
-            assertEquals(String.valueOf(i), doc.getString(TEST_KEY));
+            Assert.assertNotNull(doc);
+            Assert.assertEquals(String.valueOf(i), doc.getString(TEST_KEY));
 
             Dictionary attachments = doc.getDictionary("_attachments");
-            assertNotNull(attachments);
+            Assert.assertNotNull(attachments);
             String key = "attach" + i;
 
             Blob blob = attachments.getBlob(key);
-            assertNotNull(blob);
+            Assert.assertNotNull(blob);
             byte[] attach = String.format(Locale.ENGLISH, "attach%d", i).getBytes(StandardCharsets.UTF_8);
-            assertArrayEquals(attach, blob.getContent());
+            Assert.assertArrayEquals(attach, blob.getContent());
         }
     }
 
@@ -85,11 +82,11 @@ public class MigrationTest extends BaseTest {
 
         migrationTestDb = openDatabase();
         Collection migrationTestCollection = migrationTestDb.getDefaultCollection();
-        assertEquals(2, migrationTestCollection.getCount());
+        Assert.assertEquals(2, migrationTestCollection.getCount());
         for (int i = 1; i <= 2; i++) {
             Document doc = migrationTestCollection.getDocument("doc" + i);
-            assertNotNull(doc);
-            assertEquals(String.valueOf(i), doc.getString(TEST_KEY));
+            Assert.assertNotNull(doc);
+            Assert.assertEquals(String.valueOf(i), doc.getString(TEST_KEY));
         }
     }
 
@@ -99,16 +96,16 @@ public class MigrationTest extends BaseTest {
 
         migrationTestDb = openDatabase();
         Collection migrationTestCollection = migrationTestDb.getDefaultCollection();
-        assertEquals(2, migrationTestCollection.getCount());
+        Assert.assertEquals(2, migrationTestCollection.getCount());
 
         for (int i = 1; i <= 2; i++) {
             Document doc = migrationTestCollection.getDocument("doc" + i);
-            assertNotNull(doc);
-            assertEquals(String.valueOf(i), doc.getString(TEST_KEY));
+            Assert.assertNotNull(doc);
+            Assert.assertEquals(String.valueOf(i), doc.getString(TEST_KEY));
             Blob blob = doc.getBlob("attach" + i);
-            assertNotNull(blob);
+            Assert.assertNotNull(blob);
             byte[] attach = String.format(Locale.ENGLISH, "attach%d", i).getBytes(StandardCharsets.UTF_8);
-            assertArrayEquals(attach, blob.getContent());
+            Assert.assertArrayEquals(attach, blob.getContent());
         }
     }
 

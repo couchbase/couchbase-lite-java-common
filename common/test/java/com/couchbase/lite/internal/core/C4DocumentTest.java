@@ -17,12 +17,10 @@ package com.couchbase.lite.internal.core;
 
 import java.io.IOException;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 import com.couchbase.lite.LiteCoreException;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
 
 public class C4DocumentTest extends C4BaseTest {
@@ -47,11 +45,11 @@ public class C4DocumentTest extends C4BaseTest {
         c4Database.beginTransaction();
         try {
             C4TestUtils.create(c4Collection, fleeceBody, docID, 0, false, false, new String[0], true, 0, 0);
-            fail();
+            Assert.fail();
         }
         catch (LiteCoreException e) {
-            assertEquals(C4Constants.ErrorDomain.LITE_CORE, e.domain);
-            assertEquals(C4Constants.LiteCoreError.BAD_DOC_ID, e.code);
+            Assert.assertEquals(C4Constants.ErrorDomain.LITE_CORE, e.domain);
+            Assert.assertEquals(C4Constants.LiteCoreError.BAD_DOC_ID, e.code);
         }
         finally {
             c4Database.endTransaction(false);

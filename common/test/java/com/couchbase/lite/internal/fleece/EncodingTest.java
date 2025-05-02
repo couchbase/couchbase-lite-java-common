@@ -19,15 +19,12 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 import com.couchbase.lite.BaseTest;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.utils.Report;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 
 public class EncodingTest extends BaseTest {
@@ -141,17 +138,17 @@ public class EncodingTest extends BaseTest {
 
     private void testRoundTrip(Object item, Object expected) throws LiteCoreException {
         try (FLEncoder encoder = FLEncoder.getManagedEncoder()) {
-            assertTrue(encoder.writeValue(item));
+            Assert.assertTrue(encoder.writeValue(item));
 
             FLSliceResult slice = encoder.finish2();
-            assertNotNull(slice);
+            Assert.assertNotNull(slice);
             final FLValue flValue = FLValue.fromData(slice);
 
-            assertNotNull(flValue);
+            Assert.assertNotNull(flValue);
 
             Object obj = FLValue.toObject(flValue);
             Report.log("ROUND TRIP SLICE: '%s'; FROM: '%s'; EXPECTING: '%s'", obj, item, expected);
-            assertEquals(expected, obj);
+            Assert.assertEquals(expected, obj);
         }
     }
 
@@ -159,6 +156,6 @@ public class EncodingTest extends BaseTest {
         FLValue flValue = FLValue.fromData(utf8Slice);
         Object obj = FLValue.toObject(flValue);
         Report.log("DECODE SLICE: '%s'; EXPECTED: '%s'", obj, expected);
-        assertEquals(expected, obj);
+        Assert.assertEquals(expected, obj);
     }
 }

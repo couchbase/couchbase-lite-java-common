@@ -12,11 +12,7 @@ package com.couchbase.lite.internal.core
 
 import com.couchbase.lite.internal.QueryLanguage
 import com.couchbase.lite.internal.core.impl.NativeC4QueryObserver
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertSame
-import org.junit.Assert.assertTrue
+import org.junit.Assert
 import org.junit.Test
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.CyclicBarrier
@@ -46,7 +42,7 @@ class C4QueryObserverTest : C4BaseTest() {
     @Test
     fun testCreateC4QueryObserver() {
         val c4Query = C4Query.create(c4Database, QueryLanguage.JSON, query)
-        assertNotNull(
+        Assert.assertNotNull(
             C4QueryObserver.create(
                 mockNativeQueryObserver,
                 { mockQEnum },
@@ -66,8 +62,8 @@ class C4QueryObserverTest : C4BaseTest() {
             c4Query,
             { result, err ->
                 i++
-                assertSame(mockQEnum, result)
-                assertNull(err)
+                Assert.assertSame(mockQEnum, result)
+                Assert.assertNull(err)
                 result?.close()
             })
 
@@ -75,7 +71,7 @@ class C4QueryObserverTest : C4BaseTest() {
         obs.queryChanged(5L, 0, 0, null)
         obs.queryChanged(5L, 0, 0, null)
 
-        assertEquals(3, i)
+        Assert.assertEquals(3, i)
     }
 
     // Check that concurrent create and close don't cause obvious crashes.
@@ -101,6 +97,6 @@ class C4QueryObserverTest : C4BaseTest() {
             }
         }.forEach { it.start() }
 
-        assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
+        Assert.assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
     }
 }

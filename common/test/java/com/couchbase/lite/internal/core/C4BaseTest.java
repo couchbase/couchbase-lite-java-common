@@ -31,6 +31,7 @@ import java.util.Locale;
 import java.util.Map;
 
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 
 import com.couchbase.lite.BaseTest;
@@ -48,34 +49,31 @@ import com.couchbase.lite.internal.utils.Report;
 import com.couchbase.lite.internal.utils.StopWatch;
 import com.couchbase.lite.internal.utils.StringUtils;
 
-import static org.junit.Assert.*;
-
-
 public class C4BaseTest extends BaseTest {
     public static final long MOCK_PEER = 500005L;
-    public static final long MOCK_TOKEN = 0xba5eba11;
+    public static final long MOCK_TOKEN = 0xba5eba11L;
 
     @NonNull
     public static C4Document getOrCreateDocument(@Nullable C4Collection collection, @NonNull String docId)
         throws LiteCoreException {
-        assertNotNull(collection);
+        Assert.assertNotNull(collection);
         return C4Document.getOrCreateDocument(collection, docId);
     }
 
     public static void assertIsLiteCoreException(@Nullable Exception e, int domain, int code) {
-        assertNotNull(e);
+        Assert.assertNotNull(e);
         if (!(e instanceof LiteCoreException)) {
             throw new AssertionError("Expected CBL exception (" + domain + ", " + code + ") but got:", e);
         }
         final LiteCoreException err = (LiteCoreException) e;
-        if (domain > 0) { assertEquals(domain, err.getDomain()); }
-        if (code > 0) { assertEquals(code, err.getCode()); }
+        if (domain > 0) { Assert.assertEquals(domain, err.getDomain()); }
+        if (code > 0) { Assert.assertEquals(code, err.getCode()); }
     }
 
     public static void assertThrowsLiteCoreException(int domain, int code, @NonNull Fn.TaskThrows<Exception> block) {
         try {
             block.run();
-            fail("Expected LiteCore exception (" + domain + ", " + code + ")");
+            Assert.fail("Expected LiteCore exception (" + domain + ", " + code + ")");
         }
         catch (Exception e) {
             assertIsLiteCoreException(e, domain, code);
@@ -149,14 +147,14 @@ public class C4BaseTest extends BaseTest {
         List<String> expectedRevIds,
         boolean external) {
         final List<C4DocumentChange> changes = observer.getChanges(100);
-        assertNotNull(changes);
+        Assert.assertNotNull(changes);
         final int n = expectedDocIds.size();
-        assertEquals(n, changes.size());
+        Assert.assertEquals(n, changes.size());
         for (int i = 0; i < n; i++) {
             final C4DocumentChange ch = changes.get(i);
-            assertEquals(expectedDocIds.get(i), ch.getDocID());
-            assertEquals(trimRevId(expectedRevIds.get(i)), trimRevId(ch.getRevID()));
-            assertEquals(external, ch.isExternal());
+            Assert.assertEquals(expectedDocIds.get(i), ch.getDocID());
+            Assert.assertEquals(trimRevId(expectedRevIds.get(i)), trimRevId(ch.getRevID()));
+            Assert.assertEquals(external, ch.isExternal());
         }
     }
 
@@ -190,7 +188,7 @@ public class C4BaseTest extends BaseTest {
     protected void reopenDB() throws LiteCoreException {
         closeC4Database();
         c4Database = C4Database.getDatabase(dbParentDirPath, dbName, getTestDbFlags());
-        assertNotNull(c4Database);
+        Assert.assertNotNull(c4Database);
     }
 
     protected byte[] json2fleece(String json) throws LiteCoreException {
@@ -213,9 +211,9 @@ public class C4BaseTest extends BaseTest {
             json = FLValue.getJSONForJSON5(input);
         }
         catch (LiteCoreException e) {
-            fail(e.getMessage());
+            Assert.fail(e.getMessage());
         }
-        assertNotNull(json);
+        Assert.assertNotNull(json);
         return json;
     }
 
@@ -248,14 +246,14 @@ public class C4BaseTest extends BaseTest {
         db.beginTransaction();
         try {
             C4Document curDoc = getOrCreateDocument(coll, docID);
-            assertNotNull(curDoc);
+            Assert.assertNotNull(curDoc);
 
             List<String> revIDs = new ArrayList<>();
             revIDs.add(revID);
             if (curDoc.getRevID() != null) { revIDs.add(curDoc.getRevID()); }
             String[] history = revIDs.toArray(new String[0]);
             C4Document doc = C4TestUtils.create(coll, body, docID, flags, true, false, history, true, 0, 0);
-            assertNotNull(doc);
+            Assert.assertNotNull(doc);
             commit = true;
         }
         finally {
@@ -290,7 +288,7 @@ public class C4BaseTest extends BaseTest {
                     true,
                     0,
                     0);
-                assertNotNull(doc);
+                Assert.assertNotNull(doc);
 
                 numDocs++;
 

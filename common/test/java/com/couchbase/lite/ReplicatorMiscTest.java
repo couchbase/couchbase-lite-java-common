@@ -25,6 +25,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
@@ -34,14 +35,6 @@ import com.couchbase.lite.internal.core.C4Replicator;
 import com.couchbase.lite.internal.core.C4ReplicatorStatus;
 import com.couchbase.lite.internal.replicator.AbstractCBLWebSocket;
 import com.couchbase.lite.internal.utils.FlakyTest;
-
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 
 
 @SuppressWarnings("ConstantConditions")
@@ -53,11 +46,11 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
 
         // custom Executor
         try (ReplicatorChangeListenerToken token = new ReplicatorChangeListenerToken(executor, listener, t -> { })) {
-            assertEquals(executor, token.getExecutor());
+            Assert.assertEquals(executor, token.getExecutor());
         }
         // UI thread Executor
         try (ReplicatorChangeListenerToken token = new ReplicatorChangeListenerToken(null, listener, t -> { })) {
-            assertEquals(CouchbaseLiteInternal.getExecutionService().getDefaultExecutor(), token.getExecutor());
+            Assert.assertEquals(CouchbaseLiteInternal.getExecutionService().getDefaultExecutor(), token.getExecutor());
         }
     }
 
@@ -79,23 +72,23 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
 
         Replicator repl = makeBasicRepl();
         ReplicatorStatus replStatus = new ReplicatorStatus(c4ReplicatorStatus);
-        ReplicatorChange repChange = new ReplicatorChange(repl, replStatus);
 
-        assertEquals(repChange.getReplicator(), repl);
+        ReplicatorChange replChange = new ReplicatorChange(repl, replStatus);
+        Assert.assertEquals(replChange.getReplicator(), repl);
 
-        ReplicatorStatus status = repChange.getStatus();
-        assertNotNull(status);
-        assertEquals(status.getActivityLevel(), status.getActivityLevel());
+        ReplicatorStatus status = replChange.getStatus();
+        Assert.assertNotNull(status);
+        Assert.assertEquals(status.getActivityLevel(), replStatus.getActivityLevel());
 
         ReplicatorProgress progress = status.getProgress();
-        assertNotNull(progress);
-        assertEquals(progress.getCompleted(), completed);
-        assertEquals(progress.getTotal(), total);
+        Assert.assertNotNull(progress);
+        Assert.assertEquals(completed, progress.getCompleted());
+        Assert.assertEquals(total, progress.getTotal());
 
         CouchbaseLiteException error = status.getError();
-        assertNotNull(error);
-        assertEquals(error.getCode(), errorCode);
-        assertEquals(error.getDomain(), CBLError.Domain.CBLITE);
+        Assert.assertNotNull(error);
+        Assert.assertEquals(errorCode, error.getCode());
+        Assert.assertEquals(CBLError.Domain.CBLITE, error.getDomain());
     }
 
     @Test
@@ -103,9 +96,9 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         List<ReplicatedDocument> docs = new ArrayList<>();
         Replicator repl = makeBasicRepl();
         DocumentReplication doc = new DocumentReplication(repl, true, docs);
-        assertTrue(doc.isPush());
-        assertEquals(doc.getReplicator(), repl);
-        assertEquals(doc.getDocuments(), docs);
+        Assert.assertTrue(doc.isPush());
+        Assert.assertEquals(doc.getReplicator(), repl);
+        Assert.assertEquals(doc.getDocuments(), docs);
     }
 
     // https://issues.couchbase.com/browse/CBL-89
@@ -121,25 +114,25 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     @Test
     public void testDocumentEndListenerTokenRemove() {
         final Replicator repl = makeBasicRepl();
-        assertEquals(0, repl.getDocEndListenerCount());
+        Assert.assertEquals(0, repl.getDocEndListenerCount());
         ListenerToken token = repl.addDocumentReplicationListener(r -> { });
-        assertEquals(1, repl.getDocEndListenerCount());
+        Assert.assertEquals(1, repl.getDocEndListenerCount());
         token.remove();
-        assertEquals(0, repl.getDocEndListenerCount());
+        Assert.assertEquals(0, repl.getDocEndListenerCount());
         token.remove();
-        assertEquals(0, repl.getDocEndListenerCount());
+        Assert.assertEquals(0, repl.getDocEndListenerCount());
     }
 
     @Test
     public void testReplicationListenerTokenRemove() {
         final Replicator repl = makeBasicRepl();
-        assertEquals(0, repl.getReplicatorListenerCount());
+        Assert.assertEquals(0, repl.getReplicatorListenerCount());
         ListenerToken token = repl.addChangeListener(r -> { });
-        assertEquals(1, repl.getReplicatorListenerCount());
+        Assert.assertEquals(1, repl.getReplicatorListenerCount());
         token.remove();
-        assertEquals(0, repl.getReplicatorListenerCount());
+        Assert.assertEquals(0, repl.getReplicatorListenerCount());
         token.remove();
-        assertEquals(0, repl.getReplicatorListenerCount());
+        Assert.assertEquals(0, repl.getReplicatorListenerCount());
     }
 
     @Test
@@ -164,19 +157,19 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
             new CouchbaseLiteException("", CBLError.Domain.CBLITE, CBLError.Code.UNKNOWN_HOST));
 
         synchronized (options) {
-            assertEquals(
+            Assert.assertEquals(
                 Defaults.Replicator.ACCEPT_PARENT_COOKIES,
                 options.get(C4Replicator.REPLICATOR_OPTION_ACCEPT_PARENT_COOKIES));
-            assertEquals(
+            Assert.assertEquals(
                 Defaults.Replicator.ENABLE_AUTO_PURGE,
                 options.get(C4Replicator.REPLICATOR_OPTION_ENABLE_AUTO_PURGE));
-            assertEquals(
+            Assert.assertEquals(
                 Defaults.Replicator.HEARTBEAT,
                 ((Number) options.get(C4Replicator.REPLICATOR_HEARTBEAT_INTERVAL)).intValue());
-            assertEquals(
+            Assert.assertEquals(
                 Defaults.Replicator.MAX_ATTEMPTS_WAIT_TIME,
                 ((Number) options.get(C4Replicator.REPLICATOR_OPTION_MAX_RETRY_INTERVAL)).intValue());
-            assertEquals(
+            Assert.assertEquals(
                 Defaults.Replicator.MAX_ATTEMPTS_SINGLE_SHOT - 1,
                 ((Number) options.get(C4Replicator.REPLICATOR_OPTION_MAX_RETRIES)).intValue());
         }
@@ -211,12 +204,12 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
             new CouchbaseLiteException("", CBLError.Domain.CBLITE, CBLError.Code.UNKNOWN_HOST));
 
         synchronized (options) {
-            assertEquals(Boolean.TRUE, options.get(C4Replicator.REPLICATOR_OPTION_ACCEPT_PARENT_COOKIES));
-            assertEquals(Boolean.FALSE, options.get(C4Replicator.REPLICATOR_OPTION_ENABLE_AUTO_PURGE));
-            assertEquals(33L, options.get(C4Replicator.REPLICATOR_HEARTBEAT_INTERVAL));
-            assertEquals(45L, options.get(C4Replicator.REPLICATOR_OPTION_MAX_RETRY_INTERVAL));
+            Assert.assertEquals(Boolean.TRUE, options.get(C4Replicator.REPLICATOR_OPTION_ACCEPT_PARENT_COOKIES));
+            Assert.assertEquals(Boolean.FALSE, options.get(C4Replicator.REPLICATOR_OPTION_ENABLE_AUTO_PURGE));
+            Assert.assertEquals(33L, options.get(C4Replicator.REPLICATOR_HEARTBEAT_INTERVAL));
+            Assert.assertEquals(45L, options.get(C4Replicator.REPLICATOR_OPTION_MAX_RETRY_INTERVAL));
             // A friend once told me: Don't try to teach a pig to sing.  It won't work and it annoys the pig.
-            assertEquals(78L - 1, options.get(C4Replicator.REPLICATOR_OPTION_MAX_RETRIES));
+            Assert.assertEquals(78L - 1, options.get(C4Replicator.REPLICATOR_OPTION_MAX_RETRIES));
         }
     }
 
@@ -246,10 +239,10 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
 
         synchronized (options) {
             final Object authOpts = options.get(C4Replicator.REPLICATOR_OPTION_AUTHENTICATION);
-            assertTrue(authOpts instanceof Map);
+            Assert.assertTrue(authOpts instanceof Map);
             final Map<?, ?> auth = (Map<?, ?>) authOpts;
-            assertEquals(C4Replicator.AUTH_TYPE_BASIC, auth.get(C4Replicator.REPLICATOR_AUTH_TYPE));
-            assertEquals("sekrit", auth.get(C4Replicator.REPLICATOR_AUTH_PASSWORD));
+            Assert.assertEquals(C4Replicator.AUTH_TYPE_BASIC, auth.get(C4Replicator.REPLICATOR_AUTH_TYPE));
+            Assert.assertEquals("sekrit", auth.get(C4Replicator.REPLICATOR_AUTH_PASSWORD));
         }
     }
 
@@ -266,7 +259,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         });
 
         repl.start();
-        try { assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS)); }
+        try { Assert.assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS)); }
         finally {
             token.remove();
             repl.stop();
@@ -286,17 +279,17 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
                 CBLError.Domain.CBLITE,
                 CBLError.Code.BUSY));
 
-        assertEquals(replicatedDoc.getID(), docId);
+        Assert.assertEquals(replicatedDoc.getID(), docId);
 
-        assertEquals(getTargetCollection().getScope().getName(), replicatedDoc.getScope());
-        assertEquals(getTargetCollection().getName(), replicatedDoc.getCollection());
+        Assert.assertEquals(getTargetCollection().getScope().getName(), replicatedDoc.getScope());
+        Assert.assertEquals(getTargetCollection().getName(), replicatedDoc.getCollection());
 
-        assertTrue(replicatedDoc.getFlags().contains(DocumentFlag.DELETED));
+        Assert.assertTrue(replicatedDoc.getFlags().contains(DocumentFlag.DELETED));
 
         CouchbaseLiteException err = replicatedDoc.getError();
-        assertNotNull(err);
-        assertEquals(CBLError.Domain.CBLITE, err.getDomain());
-        assertEquals(CBLError.Code.BUSY, err.getCode());
+        Assert.assertNotNull(err);
+        Assert.assertEquals(CBLError.Domain.CBLITE, err.getDomain());
+        Assert.assertEquals(CBLError.Code.BUSY, err.getCode());
     }
 
     // CBL-1218
@@ -306,7 +299,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
 
         closeDb(getTestDatabase());
 
-        assertThrows(CouchbaseLiteError.class, repl::start);
+        Assert.assertThrows(CouchbaseLiteError.class, repl::start);
     }
 
     // CBL-1218
@@ -316,7 +309,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
 
         deleteDb(getTestDatabase());
 
-        assertThrows(CouchbaseLiteError.class, () -> repl.getPendingDocumentIds(getTestCollection()));
+        Assert.assertThrows(CouchbaseLiteError.class, () -> repl.getPendingDocumentIds(getTestCollection()));
     }
 
     // CBL-1218
@@ -326,31 +319,31 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
 
         closeDb(getTestDatabase());
 
-        assertThrows(CouchbaseLiteError.class, () -> repl.isDocumentPending("who-cares", getTestCollection()));
+        Assert.assertThrows(CouchbaseLiteError.class, () -> repl.isDocumentPending("who-cares", getTestCollection()));
     }
 
     // CBL-1441
     @Test
     public void testReplicatorStatus() {
-        assertEquals(
+        Assert.assertEquals(
             ReplicatorActivityLevel.BUSY,
             getActivityLevelFor(C4ReplicatorStatus.ActivityLevel.STOPPED - 1));
-        assertEquals(
+        Assert.assertEquals(
             ReplicatorActivityLevel.STOPPED,
             getActivityLevelFor(C4ReplicatorStatus.ActivityLevel.STOPPED));
-        assertEquals(
+        Assert.assertEquals(
             ReplicatorActivityLevel.OFFLINE,
             getActivityLevelFor(C4ReplicatorStatus.ActivityLevel.OFFLINE));
-        assertEquals(
+        Assert.assertEquals(
             ReplicatorActivityLevel.CONNECTING,
             getActivityLevelFor(C4ReplicatorStatus.ActivityLevel.CONNECTING));
-        assertEquals(
+        Assert.assertEquals(
             ReplicatorActivityLevel.IDLE,
             getActivityLevelFor(C4ReplicatorStatus.ActivityLevel.IDLE));
-        assertEquals(
+        Assert.assertEquals(
             ReplicatorActivityLevel.BUSY,
             getActivityLevelFor(C4ReplicatorStatus.ActivityLevel.BUSY));
-        assertEquals(
+        Assert.assertEquals(
             ReplicatorActivityLevel.BUSY,
             getActivityLevelFor(C4ReplicatorStatus.ActivityLevel.BUSY + 1));
     }
@@ -362,24 +355,24 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     public void testDeprecatedReplicatorType() {
         final ReplicatorConfiguration config = makeDefaultConfig();
 
-        assertEquals(AbstractReplicatorConfiguration.ReplicatorType.PUSH_AND_PULL, config.getReplicatorType());
-        assertEquals(ReplicatorType.PUSH_AND_PULL, config.getType());
+        Assert.assertEquals(AbstractReplicatorConfiguration.ReplicatorType.PUSH_AND_PULL, config.getReplicatorType());
+        Assert.assertEquals(ReplicatorType.PUSH_AND_PULL, config.getType());
 
         config.setReplicatorType(AbstractReplicatorConfiguration.ReplicatorType.PUSH);
-        assertEquals(AbstractReplicatorConfiguration.ReplicatorType.PUSH, config.getReplicatorType());
-        assertEquals(ReplicatorType.PUSH, config.getType());
+        Assert.assertEquals(AbstractReplicatorConfiguration.ReplicatorType.PUSH, config.getReplicatorType());
+        Assert.assertEquals(ReplicatorType.PUSH, config.getType());
 
         config.setReplicatorType(AbstractReplicatorConfiguration.ReplicatorType.PULL);
-        assertEquals(AbstractReplicatorConfiguration.ReplicatorType.PULL, config.getReplicatorType());
-        assertEquals(ReplicatorType.PULL, config.getType());
+        Assert.assertEquals(AbstractReplicatorConfiguration.ReplicatorType.PULL, config.getReplicatorType());
+        Assert.assertEquals(ReplicatorType.PULL, config.getType());
 
         config.setType(ReplicatorType.PUSH);
-        assertEquals(AbstractReplicatorConfiguration.ReplicatorType.PUSH, config.getReplicatorType());
-        assertEquals(ReplicatorType.PUSH, config.getType());
+        Assert.assertEquals(AbstractReplicatorConfiguration.ReplicatorType.PUSH, config.getReplicatorType());
+        Assert.assertEquals(ReplicatorType.PUSH, config.getType());
 
         config.setType(ReplicatorType.PULL);
-        assertEquals(AbstractReplicatorConfiguration.ReplicatorType.PULL, config.getReplicatorType());
-        assertEquals(ReplicatorType.PULL, config.getType());
+        Assert.assertEquals(AbstractReplicatorConfiguration.ReplicatorType.PULL, config.getReplicatorType());
+        Assert.assertEquals(ReplicatorType.PULL, config.getType());
     }
 
     /**
@@ -400,28 +393,28 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
 
         // cookie option contains both sgw cookie and user specified cookie
         String cookies = (String) options.get(C4Replicator.REPLICATOR_OPTION_COOKIES);
-        assertNotNull(cookies);
-        assertTrue(cookies.contains("SyncGatewaySession=mysessionid"));
-        assertTrue(cookies.contains("region=nw; city=sf"));
+        Assert.assertNotNull(cookies);
+        Assert.assertTrue(cookies.contains("SyncGatewaySession=mysessionid"));
+        Assert.assertTrue(cookies.contains("region=nw; city=sf"));
 
         // user specified cookie should have been removed from extra header
         Object httpHeaders = options.get(C4Replicator.REPLICATOR_OPTION_EXTRA_HEADERS);
-        assertTrue(httpHeaders instanceof Map);
+        Assert.assertTrue(httpHeaders instanceof Map);
 
         // httpHeaders must at least include a mapping for User-Agent
-        assertFalse(((Map<?, ?>) httpHeaders).containsKey(AbstractCBLWebSocket.HEADER_COOKIES));
+        Assert.assertFalse(((Map<?, ?>) httpHeaders).containsKey(AbstractCBLWebSocket.HEADER_COOKIES));
     }
 
     @Test
     public void testReplicatorWithNoCookie() {
         ImmutableReplicatorConfiguration config = new ImmutableReplicatorConfiguration(makeDefaultConfig());
         Map<?, ?> options = config.getConnectionOptions();
-        assertFalse(options.containsKey(C4Replicator.REPLICATOR_OPTION_COOKIES));
+        Assert.assertFalse(options.containsKey(C4Replicator.REPLICATOR_OPTION_COOKIES));
     }
 
     @Test
     public void testReplicatorWithOnlyAuthenticationCookie() {
-        assertEquals(
+        Assert.assertEquals(
             "SyncGatewaySession=mysessionid",
             new ImmutableReplicatorConfiguration(
                 makeDefaultConfig().setAuthenticator(new SessionAuthenticator("mysessionid")))
@@ -438,15 +431,15 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         ImmutableReplicatorConfiguration immutableConfiguration = new ImmutableReplicatorConfiguration(configuration);
         HashMap<String, Object> options = (HashMap<String, Object>) immutableConfiguration.getConnectionOptions();
 
-        assertEquals(
+        Assert.assertEquals(
             "region=nw; city=sf",
             options.get(C4Replicator.REPLICATOR_OPTION_COOKIES));
 
         Object httpHeaders = options.get(C4Replicator.REPLICATOR_OPTION_EXTRA_HEADERS);
-        assertTrue(httpHeaders instanceof Map);
+        Assert.assertTrue(httpHeaders instanceof Map);
 
         // httpHeaders must at least include a mapping for User-Agent
-        assertFalse(((Map<?, ?>) httpHeaders).containsKey(AbstractCBLWebSocket.HEADER_COOKIES));
+        Assert.assertFalse(((Map<?, ?>) httpHeaders).containsKey(AbstractCBLWebSocket.HEADER_COOKIES));
     }
 
 
@@ -465,13 +458,13 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         final ProxyAuthenticator proxyAuth = new ProxyAuthenticator("Stewart", pwd);
 
         final char[] pwd1 = proxyAuth.getPassword();
-        assertArrayEquals(password, pwd1);
-        assertNotSame(pwd, pwd1);
+        Assert.assertArrayEquals(password, pwd1);
+        Assert.assertNotSame(pwd, pwd1);
 
         pwd[0] = 'Y';
         final char[] pwd2 = proxyAuth.getPassword();
-        assertArrayEquals(password, pwd2);
-        assertNotSame(pwd1, pwd2);
+        Assert.assertArrayEquals(password, pwd2);
+        Assert.assertNotSame(pwd1, pwd2);
     }
 
     // 3.2 TestGetDefaultProxyAuthenticator
@@ -479,7 +472,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     //    Get the proxy authenticator object and check that the returned object is null.
     @Test
     public void testGetDefaultProxyAuthenticator() throws URISyntaxException {
-        assertNull(new ReplicatorConfiguration(new URLEndpoint(new URI("ws://foo.com"))).getProxyAuthenticator());
+        Assert.assertNull(new ReplicatorConfiguration(new URLEndpoint(new URI("ws://foo.com"))).getProxyAuthenticator());
     }
 
     // 3.3 TestSetNewProxyAuthenticator
@@ -491,7 +484,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     @Test
     public void testSetNewProxyAuthenticator() throws URISyntaxException {
         final ProxyAuthenticator proxyAuth = new ProxyAuthenticator("Wilson", "Vince".toCharArray());
-        assertEquals(
+        Assert.assertEquals(
             proxyAuth,
             new ReplicatorConfiguration(new URLEndpoint(new URI("ws://foo.com")))
                 .setProxyAuthenticator(proxyAuth)
@@ -505,7 +498,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     //    Check that the returned ProxyAuthenticator is null.
     @Test
     public void testSetNullProxyAuthenticator() throws URISyntaxException {
-        assertNull(new ReplicatorConfiguration(new URLEndpoint(new URI("ws://foo.com")))
+        Assert.assertNull(new ReplicatorConfiguration(new URLEndpoint(new URI("ws://foo.com")))
             .setProxyAuthenticator(null)
             .getProxyAuthenticator());
     }
@@ -524,9 +517,9 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     public void testUpdateProxyAuthenticator() throws URISyntaxException {
         final ReplicatorConfiguration config = new ReplicatorConfiguration(new URLEndpoint(new URI("ws://foo.com")));
         ProxyAuthenticator proxyAuth = new ProxyAuthenticator("Wilson", "Vince".toCharArray());
-        assertEquals(proxyAuth, config.setProxyAuthenticator(proxyAuth).getProxyAuthenticator());
+        Assert.assertEquals(proxyAuth, config.setProxyAuthenticator(proxyAuth).getProxyAuthenticator());
         proxyAuth = new ProxyAuthenticator("Matheson", "Charlie".toCharArray());
-        assertEquals(proxyAuth, config.setProxyAuthenticator(proxyAuth).getProxyAuthenticator());
+        Assert.assertEquals(proxyAuth, config.setProxyAuthenticator(proxyAuth).getProxyAuthenticator());
     }
 
     // 3.6 TestResetProxyAuthenticator
@@ -542,11 +535,11 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     public void testResetProxyAuthenticator() throws URISyntaxException {
         final ReplicatorConfiguration config = new ReplicatorConfiguration(new URLEndpoint(new URI("ws://foo.com")));
         final ProxyAuthenticator proxyAuth = new ProxyAuthenticator("Wilson", "Vince".toCharArray());
-        assertEquals(proxyAuth, config.setProxyAuthenticator(proxyAuth).getProxyAuthenticator());
-        assertNull(config.setProxyAuthenticator(null).getProxyAuthenticator());
+        Assert.assertEquals(proxyAuth, config.setProxyAuthenticator(proxyAuth).getProxyAuthenticator());
+        Assert.assertNull(config.setProxyAuthenticator(null).getProxyAuthenticator());
     }
 
-    ///////// Utility functions
+    /// ////// Utility functions
 
     private ReplicatorActivityLevel getActivityLevelFor(int activityLevel) {
         return new ReplicatorStatus(new C4ReplicatorStatus(activityLevel, 0, 0, 0, 0, 0, 0)).getActivityLevel();

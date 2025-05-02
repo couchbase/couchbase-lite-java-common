@@ -27,6 +27,7 @@ import java.util.Map;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -35,13 +36,6 @@ import org.junit.rules.TemporaryFolder;
 import com.couchbase.lite.internal.utils.IOUtils;
 import com.couchbase.lite.internal.utils.PlatformUtils;
 import com.couchbase.lite.internal.utils.StringUtils;
-
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 
 
 // There are other blob tests in test suites...
@@ -57,22 +51,24 @@ public class BlobTest extends BaseDbTest {
 
     @Test
     public void testBlobCtorWithNullContentType() {
-        assertThrows(IllegalArgumentException.class, () -> new Blob(null, new byte[] {5, 6, 7, 8}));
+        Assert.assertThrows(IllegalArgumentException.class, () -> new Blob(null, new byte[] {5, 6, 7, 8}));
     }
 
     @Test
     public void testBlobCtorWithNullContent() {
-        assertThrows(IllegalArgumentException.class, () -> new Blob("image/png", (byte[]) null));
+        Assert.assertThrows(IllegalArgumentException.class, () -> new Blob("image/png", (byte[]) null));
     }
 
     @Test
     public void testBlobCtorWithStreamAndNullContentType() {
-        assertThrows(IllegalArgumentException.class, () -> new Blob(null, PlatformUtils.getAsset("attachment.png")));
+        Assert.assertThrows(
+            IllegalArgumentException.class,
+            () -> new Blob(null, PlatformUtils.getAsset("attachment.png")));
     }
 
     @Test
     public void testBlobCtorsWithNullStream() {
-        assertThrows(IllegalArgumentException.class, () -> new Blob("image/png", (InputStream) null));
+        Assert.assertThrows(IllegalArgumentException.class, () -> new Blob("image/png", (InputStream) null));
     }
 
     @Test
@@ -87,12 +83,12 @@ public class BlobTest extends BaseDbTest {
         Blob data1c = new Blob("text/plain", content1a); // not store in db
         Blob data2a = new Blob("text/plain", content2a);
 
-        assertEquals(data1a, data1b);
-        assertEquals(data1b, data1a);
-        assertNotEquals(data1a, data2a);
-        assertNotEquals(data1b, data2a);
-        assertNotEquals(data2a, data1a);
-        assertNotEquals(data2a, data1b);
+        Assert.assertEquals(data1a, data1b);
+        Assert.assertEquals(data1b, data1a);
+        Assert.assertNotEquals(data1a, data2a);
+        Assert.assertNotEquals(data1b, data2a);
+        Assert.assertNotEquals(data2a, data1a);
+        Assert.assertNotEquals(data2a, data1b);
 
         MutableDocument mDoc = new MutableDocument();
         mDoc.setBlob("blob1a", data1a);
@@ -104,15 +100,15 @@ public class BlobTest extends BaseDbTest {
         Blob blob1b = doc.getBlob("blob1b");
         Blob blob2a = doc.getBlob("blob2a");
 
-        assertEquals(blob1a, blob1b);
-        assertEquals(blob1b, blob1a);
-        assertNotEquals(blob1a, blob2a);
-        assertNotEquals(blob1b, blob2a);
-        assertNotEquals(blob2a, blob1a);
-        assertNotEquals(blob2a, blob1b);
+        Assert.assertEquals(blob1a, blob1b);
+        Assert.assertEquals(blob1b, blob1a);
+        Assert.assertNotEquals(blob1a, blob2a);
+        Assert.assertNotEquals(blob1b, blob2a);
+        Assert.assertNotEquals(blob2a, blob1a);
+        Assert.assertNotEquals(blob2a, blob1b);
 
-        assertEquals(blob1a, data1c);
-        assertEquals(data1c, blob1a);
+        Assert.assertEquals(blob1a, data1c);
+        Assert.assertEquals(data1c, blob1a);
     }
 
     @Test
@@ -127,12 +123,12 @@ public class BlobTest extends BaseDbTest {
         Blob data1c = new Blob("text/plain", content1a); // not store in db
         Blob data2a = new Blob("text/plain", content2a);
 
-        assertEquals(data1a.hashCode(), data1b.hashCode());
-        assertEquals(data1b.hashCode(), data1a.hashCode());
-        assertNotEquals(data1a.hashCode(), data2a.hashCode());
-        assertNotEquals(data1b.hashCode(), data2a.hashCode());
-        assertNotEquals(data2a.hashCode(), data1a.hashCode());
-        assertNotEquals(data2a.hashCode(), data1b.hashCode());
+        Assert.assertEquals(data1a.hashCode(), data1b.hashCode());
+        Assert.assertEquals(data1b.hashCode(), data1a.hashCode());
+        Assert.assertNotEquals(data1a.hashCode(), data2a.hashCode());
+        Assert.assertNotEquals(data1b.hashCode(), data2a.hashCode());
+        Assert.assertNotEquals(data2a.hashCode(), data1a.hashCode());
+        Assert.assertNotEquals(data2a.hashCode(), data1b.hashCode());
 
         MutableDocument mDoc = new MutableDocument();
         mDoc.setBlob("blob1a", data1a);
@@ -144,15 +140,15 @@ public class BlobTest extends BaseDbTest {
         Blob blob1b = doc.getBlob("blob1b");
         Blob blob2a = doc.getBlob("blob2a");
 
-        assertEquals(blob1a.hashCode(), blob1b.hashCode());
-        assertEquals(blob1b.hashCode(), blob1a.hashCode());
-        assertNotEquals(blob1a.hashCode(), blob2a.hashCode());
-        assertNotEquals(blob1b.hashCode(), blob2a.hashCode());
-        assertNotEquals(blob2a.hashCode(), blob1a.hashCode());
-        assertNotEquals(blob2a.hashCode(), blob1b.hashCode());
+        Assert.assertEquals(blob1a.hashCode(), blob1b.hashCode());
+        Assert.assertEquals(blob1b.hashCode(), blob1a.hashCode());
+        Assert.assertNotEquals(blob1a.hashCode(), blob2a.hashCode());
+        Assert.assertNotEquals(blob1b.hashCode(), blob2a.hashCode());
+        Assert.assertNotEquals(blob2a.hashCode(), blob1a.hashCode());
+        Assert.assertNotEquals(blob2a.hashCode(), blob1b.hashCode());
 
-        assertEquals(blob1a.hashCode(), data1c.hashCode());
-        assertEquals(data1c.hashCode(), blob1a.hashCode());
+        Assert.assertEquals(blob1a.hashCode(), data1c.hashCode());
+        Assert.assertEquals(data1c.hashCode(), blob1a.hashCode());
     }
 
     @Test
@@ -166,15 +162,15 @@ public class BlobTest extends BaseDbTest {
         Document doc = saveDocInTestCollection(mDoc);
 
         Blob savedBlob = doc.getBlob("blob");
-        assertNotNull(savedBlob);
+        Assert.assertNotNull(savedBlob);
 
         byte[] buff = blob.getContent();
-        assertEquals(blobContent.length, buff.length);
-        assertArrayEquals(blobContent, buff);
+        Assert.assertEquals(blobContent.length, buff.length);
+        Assert.assertArrayEquals(blobContent, buff);
 
-        assertEquals(blobContent.length, savedBlob.length());
+        Assert.assertEquals(blobContent.length, savedBlob.length());
 
-        assertEquals("image/png", savedBlob.getContentType());
+        Assert.assertEquals("image/png", savedBlob.getContentType());
     }
 
     @Test
@@ -188,7 +184,7 @@ public class BlobTest extends BaseDbTest {
 
         Document doc = getTestCollection().getDocument("doc1");
         Blob savedBlob = doc.getBlob("blob");
-        assertNotNull(savedBlob);
+        Assert.assertNotNull(savedBlob);
 
         byte[] blobContent;
         try (InputStream is = PlatformUtils.getAsset("attachment.png")) { blobContent = IOUtils.toByteArray(is); }
@@ -200,12 +196,12 @@ public class BlobTest extends BaseDbTest {
             buff = out.toByteArray();
         }
 
-        assertEquals(blobContent.length, buff.length);
-        assertArrayEquals(blobContent, buff);
+        Assert.assertEquals(blobContent.length, buff.length);
+        Assert.assertArrayEquals(blobContent, buff);
 
-        assertEquals(blobContent.length, savedBlob.length());
+        Assert.assertEquals(blobContent.length, savedBlob.length());
 
-        assertEquals("image/png", savedBlob.getContentType());
+        Assert.assertEquals("image/png", savedBlob.getContentType());
     }
 
     // https://github.com/couchbase/couchbase-lite-android/issues/1438
@@ -222,10 +218,10 @@ public class BlobTest extends BaseDbTest {
         mDoc.setBlob("blob", blob);
         Document doc = saveDocInTestCollection(mDoc);
         Blob savedBlob = doc.getBlob("blob");
-        assertNotNull(savedBlob);
-        assertEquals("application/json", savedBlob.getContentType());
+        Assert.assertNotNull(savedBlob);
+        Assert.assertEquals("application/json", savedBlob.getContentType());
         byte[] content = blob.getContent();
-        assertArrayEquals(content, bytes);
+        Assert.assertArrayEquals(content, bytes);
     }
 
     // https://github.com/couchbase/couchbase-lite-android/issues/1611
@@ -244,7 +240,7 @@ public class BlobTest extends BaseDbTest {
         Document reloadedDoc = getTestCollection().getDocument(doc.getId());
         Blob savedBlob = reloadedDoc.getBlob("blob");
         byte[] content = savedBlob.getContent();
-        assertArrayEquals(content, bytes);
+        Assert.assertArrayEquals(content, bytes);
     }
 
     @Test
@@ -265,20 +261,22 @@ public class BlobTest extends BaseDbTest {
 
         byte[] bytes = IOUtils.toByteArray(path);
         byte[] content = blob.getContent();
-        assertArrayEquals(content, bytes);
+        Assert.assertArrayEquals(content, bytes);
 
-        assertThrows(IllegalArgumentException.class, () -> new Blob(null, url));
+        Assert.assertThrows(IllegalArgumentException.class, () -> new Blob(null, url));
 
-        assertThrows(IllegalArgumentException.class, () -> new Blob(contentType, (URL) null));
+        Assert.assertThrows(IllegalArgumentException.class, () -> new Blob(contentType, (URL) null));
 
-        assertThrows(IllegalArgumentException.class, () -> new Blob(contentType, new URL("http://java.sun.com")));
+        Assert.assertThrows(
+            IllegalArgumentException.class,
+            () -> new Blob(contentType, new URL("http://java.sun.com")));
     }
 
     @Test
     public void testBlobReadByte() throws IOException {
         byte[] data;
         try (InputStream is = PlatformUtils.getAsset("iTunesMusicLibrary.json")) { data = IOUtils.toByteArray(is); }
-        assertEquals(new Blob("application/json", data).getContentStream().read(), data[0]);
+        Assert.assertEquals(new Blob("application/json", data).getContentStream().read(), data[0]);
     }
 
     @Test
@@ -287,10 +285,10 @@ public class BlobTest extends BaseDbTest {
         try (InputStream is = PlatformUtils.getAsset("iTunesMusicLibrary.json")) { data = IOUtils.toByteArray(is); }
 
         byte[] blobContent = new byte[data.length];
-        assertEquals(
+        Assert.assertEquals(
             data.length,
             new Blob("application/json", data).getContentStream().read(blobContent, 0, data.length));
-        assertArrayEquals(blobContent, data);
+        Assert.assertArrayEquals(blobContent, data);
     }
 
     @Test
@@ -299,8 +297,8 @@ public class BlobTest extends BaseDbTest {
         try (InputStream is = PlatformUtils.getAsset("iTunesMusicLibrary.json")) { data = IOUtils.toByteArray(is); }
 
         InputStream blobStream = new Blob("application/json", data).getContentStream();
-        assertEquals(17, blobStream.skip(17));
-        assertEquals(blobStream.read(), data[17]);
+        Assert.assertEquals(17, blobStream.skip(17));
+        Assert.assertEquals(blobStream.read(), data[17]);
     }
 
     @Test
@@ -314,8 +312,8 @@ public class BlobTest extends BaseDbTest {
         Document doc = saveDocInTestCollection(mDoc);
 
         Blob savedBlob = doc.getBlob("blob");
-        assertNotNull(savedBlob);
-        assertEquals("image/png", savedBlob.getContentType());
+        Assert.assertNotNull(savedBlob);
+        Assert.assertEquals("image/png", savedBlob.getContentType());
 
         final byte[] buffer = new byte[1024];
 
@@ -325,12 +323,12 @@ public class BlobTest extends BaseDbTest {
                 out.write(buffer, 0, len);
             }
             byte[] readBytes = out.toByteArray();
-            assertArrayEquals(bytes, readBytes);
+            Assert.assertArrayEquals(bytes, readBytes);
         }
     }
 
 
-    ///////////////  JSON tests
+    /// ////////////  JSON tests
 
     // 3.1.a
     @Test
@@ -352,13 +350,13 @@ public class BlobTest extends BaseDbTest {
         Blob dbBlob = getTestDatabase().getBlob(fetchProps);
 
         verifyBlob(dbBlob);
-        assertEquals(BLOB_CONTENT, new String(dbBlob.getContent()));
+        Assert.assertEquals(BLOB_CONTENT, new String(dbBlob.getContent()));
     }
 
     // 3.1.c
     @Test
     public void testUnsavedBlobToJSON() {
-        assertThrows(CouchbaseLiteError.class, () -> makeBlob().toJSON());
+        Assert.assertThrows(CouchbaseLiteError.class, () -> makeBlob().toJSON());
     }
 
     // 3.1.d
@@ -367,7 +365,7 @@ public class BlobTest extends BaseDbTest {
         Map<String, Object> props = new HashMap<>();
         props.put(Blob.META_PROP_TYPE, Blob.TYPE_BLOB);
         props.put(Blob.PROP_DIGEST, "sha1-C+ThisIsTheWayWeMakeItFail=");
-        assertNull(getTestDatabase().getBlob(props));
+        Assert.assertNull(getTestDatabase().getBlob(props));
     }
 
     // 3.1.e.0: null param
@@ -375,7 +373,7 @@ public class BlobTest extends BaseDbTest {
     public void testDbGetNotBlob0() {
         Blob blob = makeBlob();
         getTestDatabase().saveBlob(blob);
-        assertThrows(IllegalArgumentException.class, () -> getTestDatabase().getBlob(null));
+        Assert.assertThrows(IllegalArgumentException.class, () -> getTestDatabase().getBlob(null));
     }
 
     // 3.1.e.1: empty param
@@ -383,7 +381,7 @@ public class BlobTest extends BaseDbTest {
     public void testDbGetNotBlob1() {
         Blob blob = makeBlob();
         getTestDatabase().saveBlob(blob);
-        assertThrows(IllegalArgumentException.class, () -> getTestDatabase().getBlob(new HashMap<>()));
+        Assert.assertThrows(IllegalArgumentException.class, () -> getTestDatabase().getBlob(new HashMap<>()));
     }
 
     // 3.1.e.2: missing digest
@@ -391,7 +389,7 @@ public class BlobTest extends BaseDbTest {
     public void testDbGetNotBlob2() {
         Map<String, Object> props = getPropsForSavedBlob();
         props.remove(Blob.PROP_DIGEST);
-        assertThrows(IllegalArgumentException.class, () -> getTestDatabase().getBlob(props));
+        Assert.assertThrows(IllegalArgumentException.class, () -> getTestDatabase().getBlob(props));
     }
 
     // 3.1.e.3: missing meta-type
@@ -399,7 +397,7 @@ public class BlobTest extends BaseDbTest {
     public void testDbGetNotBlob3() {
         Map<String, Object> props = getPropsForSavedBlob();
         props.remove(Blob.META_PROP_TYPE);
-        assertThrows(IllegalArgumentException.class, () -> getTestDatabase().getBlob(props));
+        Assert.assertThrows(IllegalArgumentException.class, () -> getTestDatabase().getBlob(props));
     }
 
     // 3.1.e.4: length is not a number
@@ -407,7 +405,7 @@ public class BlobTest extends BaseDbTest {
     public void testDbGetNotBlob4() {
         Map<String, Object> props = getPropsForSavedBlob();
         props.put(Blob.PROP_LENGTH, "42");
-        assertThrows(IllegalArgumentException.class, () -> getTestDatabase().getBlob(props));
+        Assert.assertThrows(IllegalArgumentException.class, () -> getTestDatabase().getBlob(props));
     }
 
     // 3.1.e.5: bad content type
@@ -415,7 +413,7 @@ public class BlobTest extends BaseDbTest {
     public void testDbGetNotBlob5() {
         Map<String, Object> props = getPropsForSavedBlob();
         props.put(Blob.PROP_CONTENT_TYPE, new Object());
-        assertThrows(IllegalArgumentException.class, () -> getTestDatabase().getBlob(props));
+        Assert.assertThrows(IllegalArgumentException.class, () -> getTestDatabase().getBlob(props));
     }
 
     // 3.1.e.6: extra arg
@@ -423,7 +421,7 @@ public class BlobTest extends BaseDbTest {
     public void testDbGetNotBlob6() {
         Map<String, Object> props = getPropsForSavedBlob();
         props.put("foo", "bar");
-        assertThrows(IllegalArgumentException.class, () -> getTestDatabase().getBlob(props));
+        Assert.assertThrows(IllegalArgumentException.class, () -> getTestDatabase().getBlob(props));
     }
 
     // 3.1.f
@@ -445,13 +443,13 @@ public class BlobTest extends BaseDbTest {
         Blob blob = makeBlob();
         getTestDatabase().saveBlob(blob);
 
-        assertTrue(getTestDatabase().performMaintenance(MaintenanceType.COMPACT));
+        Assert.assertTrue(getTestDatabase().performMaintenance(MaintenanceType.COMPACT));
 
         Map<String, Object> props = new HashMap<>();
         props.put(Blob.META_PROP_TYPE, Blob.TYPE_BLOB);
         props.put(Blob.PROP_DIGEST, blob.digest());
 
-        assertNull(getTestDatabase().getBlob(props));
+        Assert.assertNull(getTestDatabase().getBlob(props));
     }
 
     @Test
@@ -463,7 +461,7 @@ public class BlobTest extends BaseDbTest {
             getTestCollection().save(mDoc);
         }
 
-        assertTrue(Blob.isBlob(
+        Assert.assertTrue(Blob.isBlob(
             new MutableDictionary().setJSON(getTestCollection().getDocument("doc1").getBlob("blob").toJSON()).toMap()));
     }
 
@@ -478,10 +476,10 @@ public class BlobTest extends BaseDbTest {
 
         InputStream blobStream = getTestCollection().getDocument("blobDoc").getBlob("blob").getContentStream();
 
-        assertEquals(255, blobStream.read());
-        assertEquals(255, blobStream.read());
-        assertEquals(0xf0, blobStream.read());
-        assertEquals(0xa0, blobStream.read());
+        Assert.assertEquals(255, blobStream.read());
+        Assert.assertEquals(255, blobStream.read());
+        Assert.assertEquals(0xf0, blobStream.read());
+        Assert.assertEquals(0xa0, blobStream.read());
     }
 
     private Map<String, Object> getPropsForSavedBlob() {
