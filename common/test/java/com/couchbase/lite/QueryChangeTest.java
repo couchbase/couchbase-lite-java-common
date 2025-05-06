@@ -27,7 +27,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import com.couchbase.lite.internal.utils.Fn;
@@ -87,7 +86,6 @@ public class QueryChangeTest extends BaseQueryTest {
 
     // https://issues.couchbase.com/browse/CBL-5647
     // This test is utterly non-deterministic.  Passing it doesn't prove anything.
-    @Ignore("Failing: CBL-5647")
     @Test
     public void testQueryObserverRace() {
         final List<Expression> ids = Fn.mapToList(loadDocuments(10), d -> Expression.string(d.getId())).subList(3, 7);

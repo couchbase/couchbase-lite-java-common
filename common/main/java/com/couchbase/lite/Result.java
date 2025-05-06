@@ -42,6 +42,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
  * An attempt to reference a Result after calling ResultSet.close on the ResultSet that
  * contains it will throw an CouchbaseLiteError
  */
+@SuppressWarnings("PMD.TooManyMethods")
 public final class Result implements ArrayInterface, DictionaryInterface, Iterable<String> {
 
     //---------------------------------------------

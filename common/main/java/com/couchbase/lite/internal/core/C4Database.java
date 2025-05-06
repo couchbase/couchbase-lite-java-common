@@ -54,10 +54,10 @@ public abstract class C4Database extends C4NativePeer {
     public static final boolean VERSION_VECTORS_ENABLED = false;
 
     @VisibleForTesting
-    static final int DB_FLAGS = C4Constants.DatabaseFlags.CREATE;
+    public static final String DB_EXTENSION = ".cblite2";
 
     @VisibleForTesting
-    public static final String DB_EXTENSION = ".cblite2";
+    static final int DB_FLAGS = C4Constants.DatabaseFlags.CREATE;
 
     public interface NativeImpl {
         long nOpen(

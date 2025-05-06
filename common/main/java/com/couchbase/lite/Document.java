@@ -19,6 +19,7 @@ import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -33,8 +34,9 @@ import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.fleece.MRoot;
 import com.couchbase.lite.internal.utils.ClassUtils;
+import com.couchbase.lite.internal.utils.Internal;
 import com.couchbase.lite.internal.utils.Preconditions;
-
+import com.couchbase.lite.internal.utils.Volatile;
 
 /**
  * Readonly version of the Document.
@@ -189,8 +191,12 @@ public class Document implements DictionaryInterface, Iterable<String> {
     /**
      * Get the document's timestamp.
      *
+     * The values returned by this method are, actually, just the document's generation
+     * number.  This is a increasing number but not, until future releases, an actual timestamp.
+     *
      * @return the document's timestamp
      */
+    @Volatile
     public long getTimestamp() {
         synchronized (lock) { return (c4Document == null) ? -1 : c4Document.getTimestamp(); }
     }
@@ -431,6 +437,16 @@ public class Document implements DictionaryInterface, Iterable<String> {
      */
     @Override
     public boolean contains(@NonNull String key) { return getContent().contains(key); }
+
+    @Internal
+    @NonNull
+    public List<String> getRevisionHistory() {
+        List<String> revs = null;
+        synchronized (lock) {
+            if (c4Document != null) { revs = c4Document.getRevisonIds(Integer.MAX_VALUE, null); }
+        }
+        return (revs != null) ? revs : Collections.emptyList();
+    }
 
     //---------------------------------------------
     // Iterator implementation
