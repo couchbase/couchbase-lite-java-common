@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
@@ -43,6 +44,7 @@ import com.couchbase.lite.internal.core.C4Constants;
 import com.couchbase.lite.internal.core.C4DocumentEnded;
 import com.couchbase.lite.internal.core.C4Replicator;
 import com.couchbase.lite.internal.core.C4ReplicatorStatus;
+import com.couchbase.lite.internal.exec.ExecutionService;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.listener.Listenable;
 import com.couchbase.lite.internal.logging.Log;
@@ -65,6 +67,40 @@ import com.couchbase.lite.internal.utils.StringUtils;
 public abstract class AbstractReplicator extends BaseReplicator
     implements Listenable<ReplicatorChange, ReplicatorChangeListener> {
     private static final LogDomain LOG_DOMAIN = LogDomain.REPLICATOR;
+
+    class ConflictResolutionTask implements Runnable {
+        @NonNull
+        private final AtomicBoolean cancelled = new AtomicBoolean(false);
+        @NonNull
+        private final Database db;
+        @Nullable
+        private final ConflictResolver resolver;
+        @NonNull
+        private final ReplicatedDocument rDoc;
+
+        ConflictResolutionTask(
+            @NonNull Database db,
+            @Nullable ConflictResolver resolver,
+            @NonNull ReplicatedDocument rDoc) {
+            this.db = db;
+            this.resolver = resolver;
+            this.rDoc = rDoc;
+        }
+
+        @Override
+        public void run() {
+            if (!cancelled.get()) { db.resolveReplicationConflict(resolver, rDoc, this); }
+        }
+
+        public void cancel() { cancelled.set(true); }
+
+        public boolean isCancelled() { return cancelled.get(); }
+
+        public void onResolved(@Nullable CouchbaseLiteException err) {
+            rDoc.setError(err);
+            onConflictResolved(this, rDoc);
+        }
+    }
 
     static class ReplicatorCookieStore implements CBLCookieStore {
         @NonNull
@@ -93,6 +129,9 @@ public abstract class AbstractReplicator extends BaseReplicator
     //---------------------------------------------
     // member variables
     //---------------------------------------------
+
+    private final ExecutionService.CloseableExecutor concurrentExecutor =
+        CouchbaseLiteInternal.getExecutionService().getConcurrentExecutor();
 
     @NonNull
     private final ImmutableReplicatorConfiguration config;
@@ -125,7 +164,7 @@ public abstract class AbstractReplicator extends BaseReplicator
 
     @GuardedBy("getReplicatorLock()")
     @NonNull
-    private final Set<Fn.NullableConsumer<CouchbaseLiteException>> pendingResolutions = new HashSet<>();
+    private final Set<ConflictResolutionTask> pendingResolutions = new HashSet<>();
     @GuardedBy("getReplicatorLock()")
     @NonNull
     private final Deque<C4ReplicatorStatus> pendingStatusNotifications = new LinkedList<>();
@@ -197,15 +236,19 @@ public abstract class AbstractReplicator extends BaseReplicator
     }
 
     /**
-     * Stop a running replicator.
+     * Stop a running replicator, first cancelling any pending conflict resolutions.
      * This method does not wait for the replicator to stop.
-     * When the replicator actually stops, it will a broadcast a new state, STOPPED,
-     * to change listeners.
+     * When the replicator actually stops it will a broadcast a new state,
+     * STOPPED, to change listeners.
      */
     public void stop() {
         final C4Replicator c4repl = getC4Replicator();
         Log.i(LOG_DOMAIN, "Replicator(%s) stopped: %s", getId(), this);
         if (c4repl == null) { return; }
+
+        final Set<ConflictResolutionTask> resolutions;
+        synchronized (getReplicatorLock()) { resolutions = new HashSet<>(pendingResolutions); }
+        for (ConflictResolutionTask task: resolutions) { task.cancel(); }
         c4repl.stop();
     }
 
@@ -573,8 +616,17 @@ public abstract class AbstractReplicator extends BaseReplicator
     }
 
     // callback from queueConflictResolution
-    void onConflictResolved(Fn.NullableConsumer<CouchbaseLiteException> task, @NonNull ReplicatedDocument rDoc) {
-        Log.i(LOG_DOMAIN, "%s: conflict resolved: %s", rDoc.getError(), getId(), rDoc.getID());
+    void onConflictResolved(ConflictResolutionTask task, @NonNull ReplicatedDocument rDoc) {
+        final boolean cancelled = task.isCancelled();
+
+        Log.i(
+            LOG_DOMAIN,
+            "%s: conflict resolution %s: %s",
+            rDoc.getError(),
+            getId(),
+            cancelled ? "cancelled" : "completed",
+            rDoc.getID());
+
         List<C4ReplicatorStatus> pendingNotifications = null;
         synchronized (getReplicatorLock()) {
             pendingResolutions.remove(task);
@@ -585,7 +637,7 @@ public abstract class AbstractReplicator extends BaseReplicator
             }
         }
 
-        notifyDocumentEnded(false, Arrays.asList(rDoc));
+        if (!cancelled) { notifyDocumentEnded(false, Arrays.asList(rDoc)); }
 
         if ((pendingNotifications != null) && (!pendingNotifications.isEmpty())) {
             for (C4ReplicatorStatus status: pendingNotifications) { dispatcher.execute(() -> statusChanged(status)); }
@@ -594,7 +646,7 @@ public abstract class AbstractReplicator extends BaseReplicator
 
     void notifyDocumentEnded(boolean pushing, List<ReplicatedDocument> docs) {
         final DocumentReplication update = new DocumentReplication((Replicator) this, pushing, docs);
-        Log.i(LOG_DOMAIN, "%s: document end notification: %s", getId(), update);
+        Log.i(LOG_DOMAIN, "%s: document ended: %s", getId(), update);
         final Set<DocumentReplicationListenerToken> listenerTokens;
         synchronized (getReplicatorLock()) { listenerTokens = new HashSet<>(docEndedListeners); }
         for (DocumentReplicationListenerToken token: listenerTokens) { token.postChange(update); }
@@ -620,9 +672,7 @@ public abstract class AbstractReplicator extends BaseReplicator
     }
 
     @VisibleForTesting
-    void runTaskConcurrently(@NonNull Runnable task) {
-        CouchbaseLiteInternal.getExecutionService().getConcurrentExecutor().execute(task);
-    }
+    void runTaskConcurrently(@NonNull Runnable task) { concurrentExecutor.execute(task); }
 
     //---------------------------------------------
     // Private methods
@@ -820,19 +870,10 @@ public abstract class AbstractReplicator extends BaseReplicator
             rDoc.getCollection(),
             rDoc.getID());
 
-        final Fn.NullableConsumer<CouchbaseLiteException> continuation
-            = new Fn.NullableConsumer<CouchbaseLiteException>() {
-            public void accept(CouchbaseLiteException err) {
-                rDoc.setError(err);
-                onConflictResolved(this, rDoc);
-            }
-        };
-
-        final Runnable task = () -> db.resolveReplicationConflict(resolver, rDoc, continuation);
-
+        final ConflictResolutionTask resolutionTask = new ConflictResolutionTask(db, resolver, rDoc);
         synchronized (getReplicatorLock()) {
-            runTaskConcurrently(task);
-            pendingResolutions.add(continuation);
+            pendingResolutions.add(resolutionTask);
+            runTaskConcurrently(resolutionTask);
         }
     }
 

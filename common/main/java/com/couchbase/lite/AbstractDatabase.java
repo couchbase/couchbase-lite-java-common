@@ -1165,7 +1165,7 @@ abstract class AbstractDatabase extends BaseDatabase
     void resolveReplicationConflict(
         @Nullable ConflictResolver resolver,
         @NonNull ReplicatedDocument rDoc,
-        @NonNull Fn.NullableConsumer<CouchbaseLiteException> callback) {
+        @NonNull AbstractReplicator.ConflictResolutionTask task) {
         int n = 0;
         CouchbaseLiteException err = null;
         try {
@@ -1191,7 +1191,7 @@ abstract class AbstractDatabase extends BaseDatabase
                     }
 
                     resolveConflictOnce(resolver, collection, rDoc.getID());
-                    callback.accept(null);
+                    task.onResolved(null);
                     return;
                 }
                 catch (CouchbaseLiteException e) {
@@ -1221,7 +1221,7 @@ abstract class AbstractDatabase extends BaseDatabase
                 CBLError.Code.UNEXPECTED_ERROR);
         }
 
-        callback.accept(err);
+        task.onResolved(err);
     }
 
     // - Cookie Store:
