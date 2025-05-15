@@ -19,7 +19,10 @@ import com.couchbase.lite.BaseTest
 import com.couchbase.lite.internal.core.C4Constants
 import com.couchbase.lite.internal.sockets.CloseStatus
 import com.couchbase.lite.internal.sockets.SocketState
-import com.couchbase.lite.mock.SocketMocks
+import com.couchbase.lite.mock.MockCBLWebSocket
+import com.couchbase.lite.mock.MockCookieStore
+import com.couchbase.lite.mock.MockCore
+import com.couchbase.lite.mock.MockRemote
 import org.junit.Assert
 import org.junit.Test
 import java.net.SocketTimeoutException
@@ -31,21 +34,21 @@ class CBLWebSocketTest : BaseTest() {
         var openStatus: Int? = null
 
         lateinit var ws: AbstractCBLWebSocket
-        ws = SocketMocks.CBLWebSocket(
-            object : SocketMocks.Remote() {
+        ws = MockCBLWebSocket(
+            object : MockRemote() {
                 override fun openRemote(uri: URI, options: MutableMap<String, Any>?): Boolean {
                     ws.remoteOpened(200, null)
                     return true
                 }
             },
-            object : SocketMocks.Core() {
+            object : MockCore() {
                 override fun ackOpenToCore(httpStatus: Int, responseHeadersFleece: ByteArray?) {
                     openStatus = httpStatus
                 }
             },
             URI("https://foo"),
             null,
-            SocketMocks.CookieStore(),
+            MockCookieStore(),
             { }
         )
 
@@ -58,8 +61,8 @@ class CBLWebSocketTest : BaseTest() {
     fun testCoreRequestsOpenFails() {
         var coreStatus: CloseStatus? = null
         lateinit var ws: AbstractCBLWebSocket
-        ws = SocketMocks.CBLWebSocket(
-            object : SocketMocks.Remote() {
+        ws = MockCBLWebSocket(
+            object : MockRemote() {
                 override fun openRemote(uri: URI, options: MutableMap<String, Any>?): Boolean {
                     ws.remoteClosed(
                         CloseStatus(
@@ -71,14 +74,14 @@ class CBLWebSocketTest : BaseTest() {
                     return false
                 }
             },
-            object : SocketMocks.Core() {
+            object : MockCore() {
                 override fun closeCore(status: CloseStatus) {
                     coreStatus = status
                 }
             },
             URI("https://foo"),
             null,
-            SocketMocks.CookieStore(),
+            MockCookieStore(),
             { }
         )
 
@@ -95,14 +98,14 @@ class CBLWebSocketTest : BaseTest() {
         var openStatus: Int? = null
         var closeStatus: CloseStatus? = null
         lateinit var ws: AbstractCBLWebSocket
-        ws = SocketMocks.CBLWebSocket(
-            object : SocketMocks.Remote() {
+        ws = MockCBLWebSocket(
+            object : MockRemote() {
                 override fun openRemote(uri: URI, options: MutableMap<String, Any>?): Boolean {
                     ws.remoteOpened(200, null)
                     return true
                 }
             },
-            object : SocketMocks.Core() {
+            object : MockCore() {
                 override fun ackOpenToCore(httpStatus: Int, responseHeadersFleece: ByteArray?) {
                     openStatus = httpStatus
                 }
@@ -113,7 +116,7 @@ class CBLWebSocketTest : BaseTest() {
             },
             URI("https://foo"),
             null,
-            SocketMocks.CookieStore(),
+            MockCookieStore(),
             { }
         )
 

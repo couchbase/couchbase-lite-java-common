@@ -3,9 +3,8 @@ If you add a new file, here, be sure to add it to the add_library instruction
 in ../../CMakeLists.txt
 
 If you add or remove a method from any of these files, you must edit the related
-loader config files.  There are seven of them:
--  <root>/ee/java/etc/ld/jni_osx.ld, <root>/ce/java/etc/ld/jni_osx.ld: Java on OSX, uses wildcards; probably don't need modification
--  <root>/ee/java/etc/ld/jni_win.ld, <root>/ce/java/etc/ld/jni_win.ld: Java on Windows
--  <root>/ee/java/etc/ld/jni_gnu.ld, <root>/ce/java/etc/ld/jni_gnu.ld: Java on Linux
--  <root>/common/common/jni_android.ld: Android, but CE and EE
-
+loader config files.  There are eight of them:
+-  <root>/[ce]e/java/etc/ld/jni_osx.ld: Java CE and EE on OSX.  Uses wildcards; probably don't need modification
+-  <root>/[ce]e/java/etc/ld/jni_win.ld: Java CE and EE on Windows
+-  <root>/[ce]e/java/etc/ld/jni_gnu.ld: Java on Linux
+-  <root>/[ce]e/android/etc/ld/jni_android.ld: Java on Android

@@ -189,6 +189,10 @@ val LogFileConfigurationFactory: LogFileConfiguration? = null
  * @see com.couchbase.lite.LogFileConfiguration
  * @deprecated Use FileLogSink?.install(String?, LogLevel?, Long?, Int?, Boolean?)
  */
+@Deprecated(
+    "Use FileLogSink?.install(String?, LogLevel?, Long?, Int?, Boolean?)",
+    replaceWith = ReplaceWith("FileLogSink?.install(dir: String?, level: LogLevel?, maxSize: Long?, maxRotate: Int?, plaintxt: Boolean?)")
+)
 fun LogFileConfiguration?.newConfig(
     directory: String? = null,
     maxSize: Long? = null,
@@ -251,11 +255,11 @@ fun ValueIndexConfiguration?.create(vararg expressions: String = emptyArray()) =
  * @param usePlainText whether or not to log in plaintext.
  *
  * @see com.couchbase.lite.LogFileConfiguration
- * @deprecated Use LogFileConfiguration?.newConfig(String?, Long?, Int?, Boolean?)
+ * @deprecated Use FileLogSink?.install(String?, LogLevel?, Long?, Int?, Boolean?)
  */
 @Deprecated(
-    "Use LogFileConfiguration?.newConfig(String?, Long?, Int?, Boolean?)",
-    replaceWith = ReplaceWith("LogFileConfiguration?.newConfig(String?, Long?, Int?, Boolean?)")
+    "Use FileLogSink?.install(String?, LogLevel?, Long?, Int?, Boolean?)",
+    replaceWith = ReplaceWith("FileLogSink?.install(dir: String?, level: LogLevel?, maxSize: Long?, maxRotate: Int?, plaintxt: Boolean?)")
 )
 fun LogFileConfiguration?.create(
     directory: String? = null,

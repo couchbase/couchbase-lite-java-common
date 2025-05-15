@@ -297,7 +297,7 @@ Java_com_couchbase_lite_internal_core_C4TestUtils_encodeJSON(
 
     C4Error error{};
     C4SliceResult res = c4db_encodeJSON((C4Database *) db, (C4Slice) body, &error);
-    if (error.domain != 0 && error.code != 0) {
+    if (!res) {
         throwError(env, error);
         return nullptr;
     }

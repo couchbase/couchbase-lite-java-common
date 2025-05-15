@@ -243,12 +243,12 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getIndexesInfo(
         jlong coll) {
     C4Error error{};
     C4SliceResult data = c4coll_getIndexesInfo((C4Collection *) coll, &error);
-    if (!data && (error.code != 0)) {
+    if (!data) {
         throwError(env, error);
         return 0;
     }
-    // !!! If this slice is freed while the FLValue is being used,
-    // it will cause a crash! So who is freeing it???
+    // ??? If this slice is freed while the FLValue is being used,
+    //     it will cause a crash! So who is freeing it???
     return (jlong) FLValue_FromData({data.buf, data.size}, kFLTrusted);
 }
 
@@ -270,7 +270,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createValueIndex(
     C4IndexOptions options = {};
 
     jstringSlice whereSlice(env, where);
-    // options.where = whereSlice.c_str();
+    options.where = whereSlice.c_str();
 
     createIndex(env, coll, kC4ValueIndex, jName, (C4QueryLanguage) qLanguage, jqueryExpressions, options);
 }
@@ -319,7 +319,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createFullTextInde
 
     options.language = language.c_str();
     options.ignoreDiacritics = ignoreDiacritics == JNI_TRUE;
-    // options.where = whereSlice.c_str();
+    options.where = whereSlice.c_str();
 
     createIndex(env, coll, kC4FullTextIndex, jName, (C4QueryLanguage) qLanguage, jqueryExpressions, options);
 }

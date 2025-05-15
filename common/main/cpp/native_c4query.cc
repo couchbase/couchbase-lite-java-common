@@ -69,8 +69,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Query_setParameters(
         jlong jquery,
         jlong jparamPtr,
         jlong jparamSize) {
-    C4String s {(const void *) jparamPtr, (size_t) jparamSize};
-    c4query_setParameters((C4Query *) jquery, s);
+    C4String params{(const void *) jparamPtr, (size_t) jparamSize};
+    c4query_setParameters((C4Query *) jquery, params);
 }
 
 /*
@@ -99,7 +99,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Query_run(
         jlong jparamPtr,
         jlong jparamSize) {
     C4Error error{};
-    C4Slice params {(const void *) jparamPtr, (size_t) jparamSize};
+    C4Slice params{(const void *) jparamPtr, (size_t) jparamSize};
     C4QueryEnumerator *e = c4query_run((C4Query *) jquery, params, &error);
     if (e == nullptr) {
         throwError(env, error);

@@ -113,7 +113,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_getContents(
 
     C4Error error{};
     C4SliceResult res = c4blob_getContents((C4BlobStore *) jblobstore, *pBlobKey, &error);
-    if (error.domain != 0 && error.code != 0) {
+    if (!res) {
         throwError(env, error);
         return nullptr;
     }
@@ -140,7 +140,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_getFilePath(
 
     C4Error error{};
     C4StringResult res = c4blob_getFilePath((C4BlobStore *) jblobstore, *pBlobKey, &error);
-    if (error.domain != 0 && error.code != 0) {
+    if (!res) {
         throwError(env, error);
         return nullptr;
     }

@@ -39,7 +39,7 @@ class C4DatabaseTest : C4BaseTest() {
     private val NOT_CREATE_FLAG = C4Constants.DatabaseFlags.CREATE.inv()
     private val POSIX_EEXIST = 17
 
-    private val mockDatabase = object : C4Database.NativeImpl {
+    private val mockNativeImpl = object : C4Database.NativeImpl {
         override fun nOpen(
             parentDir: String,
             name: String,
@@ -83,19 +83,40 @@ class C4DatabaseTest : C4BaseTest() {
     // Test if java platform receives a peer value for c4Database, a java c4Database should exist
     @Test
     fun testOpenDb() {
-        C4Database.getDatabase(mockDatabase, dbParentDirPath, "test_DB", 0L, C4Constants.EncryptionAlgorithm.NONE, null)
+        C4Database.getDatabase(
+            mockNativeImpl,
+            dbParentDirPath,
+            "test_DB",
+            0L,
+            C4Constants.EncryptionAlgorithm.NONE,
+            null
+        )
             .use { c4Database -> assertNotNull(c4Database) }
     }
 
     @Test
     fun testGetSharedFleeceEncoder() {
-        C4Database.getDatabase(mockDatabase, dbParentDirPath, "test_DB", 0L, C4Constants.EncryptionAlgorithm.NONE, null)
+        C4Database.getDatabase(
+            mockNativeImpl,
+            dbParentDirPath,
+            "test_DB",
+            0L,
+            C4Constants.EncryptionAlgorithm.NONE,
+            null
+        )
             .use { c4Database -> assertNotNull(c4Database.sharedFleeceEncoder) }
     }
 
     @Test
     fun testGetFLSharedKeys() {
-        C4Database.getDatabase(mockDatabase, dbParentDirPath, "test_DB", 0L, C4Constants.EncryptionAlgorithm.NONE, null)
+        C4Database.getDatabase(
+            mockNativeImpl,
+            dbParentDirPath,
+            "test_DB",
+            0L,
+            C4Constants.EncryptionAlgorithm.NONE,
+            null
+        )
             .use { c4Database -> assertNotNull(c4Database.flSharedKeys) }
     }
 
@@ -179,7 +200,7 @@ class C4DatabaseTest : C4BaseTest() {
         c4Database = C4Database.getDatabase(
             dbParentDirPath,
             dbName,
-            (testDbFlags or C4Constants.DatabaseFlags.READ_ONLY) and NOT_CREATE_FLAG
+            (testDbFlags and NOT_CREATE_FLAG) or C4Constants.DatabaseFlags.READ_ONLY
         )
         assertNotNull(c4Database)
         assertNotNull(c4Database.publicUUID)

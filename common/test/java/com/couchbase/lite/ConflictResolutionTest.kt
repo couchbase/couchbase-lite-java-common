@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 
 // These tests were, originally essentially translations of Jay Vavachan's Obj-C tests
-class ConflictResolutionTests : BaseReplicatorTest() {
+class ConflictResolutionTest : BaseReplicatorTest() {
 
     /**
      * 1. Test conflict handler that just returns true without modifying the document.

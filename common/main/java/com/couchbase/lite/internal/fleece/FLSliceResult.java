@@ -49,8 +49,9 @@ public final class FLSliceResult implements AutoCloseable {
     public static FLSliceResult createTestSlice() { return create(0, 0); }
 
 
-    // These fields are used by reflection.  Don't change them.
+    // This field is used by reflection.  Don't change it.
     private final long base;
+    // This field is used by reflection.  Don't change it.
     private final long size;
 
     // Not using an AtomicBoolean here because the Android VM can

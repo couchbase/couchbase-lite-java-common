@@ -370,7 +370,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Document_bodyAsJSON(
         jboolean canonical) {
     C4Error error{};
     C4StringResult result = c4doc_bodyAsJSON((C4Document *) jdoc, canonical, &error);
-    if (!result && error.code != 0) {
+    if (!result) {
         throwError(env, error);
         return nullptr;
     }

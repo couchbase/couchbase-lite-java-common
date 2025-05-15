@@ -700,7 +700,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_getPendingDocIds(
 
     C4Error error{};
     C4SliceResult res = c4repl_getPendingDocIDs((C4Replicator *) repl, collSpec, &error);
-    if (error.domain != 0 && error.code != 0) {
+    if (!res) {
         throwError(env, error);
         return nullptr;
     }

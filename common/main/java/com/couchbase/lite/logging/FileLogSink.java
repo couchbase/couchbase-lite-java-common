@@ -28,6 +28,7 @@ import com.couchbase.lite.internal.logging.AbstractLogSink;
 import com.couchbase.lite.internal.logging.Log;
 import com.couchbase.lite.internal.logging.LogSinksImpl;
 import com.couchbase.lite.internal.utils.Preconditions;
+import com.couchbase.lite.internal.utils.Volatile;
 
 
 /**
@@ -36,6 +37,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
  * Do not subclass!
  * This class will be final in future versions of Couchbase Lite
  */
+@Volatile
 public class FileLogSink extends AbstractLogSink {
     public static final class Builder {
         @Nullable

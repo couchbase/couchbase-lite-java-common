@@ -433,7 +433,7 @@ static jbyteArray getCertData(JNIEnv *env, C4Cert *cert) {
 
 static C4KeyPair *createKeyPair(JNIEnv *env, jbyte algorithm, jint keySizeInBits, jlong context) {
     C4Error error{};
-    C4KeyPair *keyPair = c4keypair_fromExternal(
+    C4KeyPair* keyPair = c4keypair_fromExternal(
             (C4KeyPairAlgorithm) algorithm,
             (size_t) keySizeInBits,
             (void *) context,
