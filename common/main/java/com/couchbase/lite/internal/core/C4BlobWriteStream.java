@@ -18,43 +18,22 @@ package com.couchbase.lite.internal.core;
 import androidx.annotation.NonNull;
 
 import com.couchbase.lite.LiteCoreException;
-import com.couchbase.lite.internal.core.peers.LockManager;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
 /**
  * An open stream for writing data to a blob.
+ * <p>
+ * The C4Peer lock is sufficient to protect this class
  */
 public final class C4BlobWriteStream extends C4Peer {
-    private static void release(@NonNull C4BlobStore.NativeImpl impl, long peer) {
-        synchronized (LockManager.INSTANCE.getLock(peer)) { impl.nCloseWriteStream(peer); }
-    }
-
-
-    //-------------------------------------------------------------------------
-    // Fields
-    //-------------------------------------------------------------------------
-
     @NonNull
     private final C4BlobStore.NativeImpl impl;
 
-    // Seize this lock *after* the peer lock
-    @NonNull
-    private final Object lock;
-
-    //-------------------------------------------------------------------------
-    // Constructor
-    //-------------------------------------------------------------------------
-
     C4BlobWriteStream(@NonNull C4BlobStore.NativeImpl impl, long peer) {
-        super(peer, releasePeer -> release(impl, releasePeer));
+        super(peer, impl::nCloseWriteStream);
         this.impl = impl;
-        lock = LockManager.INSTANCE.getLock(peer);
     }
-
-    //-------------------------------------------------------------------------
-    // public methods
-    //-------------------------------------------------------------------------
 
     /**
      * Writes an entire byte array to the stream.
@@ -74,9 +53,7 @@ public final class C4BlobWriteStream extends C4Peer {
     public void write(@NonNull byte[] bytes, int len) throws LiteCoreException {
         Preconditions.assertNotNull(bytes, "bytes");
         if (len <= 0) { return; }
-        voidWithPeerOrThrow(peer -> {
-            synchronized (lock) { impl.nWrite(peer, bytes, len); }
-        });
+        voidWithPeerOrThrow(peer -> impl.nWrite(peer, bytes, len));
     }
 
     /**
@@ -85,9 +62,7 @@ public final class C4BlobWriteStream extends C4Peer {
      */
     @NonNull
     public C4BlobKey computeBlobKey() throws LiteCoreException {
-        return withPeerOrThrow(peer -> {
-            synchronized (lock) { return C4BlobKey.create(impl.nComputeBlobKey(peer)); }
-        });
+        return withPeerOrThrow(peer -> C4BlobKey.create(impl.nComputeBlobKey(peer)));
     }
 
     /**
@@ -96,9 +71,5 @@ public final class C4BlobWriteStream extends C4Peer {
      * were unable to receive all of the data from the network, or if you've called
      * c4stream_computeBlobKey and found that the data does not match the expected digest/key.)
      */
-    public void install() throws LiteCoreException {
-        voidWithPeerOrThrow(peer -> {
-            synchronized (lock) { impl.nInstall(peer); }
-        });
-    }
+    public void install() throws LiteCoreException { voidWithPeerOrThrow(impl::nInstall); }
 }

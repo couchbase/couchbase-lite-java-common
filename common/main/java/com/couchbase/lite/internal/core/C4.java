@@ -15,6 +15,7 @@
 //
 package com.couchbase.lite.internal.core;
 
+import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -32,7 +33,9 @@ public final class C4 {
         @Nullable
         String nGetVersion();
         void nDebug(boolean debugging);
+        @GuardedBy("this")
         void nSetTempDir(@NonNull String tempDir) throws LiteCoreException;
+        @GuardedBy("this")
         void nEnableExtension(@NonNull String name, @NonNull String path) throws LiteCoreException;
         @Nullable
         String nGetMessage(int domain, int code, int internalInfo);
@@ -54,11 +57,11 @@ public final class C4 {
     public static void debug(boolean debugging) { NATIVE_IMPL.nDebug(debugging); }
 
     public static void setTempDir(@NonNull String tempDir) throws LiteCoreException {
-        NATIVE_IMPL.nSetTempDir(tempDir);
+        synchronized (NATIVE_IMPL) { NATIVE_IMPL.nSetTempDir(tempDir); }
     }
 
     public static void enableExtension(@NonNull String name, @NonNull String path) throws LiteCoreException {
-        NATIVE_IMPL.nEnableExtension(name, path);
+        synchronized (NATIVE_IMPL) { NATIVE_IMPL.nEnableExtension(name, path); }
     }
 
     @Nullable

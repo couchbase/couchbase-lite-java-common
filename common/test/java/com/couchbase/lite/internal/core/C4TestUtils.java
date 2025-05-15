@@ -27,7 +27,6 @@ import com.couchbase.lite.CouchbaseLiteError;
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
-import com.couchbase.lite.internal.core.peers.LockManager;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 
 
@@ -129,18 +128,20 @@ public class C4TestUtils {
     public static class C4DocEnumerator extends C4NativePeer {
         private final Object dbLock;
 
-        public C4DocEnumerator(long db, int flags) throws LiteCoreException {
-            super(enumerateAllDocs(db, flags));
-            this.dbLock = LockManager.INSTANCE.getLock(db);
+        public C4DocEnumerator(long peer, @NonNull Object dbLock) {
+            super(peer);
+            this.dbLock = dbLock;
         }
 
+        // the C4Peer lock is sufficient to protect this method
+        public boolean next() throws LiteCoreException {
+            return withPeerOrDefault(false, C4TestUtils::next);
+        }
+
+        // the C4Peer lock is sufficient to protect this method
         @NonNull
         public C4Document getDocument() throws LiteCoreException {
             return new C4Document(withPeerOrThrow(C4TestUtils::getDocument), dbLock);
-        }
-
-        public boolean next() throws LiteCoreException {
-            return withPeerOrDefault(false, C4TestUtils::next);
         }
 
         @Override
@@ -156,20 +157,9 @@ public class C4TestUtils {
         private void closePeer(@Nullable LogDomain domain) { releasePeer(domain, C4TestUtils::free); }
     }
 
-    // managed: Java code is responsible for deleting and freeing it
-    static final class ManagedC4BlobStore extends C4BlobStore {
-        ManagedC4BlobStore(@NonNull String dirPath) throws LiteCoreException {
-            super(
-                C4BlobStore.NATIVE_IMPL,
-                openStore(dirPath, C4Constants.DatabaseFlags.CREATE),
-                C4TestUtils::deleteBlobStore);
-        }
-    }
-
-    // C4DocEnumerator
-
     public static C4DocEnumerator enumerateDocsForCollection(C4Collection coll, int flags) throws LiteCoreException {
-        return coll.withPeerOrThrow(peer -> new C4DocEnumerator(peer, flags));
+        return coll.withPeerOrThrow(colPeer ->
+            new C4DocEnumerator(enumerateAllDocs(colPeer, flags), coll.getDbLock()));
     }
 
     // C4Blob
@@ -182,6 +172,16 @@ public class C4TestUtils {
     }
 
     // C4BlobStore
+
+    // managed: Java code is responsible for deleting and freeing it
+    static final class ManagedC4BlobStore extends C4BlobStore {
+        ManagedC4BlobStore(@NonNull String dirPath) throws LiteCoreException {
+            super(
+                C4BlobStore.NATIVE_IMPL,
+                openStore(dirPath, C4Constants.DatabaseFlags.CREATE),
+                C4TestUtils::deleteBlobStore);
+        }
+    }
 
     public static void deleteBlobStore(long peer) {
         try { deleteStore(peer); }
@@ -196,13 +196,19 @@ public class C4TestUtils {
 
     @NonNull
     public static byte[] privateUUIDForDb(@NonNull C4Database db) throws LiteCoreException {
-        return db.withPeerOrThrow(C4TestUtils::getPrivateUUID);
+        final Object dblock = db.getDbLock();
+        return db.withPeerOrThrow(peer -> {
+            synchronized (dblock) { return C4TestUtils.getPrivateUUID(peer); }
+        });
     }
 
     @NonNull
     public static FLSliceResult encodeJSONInDb(@NonNull C4Database db, @NonNull String data) throws LiteCoreException {
+        final Object dblock = db.getDbLock();
         final byte[] dataBytes = data.getBytes(StandardCharsets.UTF_8);
-        return db.withPeerOrThrow(peer -> encodeJSON(peer, dataBytes));
+        return db.withPeerOrThrow(peer -> {
+            synchronized (dblock) { return encodeJSON(peer, dataBytes); }
+        });
     }
 
     @Nullable
@@ -228,9 +234,11 @@ public class C4TestUtils {
         int maxRevTreeDepth,
         int remoteDBID)
         throws LiteCoreException {
-        return collection.withPeerOrThrow(
-            peer -> new C4Document(
-                put(
+        final Object dbLock = collection.getDbLock();
+        return collection.withPeerOrThrow(peer -> {
+            final long docPeer;
+            synchronized (dbLock) {
+                docPeer = put(
                     peer,
                     body,
                     docID,
@@ -240,8 +248,10 @@ public class C4TestUtils {
                     history,
                     save,
                     maxRevTreeDepth,
-                    remoteDBID),
-                collection.getDbLock()));
+                    remoteDBID);
+            }
+            return new C4Document(docPeer, dbLock);
+        });
     }
 
     @SuppressWarnings("PMD.ExcessiveParameterList")
@@ -258,9 +268,11 @@ public class C4TestUtils {
         int maxRevTreeDepth,
         int remoteDBID)
         throws LiteCoreException {
-        return collection.withPeerOrThrow(peer ->
-            new C4Document(
-                put2(
+        final Object dbLock = collection.getDbLock();
+        return collection.withPeerOrThrow(peer -> {
+            final long docPeer;
+            synchronized (dbLock) {
+                docPeer = put2(
                     peer,
                     body.getBase(),
                     body.getSize(),
@@ -271,8 +283,10 @@ public class C4TestUtils {
                     history,
                     save,
                     maxRevTreeDepth,
-                    remoteDBID),
-                collection.getDbLock()));
+                    remoteDBID);
+            }
+            return new C4Document(docPeer, dbLock);
+        });
     }
 
     // C4Key
@@ -296,7 +310,10 @@ public class C4TestUtils {
     // C4Index
 
     public static boolean isIndexTrained(C4Collection collection, @NonNull String name) throws LiteCoreException {
-        return collection.withPeerOrThrow(peer -> isIndexTrained(peer, name));
+        final Object dbLock = collection.getDbLock();
+        return collection.withPeerOrThrow(peer -> {
+            synchronized (dbLock) { return isIndexTrained(peer, name); }
+        });
     }
 
     @NonNull
@@ -314,8 +331,13 @@ public class C4TestUtils {
         return new C4IndexOptions(language, ignoreDiacritics, disableStemming, stopWords, unnestPath);
     }
 
+
     //-------------------------------------------------------------------------
-    // native methods
+    // Native methods
+    //
+    // Methods that take a peer as an argument assume that the peer is valid until the method returns
+    // Methods without a @GuardedBy annotation are otherwise thread-safe
+    // Thread safety verified as of 2025/5/15
     //-------------------------------------------------------------------------
 
     // C4FullTextMatch
@@ -336,17 +358,19 @@ public class C4TestUtils {
 
     // C4DocEnumerator
 
-    private static native long enumerateAllDocs(long db, int flags) throws LiteCoreException;
+    @GuardedBy("dbLock")
+    private static native long enumerateAllDocs(long peer, int flags) throws LiteCoreException;
 
+    @GuardedBy("enumeratorLock")
     private static native boolean next(long peer) throws LiteCoreException;
 
+    @GuardedBy("enumeratorLock")
     private static native long getDocument(long peer) throws LiteCoreException;
 
     private static native void free(long peer);
 
     // C4Blob
 
-    @GuardedBy("streamLock")
     private static native long getBlobLength(long peer) throws LiteCoreException;
 
     // C4BlobStore
@@ -359,9 +383,11 @@ public class C4TestUtils {
 
     // C4Database
 
+    @GuardedBy("dbLock")
     @NonNull
     private static native byte[] getPrivateUUID(long db) throws LiteCoreException;
 
+    @GuardedBy("dbLock")
     @NonNull
     private static native FLSliceResult encodeJSON(long db, @NonNull byte[] jsonData) throws LiteCoreException;
 
@@ -373,6 +399,7 @@ public class C4TestUtils {
     // C4Document
 
     @SuppressWarnings("PMD.ExcessiveParameterList")
+    @GuardedBy("dbLock")
     private static native long put(
         long collection,
         byte[] body,
@@ -387,6 +414,7 @@ public class C4TestUtils {
         throws LiteCoreException;
 
     @SuppressWarnings("PMD.ExcessiveParameterList")
+    @GuardedBy("dbLock")
     private static native long put2(
         long collection,
         long bodyPtr,
@@ -414,6 +442,7 @@ public class C4TestUtils {
 
     // C4Index
 
+    @GuardedBy("dbLock")
     private static native boolean isIndexTrained(long collection, @NonNull String name) throws LiteCoreException;
 
     private static native C4IndexOptions getIndexOptions(long idx) throws CouchbaseLiteException;

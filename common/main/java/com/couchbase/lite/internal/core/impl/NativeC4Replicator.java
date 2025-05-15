@@ -27,8 +27,8 @@ import com.couchbase.lite.internal.fleece.FLSliceResult;
 
 
 public final class NativeC4Replicator implements C4Replicator.NativeImpl {
-    @GuardedBy("dbLock")
     @SuppressWarnings("PMD.ExcessiveParameterList")
+    @GuardedBy("dbLock")
     @Override
     public long nCreate(
         @NonNull String id,
@@ -104,20 +104,16 @@ public final class NativeC4Replicator implements C4Replicator.NativeImpl {
         return createWithSocket(id, collections, db, openSocket, options, replicatorToken);
     }
 
-    // thread safe
     @Override
     public void nStart(long peer, boolean restart) { start(peer, restart); }
 
-    // thread safe
     @Override
     public void nSetOptions(long peer, @Nullable byte[] options) { setOptions(peer, options); }
 
-    // thread safe
     @NonNull
     @Override
     public C4ReplicatorStatus nGetStatus(long peer) { return getStatus(peer); }
 
-    // thread safe
     @NonNull
     @Override
     public FLSliceResult nGetPendingDocIds(long peer, @NonNull String scope, @NonNull String collection)
@@ -125,7 +121,6 @@ public final class NativeC4Replicator implements C4Replicator.NativeImpl {
         return getPendingDocIds(peer, scope, collection);
     }
 
-    // thread safe
     @Override
     public boolean nIsDocumentPending(long peer, @NonNull String id, @NonNull String scope, @NonNull String collection)
         throws LiteCoreException {
@@ -138,23 +133,22 @@ public final class NativeC4Replicator implements C4Replicator.NativeImpl {
         setProgressLevel(peer, progressLevel);
     }
 
-    // thread safe
     @Override
     public void nSetHostReachable(long peer, boolean reachable) { setHostReachable(peer, reachable); }
 
-    // thread safe
     @Override
     public void nStop(long peer) { stop(peer); }
 
-    // thread safe
     @Override
     public void nFree(long peer) { free(peer); }
+
 
     //-------------------------------------------------------------------------
     // Native methods
     //
     // Methods that take a peer as an argument assume that the peer is valid until the method returns
     // Methods without a @GuardedBy annotation are otherwise thread-safe
+    // Thread safety verified as of 2025/5/15
     //-------------------------------------------------------------------------
 
     /*
@@ -213,26 +207,22 @@ public final class NativeC4Replicator implements C4Replicator.NativeImpl {
 
     /**
      * Tells a replicator to start.
-     * thread-safe
      */
     private static native void start(long peer, boolean restart);
 
     /**
      * Set the replicator options.
-     * thread-safe
      */
     private static native void setOptions(long peer, @Nullable byte[] options);
 
     /**
      * Returns the current state of a replicator.
-     * thread-safe
      */
     @NonNull
     private static native C4ReplicatorStatus getStatus(long peer);
 
     /**
      * Returns a list of string ids for pending documents.
-     * thread-safe
      */
     @NonNull
     private static native FLSliceResult getPendingDocIds(long peer, @NonNull String scope, @NonNull String collection)
@@ -240,7 +230,6 @@ public final class NativeC4Replicator implements C4Replicator.NativeImpl {
 
     /**
      * Returns true if there are documents that have not been resolved.
-     * thread-safe
      */
     private static native boolean isDocumentPending(
         long peer,
@@ -257,13 +246,11 @@ public final class NativeC4Replicator implements C4Replicator.NativeImpl {
 
     /**
      * Hint to core about the reachability of the target of this replicator.
-     * thread-safe
      */
     private static native void setHostReachable(long peer, boolean reachable);
 
     /**
      * Tells a replicator to stop.
-     * thread-safe
      */
     private static native void stop(long peer);
 
@@ -271,7 +258,6 @@ public final class NativeC4Replicator implements C4Replicator.NativeImpl {
      * Frees a replicator reference.
      * If the replicator is running it will not stop!
      * Call stop first.
-     * thread-safe
      */
     private static native void free(long peer);
 }

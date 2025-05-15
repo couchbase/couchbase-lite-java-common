@@ -18,37 +18,24 @@ package com.couchbase.lite.internal.core;
 import androidx.annotation.NonNull;
 
 import com.couchbase.lite.LiteCoreException;
-import com.couchbase.lite.internal.core.peers.LockManager;
 
 
 /**
  * An open stream for reading data from a blob.
+ * <p>
+ * The C4Peer lock is sufficient to protect this class
  */
 public final class C4BlobReadStream extends C4Peer {
-    private static void release(@NonNull C4BlobStore.NativeImpl impl, long peer) {
-        synchronized (LockManager.INSTANCE.getLock(peer)) { impl.nCloseReadStream(peer); }
-    }
-
-
-    //-------------------------------------------------------------------------
-    // Fields
-    //-------------------------------------------------------------------------
-
     @NonNull
     private final C4BlobStore.NativeImpl impl;
-
-    // Seize this lock *after* the peer lock
-    @NonNull
-    private final Object lock;
 
     //-------------------------------------------------------------------------
     // Constructor
     //-------------------------------------------------------------------------
 
     C4BlobReadStream(@NonNull C4BlobStore.NativeImpl impl, long peer) {
-        super(peer, releasePeer -> release(impl, releasePeer));
+        super(peer, impl::nCloseReadStream);
         this.impl = impl;
-        lock = LockManager.INSTANCE.getLock(peer);
     }
 
     //-------------------------------------------------------------------------
@@ -61,9 +48,7 @@ public final class C4BlobReadStream extends C4Peer {
      * @param maxBytesToRead The maximum number of bytes to read to the buffer
      */
     public int read(byte[] b, int offset, long maxBytesToRead) throws LiteCoreException {
-        return withPeerOrDefault(0, peer -> {
-            synchronized (lock) { return impl.nRead(peer, b, offset, maxBytesToRead); }
-        });
+        return withPeerOrDefault(0, peer -> impl.nRead(peer, b, offset, maxBytesToRead));
     }
 
     /**
@@ -71,8 +56,6 @@ public final class C4BlobReadStream extends C4Peer {
      * The next c4stream_read call will read starting at that location.
      */
     public void seek(long position) throws LiteCoreException {
-        voidWithPeerOrThrow(peer -> {
-            synchronized (lock) { impl.nSeek(peer, position); }
-        });
+        voidWithPeerOrThrow(peer -> impl.nSeek(peer, position));
     }
 }

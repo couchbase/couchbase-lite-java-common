@@ -37,7 +37,6 @@ import com.couchbase.lite.internal.BaseSocketFactory;
 import com.couchbase.lite.internal.ReplicationCollection;
 import com.couchbase.lite.internal.SocketFactory;
 import com.couchbase.lite.internal.core.impl.NativeC4Replicator;
-import com.couchbase.lite.internal.core.peers.LockManager;
 import com.couchbase.lite.internal.core.peers.TaggedWeakPeerBinding;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
@@ -66,7 +65,7 @@ public abstract class C4Replicator extends C4Peer {
     public static final LogDomain LOG_DOMAIN = LogDomain.REPLICATOR;
 
 
-    /// ///// Most of these are defined in c4Replicator.h and must agree with those definitions.
+    //////// Most of these are defined in c4Replicator.h and must agree with those definitions.
 
     public static final String WEBSOCKET_SCHEME = "ws";
     public static final String WEBSOCKET_SECURE_CONNECTION_SCHEME = "wss";
@@ -75,13 +74,13 @@ public abstract class C4Replicator extends C4Peer {
     public static final String C4_REPLICATOR_SCHEME_2 = "blip";
     public static final String C4_REPLICATOR_TLS_SCHEME_2 = "blips";
 
-    /// /// values for enum C4ReplicatorProgressLevel
+    ////// values for enum C4ReplicatorProgressLevel
 
     public static final int PROGRESS_OVERALL = 0;
     public static final int PROGRESS_PER_DOC = 1;
     public static final int PROGRESS_PER_ATTACHMENT = 2;
 
-    /// /// Replicator option dictionary keys:
+    ////// Replicator option dictionary keys:
 
     // begin: collection specific properties.
     // Docs to replicate: string[]
@@ -115,7 +114,7 @@ public abstract class C4Replicator extends C4Peer {
     // true, Enable auto-purge
     public static final String REPLICATOR_OPTION_ENABLE_AUTO_PURGE = "autoPurge";
 
-    /// / TLS options
+    //// TLS options
     // Trusted root certs (data)
     public static final String REPLICATOR_OPTION_ROOT_CERTS = "rootCerts";
     // Cert or public key: [data]
@@ -123,7 +122,7 @@ public abstract class C4Replicator extends C4Peer {
     // Only accept self signed server certs (for P2P, bool)
     public static final String REPLICATOR_OPTION_SELF_SIGNED_SERVER_CERT = "onlySelfSignedServer";
 
-    /// / HTTP options
+    //// HTTP options
     // Extra HTTP headers: string[]
     public static final String REPLICATOR_OPTION_EXTRA_HEADERS = "headers";
     // HTTP Cookie header value: string
@@ -134,7 +133,7 @@ public abstract class C4Replicator extends C4Peer {
     public static final String REPLICATOR_OPTION_AUTHENTICATION = "auth";
     // Proxy settings (Dict); see [3]]
 
-    /// / WebSocket options
+    //// WebSocket options
     // Interval in secs to send a keep-alive: ping
     public static final String REPLICATOR_HEARTBEAT_INTERVAL = "heartbeat";
     // Sec-WebSocket-Protocol header value
@@ -142,11 +141,11 @@ public abstract class C4Replicator extends C4Peer {
     // Specific network interface (name or IP address) used for connecting to the remote server.
     public static final String SOCKET_OPTIONS_NETWORK_INTERFACE = "networkInterface";
 
-    /// / BLIP options
+    //// BLIP options
     // Data compression level, 0..9
     public static final String REPLICATOR_COMPRESSION_LEVEL = "BLIPCompressionLevel";
 
-    /// /// Auth dictionary keys:
+    ////// Auth dictionary keys:
 
     // Auth type; see [2] (string)
     public static final String REPLICATOR_AUTH_TYPE = "type";
@@ -165,7 +164,7 @@ public abstract class C4Replicator extends C4Peer {
     // Proxy authentications: password
     public static final String REPLICATOR_OPTION_PROXY_PASS = "proxyPassword";
 
-    /// /// auth.type values:
+    ////// auth.type values:
     // HTTP Basic (the default)
     public static final String AUTH_TYPE_BASIC = "Basic";
     // SG session cookie
@@ -190,7 +189,7 @@ public abstract class C4Replicator extends C4Peer {
         void documentsEnded(@NonNull List<C4DocumentEnded> docEnds, boolean pushing);
     }
 
-    /// /// Native API
+    ////// Native API
 
     public interface NativeImpl {
         @GuardedBy("dbLock")
@@ -252,7 +251,7 @@ public abstract class C4Replicator extends C4Peer {
         void nFree(long replPeer);
     }
 
-    /// /// Message Endpoint Replicator
+    ////// Message Endpoint Replicator
 
     static final class C4MessageEndpointReplicator extends C4Replicator {
         // Protect this socket from the GC.
@@ -283,18 +282,15 @@ public abstract class C4Replicator extends C4Peer {
         }
     }
 
-    /// /// Standard Replicator
+    ////// Standard Replicator
 
     static final class C4CommonReplicator extends C4Replicator {
         @NonNull
-        private final DocEndsListener docEndsListener;
-
-        @NonNull
         private final AbstractReplicator replicator;
-
+        @NonNull
+        private final DocEndsListener docEndsListener;
         @Nullable
         private final SocketFactory socketFactory;
-        private final long socketFactoryToken;
 
         C4CommonReplicator(
             @NonNull NativeImpl impl,
@@ -314,12 +310,9 @@ public abstract class C4Replicator extends C4Peer {
                 colls,
                 statusListener);
 
-            this.docEndsListener = docEndsListener;
-
             this.replicator = Preconditions.assertNotNull(replicator, "replicator");
-
+            this.docEndsListener = docEndsListener;
             this.socketFactory = socketFactory;
-            this.socketFactoryToken = socketFactoryToken;
         }
 
         @Override
@@ -384,6 +377,7 @@ public abstract class C4Replicator extends C4Peer {
     static C4Replicator createRemoteReplicator(
         @NonNull Map<Collection, CollectionConfiguration> collections,
         long dbPeer,
+        @NonNull Object dbLock,
         @Nullable String scheme,
         @Nullable String host,
         int port,
@@ -402,6 +396,7 @@ public abstract class C4Replicator extends C4Peer {
             NATIVE_IMPL,
             collections,
             dbPeer,
+            dbLock,
             scheme,
             host,
             port,
@@ -424,6 +419,7 @@ public abstract class C4Replicator extends C4Peer {
         @NonNull NativeImpl impl,
         @NonNull Map<Collection, CollectionConfiguration> collections,
         long dbPeer,
+        @NonNull Object dbLock,
         @Nullable String scheme,
         @Nullable String host,
         int port,
@@ -445,8 +441,7 @@ public abstract class C4Replicator extends C4Peer {
 
         final long replPeer;
         try {
-            // This is safe only because it is called from C4Database, which is holding a ref to dbPeer's lock.
-            synchronized (LockManager.INSTANCE.getLock(dbPeer)) {
+            synchronized (dbLock) {
                 replPeer = impl.nCreate(
                     ID + replToken,
                     colls,
@@ -486,10 +481,12 @@ public abstract class C4Replicator extends C4Peer {
         return c4Replicator;
     }
 
+    @SuppressWarnings("PMD.ExcessiveParameterList")
     @NonNull
     static C4Replicator createLocalReplicator(
         @NonNull Map<Collection, CollectionConfiguration> collections,
         long dbPeer,
+        @NonNull Object dbLock,
         @NonNull C4Database targetDb,
         @NonNull ReplicatorType type,
         boolean continuous,
@@ -502,6 +499,7 @@ public abstract class C4Replicator extends C4Peer {
             NATIVE_IMPL,
             collections,
             dbPeer,
+            dbLock,
             targetDb,
             type,
             continuous,
@@ -518,6 +516,7 @@ public abstract class C4Replicator extends C4Peer {
         @NonNull NativeImpl impl,
         @NonNull Map<Collection, CollectionConfiguration> collections,
         long dbPeer,
+        @NonNull Object dbLock,
         @NonNull C4Database targetDb,
         @NonNull ReplicatorType type,
         boolean continuous,
@@ -533,7 +532,7 @@ public abstract class C4Replicator extends C4Peer {
         final long replPeer;
         try {
             // This is safe only because it is called from C4Database, which is holding a ref to dbPeer's lock.
-            synchronized (LockManager.INSTANCE.getLock(dbPeer)) {
+            synchronized (dbLock) {
                 replPeer = targetDb.withPeerOrThrow(targetDbPeer ->
                     impl.nCreateLocal(
                         ID + token,
@@ -572,6 +571,7 @@ public abstract class C4Replicator extends C4Peer {
     static C4Replicator createMessageEndpointReplicator(
         @NonNull Set<Collection> collections,
         long dbPeer,
+        @NonNull Object dbLock,
         @NonNull C4Socket c4Socket,
         @Nullable Map<String, Object> options,
         @NonNull StatusListener statusListener)
@@ -580,6 +580,7 @@ public abstract class C4Replicator extends C4Peer {
             NATIVE_IMPL,
             collections,
             dbPeer,
+            dbLock,
             c4Socket,
             options,
             statusListener);
@@ -592,6 +593,7 @@ public abstract class C4Replicator extends C4Peer {
         @NonNull NativeImpl impl,
         @NonNull Set<Collection> collections,
         long dbPeer,
+        @NonNull Object dbLock,
         @NonNull C4Socket c4Socket,
         @Nullable Map<String, Object> options,
         @NonNull StatusListener statusListener)
@@ -603,7 +605,7 @@ public abstract class C4Replicator extends C4Peer {
         final long replPeer;
         try {
             // This is safe only because it is called from C4Database, which is holding a ref to dbPeer's lock.
-            synchronized (LockManager.INSTANCE.getLock(dbPeer)) {
+            synchronized (dbLock) {
                 replPeer = impl.nCreateWithSocket(
                     ID + token,
                     colls,
@@ -637,9 +639,6 @@ public abstract class C4Replicator extends C4Peer {
 
     @NonNull
     private final NativeImpl impl;
-    @NonNull
-    private final Object replLock;
-
     @VisibleForTesting
     final long token;
 
@@ -673,7 +672,6 @@ public abstract class C4Replicator extends C4Peer {
         this.token = Preconditions.assertNotZero(token, "token");
         this.colls = Preconditions.assertNotNull(colls, "collections");
         this.statusListener = Preconditions.assertNotNull(statusListener, "status listener");
-        this.replLock = LockManager.INSTANCE.getLock(replPeer);
     }
 
     //-------------------------------------------------------------------------
@@ -713,10 +711,9 @@ public abstract class C4Replicator extends C4Peer {
         }
     }
 
+    // the C4Peer lock is sufficient to protect this method
     public void setProgressLevel(int level) throws LiteCoreException {
-        voidWithPeerOrThrow(replPeer -> {
-            synchronized (replLock) { impl.nSetProgressLevel(replPeer, level); }
-        });
+        voidWithPeerOrThrow(replPeer -> impl.nSetProgressLevel(replPeer, level));
     }
 
     public void setHostReachable(boolean reachable) {

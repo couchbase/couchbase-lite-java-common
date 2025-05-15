@@ -13,6 +13,8 @@ import com.couchbase.lite.internal.core.C4Database;
 @SuppressWarnings("PMD.TooManyMethods")
 public final class NativeC4Database implements C4Database.NativeImpl {
 
+    // - Lifecycle
+
     @Override
     public long nOpen(@NonNull String parentDir, @NonNull String name, long flags, int algorithm, byte[] encryptionKey)
         throws LiteCoreException {
@@ -65,6 +67,7 @@ public final class NativeC4Database implements C4Database.NativeImpl {
 
     // - Maintenance
 
+    @GuardedBy("dbLock")
     @Override
     public void nRekey(long db, int keyType, byte[] newKey) throws LiteCoreException { rekey(db, keyType, newKey); }
 
@@ -133,6 +136,7 @@ public final class NativeC4Database implements C4Database.NativeImpl {
     //
     // Methods that take a peer as an argument assume that the peer is valid until the method returns
     // Methods without a @GuardedBy annotation are otherwise thread-safe
+    // Thread safety verified as of 2025/5/15
     //-------------------------------------------------------------------------
 
     // - Lifecycle
@@ -185,6 +189,7 @@ public final class NativeC4Database implements C4Database.NativeImpl {
 
     // - Maintenance
 
+    @GuardedBy("dbLock")
     private static native void rekey(long peer, int keyType, byte[] newKey) throws LiteCoreException;
 
     @GuardedBy("dbLock")

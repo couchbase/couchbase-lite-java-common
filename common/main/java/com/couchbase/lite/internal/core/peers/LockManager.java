@@ -43,6 +43,11 @@ import com.couchbase.lite.internal.exec.RefQueueCleanerThread;
  * Note that the new and old locking strategies are compatible.  As long as locks are acquired
  * in order there should be no risk of deadlock.
  *
+ * After using this a bit, I believe that the best practice is for the lock-protected instance to
+ * retrieve its lock and then to pass it to any dependent objects that need it.  THat guarantees
+ * that the dependents are using the correct lock and that the lock is not released until
+ * the last dependent is done with it.
+ *
  * The following classes have been converted to use this new locking strategy:
  * C4BlobReadStream.java
  * C4BlobStore.java

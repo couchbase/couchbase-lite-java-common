@@ -10,6 +10,7 @@
 //
 package com.couchbase.lite.internal.core;
 
+import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 
@@ -32,6 +33,7 @@ public final class C4QueryObserver extends C4NativePeer {
 
     public interface NativeImpl {
         long nCreate(long token, long c4Query);
+        @GuardedBy("dbLock")
         void nEnable(long peer);
         void nFree(long peer);
     }
@@ -60,13 +62,13 @@ public final class C4QueryObserver extends C4NativePeer {
         @NonNull C4Query query,
         @NonNull QueryChangeCallback callback) {
         final long token = QUERY_OBSERVER_CONTEXT.reserveKey();
-
+        final Object dbLock = query.getDbLock();
         final long peer = query.withPeerOrThrow(queryPeer -> impl.nCreate(queryPeer, token));
-        final C4QueryObserver observer = new C4QueryObserver(impl, peer, queryEnumeratorFactory, token, callback);
+        final C4QueryObserver obs = new C4QueryObserver(impl, peer, dbLock, queryEnumeratorFactory, token, callback);
 
-        QUERY_OBSERVER_CONTEXT.bind(token, observer);
+        QUERY_OBSERVER_CONTEXT.bind(token, obs);
 
-        return observer;
+        return obs;
     }
 
     //-------------------------------------------------------------------------
@@ -87,20 +89,24 @@ public final class C4QueryObserver extends C4NativePeer {
     private final long token;
     @NonNull
     private final C4QueryObserver.NativeImpl impl;
+    // Always seize this lock *after* the C4Peer lock
+    @NonNull
+    private final Object dbLock;
     @NonNull
     private final Fn.Function<Long, C4QueryEnumerator> c4QueryEnumeratorFactory;
     @NonNull
     private final QueryChangeCallback callback;
 
-    @VisibleForTesting
-    C4QueryObserver(
+    private C4QueryObserver(
         @NonNull NativeImpl impl,
         long peer,
+        @NonNull Object dbLock,
         @NonNull Fn.Function<Long, C4QueryEnumerator> c4QueryEnumeratorFactory,
         long token,
         @NonNull QueryChangeCallback callback) {
         super(peer);
         this.impl = impl;
+        this.dbLock = dbLock;
         this.c4QueryEnumeratorFactory = c4QueryEnumeratorFactory;
         this.token = token;
         this.callback = callback;
@@ -118,7 +124,11 @@ public final class C4QueryObserver extends C4NativePeer {
         return "C4QueryObserver{" + ClassUtils.objId(this) + "/" + super.toString() + ": " + token + "}";
     }
 
-    public void enable() { impl.nEnable(getPeer()); }
+    public void enable() {
+        withPeer(peer -> {
+            synchronized (dbLock) { impl.nEnable(peer); }
+        });
+    }
 
     @Override
     protected void finalize() throws Throwable {

@@ -15,6 +15,7 @@
 //
 package com.couchbase.lite.internal.core;
 
+import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -64,14 +65,21 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
     //-------------------------------------------------------------------------
 
     public interface NativeImpl {
-        void nRetain(long peer);
         long nFromNative(long token, String schema, String host, int port, String path, int framing);
+        @GuardedBy("socLock")
         void nOpened(long peer);
+        @GuardedBy("socLock")
         void nGotHTTPResponse(long peer, int httpStatus, @Nullable byte[] responseHeadersFleece);
+        @GuardedBy("socLock")
         void nCompletedWrite(long peer, long byteCount);
+        @GuardedBy("socLock")
         void nReceived(long peer, byte[] data);
+        @GuardedBy("socLock")
         void nCloseRequested(long peer, int status, @Nullable String message);
+        @GuardedBy("socLock")
         void nClosed(long peer, int errorDomain, int errorCode, String message);
+        @VisibleForTesting
+        void setPeer(long peer);
     }
 
     @FunctionalInterface
@@ -282,16 +290,13 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
     // Constructors
     //-------------------------------------------------------------------------
 
-    // Unlike most ref-counted objects, the C C4Socket is not
-    // retained when it is created.  We have to retain it immediately
-    // whether we created it or were handed it.
     // Don't bind the socket to the peer, in the constructor, because that would
     // publish an incompletely constructed object.
     @VisibleForTesting
     C4Socket(@NonNull NativeImpl impl, long peer) {
         super(peer);
         this.impl = impl;
-        impl.nRetain(peer);
+        impl.setPeer(peer); // this is just for testing.
     }
 
     @Override

@@ -24,6 +24,7 @@ import com.couchbase.lite.internal.core.C4Query;
 
 
 public final class NativeC4Query implements C4Query.NativeImpl {
+    @GuardedBy("dbLock")
     @Override
     public long nCreateQuery(long db, int language, @NonNull String params) throws LiteCoreException {
         return createQuery(db, language, params);
@@ -32,18 +33,22 @@ public final class NativeC4Query implements C4Query.NativeImpl {
     @Override
     public void nSetParameters(long peer, long paramPtr, long paramSize) { setParameters(peer, paramPtr, paramSize); }
 
+    @GuardedBy("dbLock")
     @Nullable
     @Override
     public String nExplain(long peer) { return explain(peer); }
 
+    @GuardedBy("dbLock")
     @Override
     public long nRun(long peer, long paramPtr, long paramSize) throws LiteCoreException {
         return run(peer, paramPtr, paramSize);
     }
 
+    @GuardedBy("queryLock")
     @Override
     public int nColumnCount(long peer) { return columnCount(peer); }
 
+    @GuardedBy("queryLock")
     @Nullable
     @Override
     public String nColumnName(long peer, int colIdx) { return columnName(peer, colIdx); }
@@ -57,6 +62,7 @@ public final class NativeC4Query implements C4Query.NativeImpl {
     //
     // Methods that take a peer as an argument assume that the peer is valid until the method returns
     // Methods without a @GuardedBy annotation are otherwise thread-safe
+    // Thread safety verified as of 2025/5/15
     //-------------------------------------------------------------------------
 
     @GuardedBy("dbLock")

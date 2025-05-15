@@ -15,6 +15,7 @@
 //
 package com.couchbase.lite.internal.core;
 
+import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -36,10 +37,11 @@ import com.couchbase.lite.internal.utils.Preconditions;
  */
 public final class C4QueryEnumerator extends C4NativePeer {
     public interface NativeImpl {
+        @GuardedBy("queryEnumLock")
         boolean nNext(long peer) throws LiteCoreException;
-        void nFree(long peer);
         long nGetColumns(long peer);
         long nGetMissingColumns(long peer);
+        void nFree(long peer);
     }
 
     @NonNull
@@ -77,6 +79,7 @@ public final class C4QueryEnumerator extends C4NativePeer {
     // public methods
     //-------------------------------------------------------------------------
 
+    // the C4Peer lock is sufficient to protect this method
     public boolean next() throws LiteCoreException { return withPeerOrThrow(impl::nNext); }
 
     /**

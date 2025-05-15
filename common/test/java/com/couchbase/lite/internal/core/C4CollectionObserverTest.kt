@@ -2,8 +2,7 @@ package com.couchbase.lite.internal.core
 
 import com.couchbase.lite.Collection
 import com.couchbase.lite.LiteCoreException
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
+import org.junit.Assert
 import org.junit.Test
 
 class C4CollectionObserverTest : C4BaseTest() {
@@ -20,9 +19,7 @@ class C4CollectionObserverTest : C4BaseTest() {
     //test collection observer
     fun testCreateCollectionObserver() {
         C4Collection.create(c4Database, Collection.DEFAULT_NAME, Collection.DEFAULT_NAME).use { coll ->
-            coll.voidWithPeerOrThrow<LiteCoreException> { peer ->
-                C4CollectionObserver.newObserver(mockCollectionObserver, peer, {}).use { obs -> assertNotNull(obs) }
-            }
+            Assert.assertNotNull(createMockObserver(coll) {})
         }
     }
 
@@ -31,16 +28,13 @@ class C4CollectionObserverTest : C4BaseTest() {
     fun testCollectionCallBack() {
         var i = 0
         C4Collection.create(c4Database, Collection.DEFAULT_NAME, Collection.DEFAULT_NAME).use { coll ->
-            coll.voidWithPeerOrThrow<LiteCoreException> { peer ->
-                C4CollectionObserver.newObserver(mockCollectionObserver, peer, { i++ }).use { obs ->
-                    C4CollectionObserver.callback(obs.token)
-                    C4CollectionObserver.callback(obs.token)
-                    C4CollectionObserver.callback(obs.token)
-                }
-            }
+            val obs: C4CollectionObserver = assertNonNull(createMockObserver(coll) { i++ })
+            C4CollectionObserver.callback(obs.token)
+            C4CollectionObserver.callback(obs.token)
+            C4CollectionObserver.callback(obs.token)
         }
 
-        assertEquals(3, i)
+        Assert.assertEquals(3, i)
     }
 
     /**
@@ -55,32 +49,31 @@ class C4CollectionObserverTest : C4BaseTest() {
     fun testCollObserver() {
         var i = 0
         C4Collection.create(c4Database, Collection.DEFAULT_NAME, Collection.DEFAULT_NAME).use { coll ->
-            coll.voidWithPeerOrThrow<LiteCoreException> { peer ->
-                C4CollectionObserver.newObserver(peer, { i++ }).use { obs ->
-                    assertEquals(0, i)
-                    val revId1 = getTestRevId("aa", 1)
-                    createRev(coll, "A", revId1, fleeceBody)
-                    assertEquals(1, i)
-                    val revId2 = getTestRevId("bb", 1)
-                    createRev(coll, "B", revId2, fleeceBody)
-                    assertEquals(1, i)
+            val obs: C4CollectionObserver = createNonNullObserver(coll) { i++ }
 
-                    checkChanges(obs, arrayListOf("A", "B"), arrayListOf(revId1, revId2), false)
+            Assert.assertEquals(0, i)
+            val revId1 = getTestRevId("aa", 1)
+            createRev(coll, "A", revId1, fleeceBody)
+            Assert.assertEquals(1, i)
+            val revId2 = getTestRevId("bb", 1)
+            createRev(coll, "B", revId2, fleeceBody)
+            Assert.assertEquals(1, i)
 
-                    val revId3 = getTestRevId("bbbb", 2)
-                    createRev(coll, "B", revId3, fleeceBody)
-                    assertEquals(2, i)
-                    val revId4 = getTestRevId("cc", 1)
-                    createRev(coll, "C", revId4, fleeceBody)
-                    assertEquals(2, i)
+            checkChanges(obs, arrayListOf("A", "B"), arrayListOf(revId1, revId2), false)
 
-                    checkChanges(obs, arrayListOf("B", "C"), arrayListOf(revId3, revId4), false)
-                }
+            val revId3 = getTestRevId("bbbb", 2)
+            createRev(coll, "B", revId3, fleeceBody)
+            Assert.assertEquals(2, i)
+            val revId4 = getTestRevId("cc", 1)
+            createRev(coll, "C", revId4, fleeceBody)
+            Assert.assertEquals(2, i)
 
-                // no call back if observer is closed
-                createRev(coll, "A", getTestRevId("aaaa", 2), fleeceBody)
-                assertEquals(2, i)
-            }
+            checkChanges(obs, arrayListOf("B", "C"), arrayListOf(revId3, revId4), false)
+
+            // no call back if observer is closed
+            obs.close()
+            createRev(coll, "A", getTestRevId("aaaa", 2), fleeceBody)
+            Assert.assertEquals(2, i)
         }
     }
 
@@ -89,25 +82,23 @@ class C4CollectionObserverTest : C4BaseTest() {
     fun testObserverOnMultiCollectionInstances() {
         var i = 0
         C4Collection.create(c4Database, Collection.DEFAULT_NAME, Collection.DEFAULT_NAME).use { coll ->
-            coll.voidWithPeerOrThrow<LiteCoreException> { peer ->
-                C4CollectionObserver.newObserver(peer, { i++ }).use { obs ->
-                    val otherColl = C4Database.getDatabase(dbParentDirPath, dbName)
-                        .getCollection(coll.name, coll.scope)
-                    assertNotNull(otherColl)
+            val obs: C4CollectionObserver = createNonNullObserver(coll) { i++ }
 
-                    val revId1 = getTestRevId("cc", 1)
-                    createRev(otherColl, "c", revId1, fleeceBody)
-                    val revId2 = getTestRevId("dd", 1)
-                    createRev(otherColl, "d", revId2, fleeceBody)
-                    val revId3 = getTestRevId("ee", 1)
-                    createRev(otherColl, "e", revId3, fleeceBody)
+            val otherColl = C4Database.getDatabase(dbParentDirPath, dbName).getCollection(coll.name, coll.scope)
+            Assert.assertNotNull(otherColl)
 
-                    assertEquals(1, i)
-                    checkChanges(obs, arrayListOf("c", "d", "e"), arrayListOf(revId1, revId2, revId3), true)
-                }
-            }
+            val revId1 = getTestRevId("cc", 1)
+            createRev(otherColl, "c", revId1, fleeceBody)
+            val revId2 = getTestRevId("dd", 1)
+            createRev(otherColl, "d", revId2, fleeceBody)
+            val revId3 = getTestRevId("ee", 1)
+            createRev(otherColl, "e", revId3, fleeceBody)
+
+            Assert.assertEquals(1, i)
+            checkChanges(obs, arrayListOf("c", "d", "e"), arrayListOf(revId1, revId2, revId3), true)
         }
     }
+
 
     // Test multiple observers on the same collection
     // This test will fail on LiteCore using Version Vectors
@@ -119,27 +110,45 @@ class C4CollectionObserverTest : C4BaseTest() {
         var j = 0
 
         C4Collection.create(c4Database, Collection.DEFAULT_NAME, Collection.DEFAULT_NAME).use { coll ->
-            coll.voidWithPeerOrThrow<LiteCoreException> { peer ->
-                C4CollectionObserver.newObserver(peer, { i++ }).use { obs1 ->
-                    C4CollectionObserver.newObserver(peer, { j++ }).use { obs2 ->
-                        val revId1 = getTestRevId("aa", 1)
-                        createRev(coll, "A", revId1, fleeceBody)
-                        assertEquals(1, i)
-                        assertEquals(1, j)
+            val obs1: C4CollectionObserver = createNonNullObserver(coll) { i++ }
+            val obs2: C4CollectionObserver = createNonNullObserver(coll) { j++ }
 
-                        checkChanges(obs1, arrayListOf("A"), arrayListOf(revId1), false)
-                        checkChanges(obs2, arrayListOf("A"), arrayListOf(revId1), false)
+            val revId1 = getTestRevId("aa", 1)
+            createRev(coll, "A", revId1, fleeceBody)
+            Assert.assertEquals(1, i)
+            Assert.assertEquals(1, j)
 
-                        val revId2 = getTestRevId("aaaa", 2)
-                        createRev(coll, "A", revId2, fleeceBody)
-                        assertEquals(2, i)
-                        assertEquals(2, j)
+            checkChanges(obs1, arrayListOf("A"), arrayListOf(revId1), false)
+            checkChanges(obs2, arrayListOf("A"), arrayListOf(revId1), false)
 
-                        checkChanges(obs1, arrayListOf("A"), arrayListOf(revId2), false)
-                        checkChanges(obs2, arrayListOf("A"), arrayListOf(revId2), false)
-                    }
-                }
+            val revId2 = getTestRevId("aaaa", 2)
+            createRev(coll, "A", revId2, fleeceBody)
+            Assert.assertEquals(2, i)
+            Assert.assertEquals(2, j)
+
+            checkChanges(obs1, arrayListOf("A"), arrayListOf(revId2), false)
+            checkChanges(obs2, arrayListOf("A"), arrayListOf(revId2), false)
+        }
+    }
+
+    private fun createNonNullObserver(coll: C4Collection, callback: Runnable): C4CollectionObserver =
+        assertNonNull(createObserver(coll, callback))
+
+    private fun createObserver(coll: C4Collection, callback: Runnable): C4CollectionObserver? {
+        var obs: C4CollectionObserver? = null
+        coll.voidWithPeerOrThrow<LiteCoreException> { peer ->
+            synchronized(c4Database.dbLock) { obs = C4CollectionObserver.newObserver(peer, callback) }
+        }
+        return obs
+    }
+
+    private fun createMockObserver(coll: C4Collection, callback: Runnable): C4CollectionObserver? {
+        var obs: C4CollectionObserver? = null
+        coll.voidWithPeerOrThrow<LiteCoreException> { peer ->
+            synchronized(c4Database.dbLock) {
+                obs = C4CollectionObserver.newObserver(mockCollectionObserver, peer, callback)
             }
         }
+        return obs
     }
 }

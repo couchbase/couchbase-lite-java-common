@@ -15,11 +15,14 @@
 //
 package com.couchbase.lite.internal.core.impl;
 
+import androidx.annotation.GuardedBy;
+
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.core.C4Index;
 
 
 public class NativeC4Index implements C4Index.NativeImpl {
+    @GuardedBy("dbLock")
     @Override
     public long nBeginUpdate(long peer, int limit) throws LiteCoreException { return beginUpdate(peer, limit); }
 
@@ -28,9 +31,14 @@ public class NativeC4Index implements C4Index.NativeImpl {
 
 
     //-------------------------------------------------------------------------
-    // Native Methods
+    // Native methods
+    //
+    // Methods that take a peer as an argument assume that the peer is valid until the method returns
+    // Methods without a @GuardedBy annotation are otherwise thread-safe
+    // Thread safety verified as of 2025/5/15
     //-------------------------------------------------------------------------
 
+    @GuardedBy("dbLock")
     private static native long beginUpdate(long peer, int limit) throws LiteCoreException;
 
     private static native void releaseIndex(long peer);

@@ -20,7 +20,6 @@ import com.couchbase.lite.Collection;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.Scope;
 import com.couchbase.lite.internal.core.impl.NativeC4Collection;
-import com.couchbase.lite.internal.core.peers.LockManager;
 import com.couchbase.lite.internal.fleece.FLSharedKeys;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.fleece.FLValue;
@@ -130,11 +129,9 @@ public final class C4Collection extends C4Peer {
         @NonNull String scope,
         @NonNull String collection)
         throws LiteCoreException {
-
+        final Object dbLock = c4db.getDbLock();
         final long peer = c4db.withPeerOrThrow(dbPeer -> {
-            synchronized (LockManager.INSTANCE.getLock(dbPeer)) {
-                return impl.nCreateCollection(dbPeer, scope, collection);
-            }
+            synchronized (dbLock) { return impl.nCreateCollection(dbPeer, scope, collection); }
         });
 
         return new C4Collection(impl, peer, c4db, scope, collection);
@@ -148,10 +145,9 @@ public final class C4Collection extends C4Peer {
         @NonNull String scope,
         @NonNull String collection)
         throws LiteCoreException {
+        final Object dbLock = c4db.getDbLock();
         final long peer = c4db.withPeerOrThrow(dbPeer -> {
-            synchronized (LockManager.INSTANCE.getLock(dbPeer)) {
-                return impl.nGetCollection(dbPeer, scope, collection);
-            }
+            synchronized (dbLock) { return impl.nGetCollection(dbPeer, scope, collection); }
         });
         return (peer == 0L) ? null : new C4Collection(impl, peer, c4db, scope, collection);
     }
@@ -174,7 +170,7 @@ public final class C4Collection extends C4Peer {
     @NonNull
     private final NativeImpl impl;
 
-    // Seize this lock *after* the peer lock
+    // Always seize this lock *after* the C4Peer lock
     @NonNull
     private final Object dbLock;
 
@@ -202,11 +198,11 @@ public final class C4Collection extends C4Peer {
         this.db = db;
         this.scope = scope;
         this.name = name;
-        this.dbLock = db.withPeerOrThrow(dbPeer -> LockManager.INSTANCE.getLock(peer));
+        this.dbLock = db.getDbLock();
     }
 
     @NonNull
-    public Object getDbLock() { return db.getLock(); }
+    public Object getDbLock() { return dbLock; }
 
     @NonNull
     public C4Database getDb() { return db; }
@@ -226,9 +222,11 @@ public final class C4Collection extends C4Peer {
     public boolean isValid() { return withPeerOrDefault(false, impl::nCollectionIsValid); }
 
     public long getDocumentCount() {
-        return withPeerOrDefault(0L, peer -> {
-            synchronized (dbLock) { return impl.nGetDocumentCount(peer); }
-        });
+        return withPeerOrDefault(
+            0L,
+            peer -> {
+                synchronized (dbLock) { return impl.nGetDocumentCount(peer); }
+            });
     }
 
     // - Documents
@@ -250,9 +248,11 @@ public final class C4Collection extends C4Peer {
     }
 
     public long getDocumentExpiration(@NonNull String docID) throws LiteCoreException {
-        return withPeerOrDefault(0L, peer -> {
-            synchronized (dbLock) { return impl.nGetDocExpiration(peer, docID); }
-        });
+        return withPeerOrDefault(
+            0L,
+            peer -> {
+                synchronized (dbLock) { return impl.nGetDocExpiration(peer, docID); }
+            });
     }
 
     public void setDocumentExpiration(@NonNull String docID, long timeStamp) throws LiteCoreException {
@@ -273,7 +273,9 @@ public final class C4Collection extends C4Peer {
 
     @NonNull
     public C4CollectionObserver createCollectionObserver(@NonNull Runnable listener) throws LiteCoreException {
-        return withPeerOrThrow(peer -> C4CollectionObserver.newObserver(peer, listener));
+        return withPeerOrThrow(peer -> {
+            synchronized (dbLock) { return C4CollectionObserver.newObserver(peer, listener); }
+        });
     }
 
     @NonNull
@@ -380,7 +382,7 @@ public final class C4Collection extends C4Peer {
         final long idx = withPeerOrThrow(peer -> {
             synchronized (dbLock) { return impl.nGetIndex(peer, name); }
         });
-        return (idx == 0L) ? null : C4Index.create(idx);
+        return (idx == 0L) ? null : C4Index.create(idx, dbLock);
     }
 
     public void deleteIndex(@NonNull String name) throws LiteCoreException {

@@ -89,6 +89,11 @@ static void socket_open(C4Socket *socket, const C4Address *addr, C4Slice options
     jstring _path = toJString(env, addr->path);
     jbyteArray _options = toJByteArray(env, options);
 
+    // This is here because we always release the socket when we close it
+    // (see Java_com_couchbase_lite_internal_core_impl_NativeC4Socket_closed)
+    // Even though this socket is already retained, we neeed to match retains with releases
+    c4socket_retain(socket);
+
     env->CallStaticVoidMethod(
             cls_C4Socket,
             m_C4Socket_open,
@@ -221,18 +226,11 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Socket_fromNative(
 
     C4Socket *c4socket = c4socket_fromNative(socketFactory, context, &c4Address);
 
-    return (jlong) c4socket;
-}
+    // Unlike most ref-counted objects, the C4Socket is not
+    // retained when it is created.  We are obliged to retain it immediately
+    c4socket_retain(c4socket);
 
-/*
- * Class:     com_couchbase_lite_internal_core_C4Socket
- * Method:    retain
- * Signature: (J)V
- */
-JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Socket_retain(JNIEnv *env, jclass ignore, jlong jSocket) {
-    auto socket = (C4Socket *) jSocket;
-    c4socket_retain(socket);
+    return (jlong) c4socket;
 }
 
 /*

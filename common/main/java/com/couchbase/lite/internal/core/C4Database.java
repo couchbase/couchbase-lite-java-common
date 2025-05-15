@@ -124,6 +124,8 @@ public abstract class C4Database extends C4Peer {
         @GuardedBy("dbLock")
         long nGetFLSharedKeys(long db);
 
+        // - Blobs
+
         @GuardedBy("dbLock")
         boolean nDocContainsBlobs(long dictPtr, long dictSize, long sharedKeys);
 
@@ -147,22 +149,15 @@ public abstract class C4Database extends C4Peer {
 
     // unmanaged: the native code will free it
     static final class UnmanagedC4Database extends C4Database {
-        UnmanagedC4Database(@NonNull NativeImpl impl, long peer) {
-            super(impl, peer, LockManager.INSTANCE.getLock(peer), "shell", null);
+        UnmanagedC4Database(@NonNull NativeImpl impl, long peer, @NonNull Object dbLock) {
+            super(impl, peer, dbLock, "shell", null);
         }
     }
 
     // managed: Java code is responsible for freeing it
     static final class ManagedC4Database extends C4Database {
-        ManagedC4Database(@NonNull NativeImpl impl, long peer, @NonNull Object lock, @NonNull String name) {
-            super(
-                impl,
-                peer,
-                lock,
-                name,
-                unused -> {
-                    synchronized (lock) { impl.nFree(peer); }
-                });
+        ManagedC4Database(@NonNull NativeImpl impl, long peer, @NonNull Object dbLock, @NonNull String name) {
+            super(impl, peer, dbLock, name, unused -> impl.nFree(peer));
         }
     }
 
@@ -189,7 +184,7 @@ public abstract class C4Database extends C4Peer {
     // unmanaged: someone else owns it
     @NonNull
     public static C4Database getUnmanagedDatabase(long peer) {
-        return new UnmanagedC4Database(NATIVE_IMPL, peer);
+        return new UnmanagedC4Database(NATIVE_IMPL, peer, LockManager.INSTANCE.getLock(peer));
     }
 
     // managed: Java code is responsible for freeing it
@@ -338,9 +333,10 @@ public abstract class C4Database extends C4Peer {
 
     // We need to hold a reference to this for this objects lifetime,
     // to be sure that everyone else gets the same lock.
+    // Always seize this lock *after* the C4Peer lock.
     @SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField"})
     @NonNull
-    private final Object lock;
+    private final Object dbLock;
 
     @NonNull
     private final AtomicReference<File> dbFile = new AtomicReference<>();
@@ -351,13 +347,13 @@ public abstract class C4Database extends C4Peer {
     protected C4Database(
         @NonNull NativeImpl impl,
         long peer,
-        @NonNull Object lock,
+        @NonNull Object dbLock,
         @NonNull String name,
         @Nullable PeerCleaner cleaner) {
         super(peer, cleaner);
         this.name = name;
         this.impl = impl;
-        this.lock = lock;
+        this.dbLock = dbLock;
     }
 
     //-------------------------------------------------------------------------
@@ -365,7 +361,7 @@ public abstract class C4Database extends C4Peer {
     //-------------------------------------------------------------------------
 
     @NonNull
-    public Object getLock() { return lock; }
+    public Object getDbLock() { return dbLock; }
 
     @NonNull
     @Override
@@ -389,7 +385,7 @@ public abstract class C4Database extends C4Peer {
     // Even if the close failes, the cleaner will backstop this rare case so that the Database doesn't leak.
     public void closeDb() throws LiteCoreException {
         voidWithPeerOrThrow(peer -> {
-            synchronized (lock) { impl.nClose(peer); }
+            synchronized (dbLock) { impl.nClose(peer); }
         });
         close();
     }
@@ -438,30 +434,21 @@ public abstract class C4Database extends C4Peer {
     @NonNull
     public byte[] getPublicUUID() throws LiteCoreException {
         return withPeerOrThrow(peer -> {
-            synchronized (lock) { return impl.nGetPublicUUID(peer); }
+            synchronized (dbLock) { return impl.nGetPublicUUID(peer); }
         });
-    }
-
-    // - Blobs
-
-    @NonNull
-    public C4BlobStore getBlobStore() throws LiteCoreException { return withPeerOrThrow(C4BlobStore::create); }
-
-    public boolean docContainsBlobs(FLSliceResult body, FLSharedKeys keys) {
-        synchronized (lock) { return impl.nDocContainsBlobs(body.getBase(), body.getSize(), keys.getPeer()); }
     }
 
     // - Transactions
 
     public void beginTransaction() throws LiteCoreException {
         voidWithPeerOrThrow(peer -> {
-            synchronized (lock) { impl.nBeginTransaction(peer); }
+            synchronized (dbLock) { impl.nBeginTransaction(peer); }
         });
     }
 
     public void endTransaction(boolean commit) throws LiteCoreException {
         voidWithPeerOrThrow(peer -> {
-            synchronized (lock) { impl.nEndTransaction(peer, commit); }
+            synchronized (dbLock) { impl.nEndTransaction(peer, commit); }
         });
     }
 
@@ -469,7 +456,7 @@ public abstract class C4Database extends C4Peer {
 
     public void rekey(int keyType, byte[] newKey) throws LiteCoreException {
         voidWithPeerOrThrow(peer -> {
-            synchronized (lock) { impl.nRekey(peer, keyType, newKey); }
+            synchronized (dbLock) { impl.nRekey(peer, keyType, newKey); }
         });
     }
 
@@ -477,7 +464,7 @@ public abstract class C4Database extends C4Peer {
         final Integer mTyp = MAINTENANCE_TYPE_MAP.get(type);
         if (mTyp == null) { throw new IllegalArgumentException("Unknown maintenance type: " + type); }
         return withPeerOrThrow(peer -> {
-            synchronized (lock) { return impl.nMaintenance(peer, mTyp); }
+            synchronized (dbLock) { return impl.nMaintenance(peer, mTyp); }
         });
     }
 
@@ -487,7 +474,7 @@ public abstract class C4Database extends C4Peer {
         throws LiteCoreException {
         final String uriStr = uri.toString();
         voidWithPeerOrThrow(peer -> {
-            synchronized (lock) { impl.nSetCookie(peer, uriStr, setCookieHeader, acceptParentDomain); }
+            synchronized (dbLock) { impl.nSetCookie(peer, uriStr, setCookieHeader, acceptParentDomain); }
         });
     }
 
@@ -496,7 +483,7 @@ public abstract class C4Database extends C4Peer {
     public String getCookies(@NonNull URI uri) throws LiteCoreException {
         final String uriStr = uri.toString();
         return withPeerOrNull(peer -> {
-            synchronized (lock) { return impl.nGetCookies(peer, uriStr); }
+            synchronized (dbLock) { return impl.nGetCookies(peer, uriStr); }
         });
     }
 
@@ -505,15 +492,26 @@ public abstract class C4Database extends C4Peer {
     @NonNull
     public FLEncoder getSharedFleeceEncoder() {
         return FLEncoder.getSharedEncoder(withPeerOrThrow(peer -> {
-            synchronized (lock) { return impl.nGetSharedFleeceEncoder(peer); }
+            synchronized (dbLock) { return impl.nGetSharedFleeceEncoder(peer); }
         }));
     }
 
     @NonNull
     public FLSharedKeys getFLSharedKeys() {
         return new FLSharedKeys(withPeerOrThrow(peer -> {
-            synchronized (lock) { return impl.nGetFLSharedKeys(peer); }
+            synchronized (dbLock) { return impl.nGetFLSharedKeys(peer); }
         }));
+    }
+
+    // - Blobs
+
+    @NonNull
+    public C4BlobStore getBlobStore() throws LiteCoreException {
+        return withPeerOrThrow(peer -> C4BlobStore.create(peer, dbLock));
+    }
+
+    public boolean docContainsBlobs(FLSliceResult body, FLSharedKeys keys) {
+        synchronized (dbLock) { return impl.nDocContainsBlobs(body.getBase(), body.getSize(), keys.getPeer()); }
     }
 
     // - Scopes and Collections
@@ -521,26 +519,26 @@ public abstract class C4Database extends C4Peer {
     @NonNull
     public Set<String> getScopeNames() throws LiteCoreException {
         return withPeerOrThrow(peer -> {
-            synchronized (lock) { return impl.nGetScopeNames(peer); }
+            synchronized (dbLock) { return impl.nGetScopeNames(peer); }
         });
     }
 
     public boolean hasScope(@NonNull String scope) {
         return withPeerOrThrow(peer -> {
-            synchronized (lock) { return impl.nHasScope(peer, scope); }
+            synchronized (dbLock) { return impl.nHasScope(peer, scope); }
         });
     }
 
     @NonNull
     public Set<String> getCollectionNames(@NonNull String scope) throws LiteCoreException {
         return withPeerOrThrow(peer -> {
-            synchronized (lock) { return impl.nGetCollectionNames(peer, scope); }
+            synchronized (dbLock) { return impl.nGetCollectionNames(peer, scope); }
         });
     }
 
     public void deleteCollection(@NonNull String scopeName, @NonNull String collectionName) throws LiteCoreException {
         voidWithPeerOrThrow(peer -> {
-            synchronized (lock) { impl.nDeleteCollection(peer, scopeName, collectionName); }
+            synchronized (dbLock) { impl.nDeleteCollection(peer, scopeName, collectionName); }
         });
     }
 
@@ -583,6 +581,7 @@ public abstract class C4Database extends C4Peer {
             C4Replicator.createRemoteReplicator(
                 collections,
                 peer,
+                dbLock,
                 scheme,
                 host,
                 port,
@@ -613,6 +612,7 @@ public abstract class C4Database extends C4Peer {
             C4Replicator.createLocalReplicator(
                 collections,
                 peer,
+                dbLock,
                 targetDb,
                 type,
                 continuous,
@@ -633,6 +633,7 @@ public abstract class C4Database extends C4Peer {
             C4Replicator.createMessageEndpointReplicator(
                 collections,
                 peer,
+                dbLock,
                 c4Socket,
                 options,
                 statusListener));

@@ -25,38 +25,43 @@ import com.couchbase.lite.internal.core.C4Socket;
  * The C4Listener companion object
  */
 public final class NativeC4Socket implements C4Socket.NativeImpl {
-
     @Override
     public long nFromNative(long token, String schema, String host, int port, String path, int framing) {
         return fromNative(token, schema, host, port, path, framing);
     }
 
-    @Override
-    public void nRetain(long peer) { retain(peer); }
-
+    @GuardedBy("socLock")
     @Override
     public void nOpened(long peer) { opened(peer); }
 
+    @GuardedBy("socLock")
     @Override
     public void nGotHTTPResponse(long peer, int httpStatus, @Nullable byte[] responseHeadersFleece) {
         gotHTTPResponse(peer, httpStatus, responseHeadersFleece);
     }
 
+    @GuardedBy("socLock")
     @Override
     public void nCompletedWrite(long peer, long byteCount) { completedWrite(peer, byteCount); }
 
+    @GuardedBy("socLock")
     @Override
     public void nReceived(long peer, byte[] data) { received(peer, data); }
 
+    @GuardedBy("socLock")
     @Override
     public void nCloseRequested(long peer, int status, @Nullable String message) {
         closeRequested(peer, status, message);
     }
 
+    @GuardedBy("socLock")
     @Override
     public void nClosed(long peer, int errorDomain, int errorCode, String message) {
         closed(peer, errorDomain, errorCode, message);
     }
+
+    @Override
+    public void setPeer(long ignore) { }
 
 
     //-------------------------------------------------------------------------
@@ -64,6 +69,7 @@ public final class NativeC4Socket implements C4Socket.NativeImpl {
     //
     // Methods that take a peer as an argument assume that the peer is valid until the method returns
     // Methods without a @GuardedBy annotation are otherwise thread-safe
+    // Thread safety verified as of 2025/5/15
     //-------------------------------------------------------------------------
 
     // wrap an existing Java C4Socket in a C-native C4Socket
@@ -74,8 +80,6 @@ public final class NativeC4Socket implements C4Socket.NativeImpl {
         int port,
         String path,
         int framing);
-
-    private static native void retain(long peer);
 
     @GuardedBy("socLock")
     private static native void opened(long peer);

@@ -18,7 +18,6 @@ package com.couchbase.lite.internal.core;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.VisibleForTesting;
 
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
@@ -27,6 +26,7 @@ import com.couchbase.lite.internal.core.impl.NativeC4Index;
 
 public final class C4Index extends C4NativePeer {
     public interface NativeImpl {
+        @GuardedBy("dbLock")
         long nBeginUpdate(long peer, int limit) throws LiteCoreException;
         void nReleaseIndex(long peer);
     }
@@ -35,22 +35,26 @@ public final class C4Index extends C4NativePeer {
     private static final NativeImpl NATIVE_IMPL = new NativeC4Index();
 
     @NonNull
-    public static C4Index create(long peer) { return new C4Index(NATIVE_IMPL, peer); }
+    public static C4Index create(long peer, @NonNull Object dbLock) { return new C4Index(NATIVE_IMPL, peer, dbLock); }
 
 
     private final NativeImpl impl;
 
-    @VisibleForTesting
-    C4Index(@NonNull NativeImpl impl, long peer) {
+    // Always seize this lock *after* the C4Peer lock
+    @NonNull
+    private final Object dbLock;
+
+    private C4Index(@NonNull NativeImpl impl, long peer, @NonNull Object dbLock) {
         super(peer);
         this.impl = impl;
+        this.dbLock = dbLock;
     }
 
-    @GuardedBy("Database.lock")
     @Nullable
     public C4IndexUpdater beginUpdate(int limit) throws LiteCoreException {
         return nullableWithPeerOrThrow(peer -> {
-            final long updater = impl.nBeginUpdate(peer, limit);
+            final long updater;
+            synchronized (dbLock) { updater = impl.nBeginUpdate(peer, limit); }
             return (updater == 0L) ? null : C4IndexUpdater.create(updater);
         });
     }

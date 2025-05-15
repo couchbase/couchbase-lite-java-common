@@ -15,12 +15,14 @@
 //
 package com.couchbase.lite.internal.core.impl;
 
+import androidx.annotation.GuardedBy;
+
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.core.C4QueryEnumerator;
 
 
 public final class NativeC4QueryEnumerator implements C4QueryEnumerator.NativeImpl {
-
+    @GuardedBy("queryEnumLock")
     @Override
     public boolean nNext(long peer) throws LiteCoreException { return next(peer); }
 
@@ -39,8 +41,10 @@ public final class NativeC4QueryEnumerator implements C4QueryEnumerator.NativeIm
     //
     // Methods that take a peer as an argument assume that the peer is valid until the method returns
     // Methods without a @GuardedBy annotation are otherwise thread-safe
+    // Thread safety verified as of 2025/5/15
     //-------------------------------------------------------------------------
 
+    @GuardedBy("queryEnumLock")
     private static native boolean next(long peer) throws LiteCoreException;
 
     private static native long getColumns(long peer);

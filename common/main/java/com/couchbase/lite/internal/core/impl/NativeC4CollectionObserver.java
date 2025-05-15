@@ -42,6 +42,7 @@ public final class NativeC4CollectionObserver implements C4CollectionObserver.Na
     //
     // Methods that take a peer as an argument assume that the peer is valid until the method returns
     // Methods without a @GuardedBy annotation are otherwise thread-safe
+    // Thread safety verified as of 2025/5/15
     //-------------------------------------------------------------------------
 
     @GuardedBy("dbLock")

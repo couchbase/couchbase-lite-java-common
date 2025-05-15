@@ -59,6 +59,7 @@ public final class NativeC4Document implements C4Document.NativeImpl {
     @NonNull
     public String nGetSelectedRevID(long doc) { return getSelectedRevID(doc); }
 
+    @GuardedBy("dbLock")
     @Nullable
     @Override
     public String nGetRevisionHistory(long coll, long doc, long maxRevs, @Nullable String[] backToRevs)
@@ -124,6 +125,7 @@ public final class NativeC4Document implements C4Document.NativeImpl {
     //
     // Methods that take a peer as an argument assume that the peer is valid until the method returns
     // Methods without a @GuardedBy annotation are otherwise thread-safe
+    // Thread safety verified as of 2025/5/15
     //-------------------------------------------------------------------------
 
     //// Creating and Updating Documents
@@ -149,6 +151,7 @@ public final class NativeC4Document implements C4Document.NativeImpl {
     @NonNull
     private static native String getSelectedRevID(long peer);
 
+    @GuardedBy("dbLock")
     @Nullable
     private static native String getRevisionHistory(long coll, long peer, long maxRevs, @Nullable String[] backToRevs)
         throws LiteCoreException;

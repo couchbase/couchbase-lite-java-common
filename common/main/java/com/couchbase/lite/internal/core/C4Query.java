@@ -15,6 +15,7 @@
 //
 package com.couchbase.lite.internal.core;
 
+import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -27,12 +28,17 @@ import com.couchbase.lite.internal.fleece.FLSliceResult;
 
 public final class C4Query extends C4Peer {
     public interface NativeImpl {
+        @GuardedBy("dbLock")
         long nCreateQuery(long db, int language, @NonNull String params) throws LiteCoreException;
         void nSetParameters(long peer, long paramPtr, long paramSize);
+        @GuardedBy("dbLock")
         @Nullable
         String nExplain(long peer);
+        @GuardedBy("dbLock")
         long nRun(long peer, long paramPtr, long paramSize) throws LiteCoreException;
+        @GuardedBy("queryLock")
         int nColumnCount(long peer);
+        @GuardedBy("queryLock")
         @Nullable
         String nColumnName(long peer, int colIdx);
         void nFree(long peer);
@@ -58,9 +64,10 @@ public final class C4Query extends C4Peer {
         @NonNull QueryLanguage language,
         @NonNull String expression)
         throws LiteCoreException {
+        final Object dbLock = c4db.getDbLock();
         return c4db.withPeerOrThrow(dbPeer -> {
             final long peer = impl.nCreateQuery(dbPeer, language.getCode(), expression);
-            return new C4Query(impl, peer);
+            return new C4Query(impl, peer, dbLock);
         });
     }
 
@@ -69,15 +76,20 @@ public final class C4Query extends C4Peer {
     // Instance members
     //-------------------------------------------------------------------------
 
+    @NonNull
     private final NativeImpl impl;
+    // Always seize this lock *after* the C4Peer lock
+    @NonNull
+    private final Object dbLock;
 
     //-------------------------------------------------------------------------
     // Constructors
     //-------------------------------------------------------------------------
 
-    private C4Query(@NonNull NativeImpl impl, long peer) {
+    private C4Query(@NonNull NativeImpl impl, long peer, @NonNull Object dbLock) {
         super(peer, impl::nFree);
         this.impl = impl;
+        this.dbLock = dbLock;
     }
 
     //-------------------------------------------------------------------------
@@ -89,15 +101,32 @@ public final class C4Query extends C4Peer {
     }
 
     @Nullable
-    public String explain() { return withPeerOrNull(impl::nExplain); }
+    public String explain() {
+        return withPeerOrNull(peer -> {
+            synchronized (dbLock) { return impl.nExplain(peer); }
+        });
+    }
 
     @Nullable
     public C4QueryEnumerator run(@NonNull FLSliceResult params) throws LiteCoreException {
-        return withPeerOrNull(peer -> C4QueryEnumerator.create(impl.nRun(peer, params.getBase(), params.getSize())));
+        return withPeerOrNull(peer -> {
+            synchronized (dbLock) {
+                return C4QueryEnumerator.create(impl.nRun(peer, params.getBase(), params.getSize()));
+            }
+        });
     }
 
+    // the C4Peer lock is sufficient to protect this method
     public int getColumnCount() { return withPeerOrDefault(0, impl::nColumnCount); }
 
+    // the C4Peer lock is sufficient to protect this method
     @Nullable
     public String getColumnNameForIndex(int idx) { return withPeerOrNull(peer -> impl.nColumnName(peer, idx)); }
+
+    //-------------------------------------------------------------------------
+    // package methods
+    //-------------------------------------------------------------------------
+
+    @NonNull
+    Object getDbLock() { return dbLock; }
 }

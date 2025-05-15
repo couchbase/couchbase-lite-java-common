@@ -50,6 +50,7 @@ public final class C4Document extends C4Peer {
         int nGetSelectedFlags(long doc);
         @NonNull
         String nGetSelectedRevID(long doc);
+        @GuardedBy("dbLock")
         @Nullable
         String nGetRevisionHistory(long coll, long doc, long maxRevs, @Nullable String[] backToRevs)
             throws LiteCoreException;
@@ -91,10 +92,10 @@ public final class C4Document extends C4Peer {
     @NonNull
     static C4Document create(@NonNull C4Collection coll, @NonNull String docID, @Nullable FLSliceResult body, int flags)
         throws LiteCoreException {
-        final Object lock = coll.getDbLock();
+        final Object dbLock = coll.getDbLock();
 
         final long peer = coll.withPeerOrThrow(collPeer -> {
-            synchronized (lock) {
+            synchronized (dbLock) {
                 return NATIVE_IMPL.nCreateFromSlice(
                     collPeer,
                     docID,
@@ -104,35 +105,35 @@ public final class C4Document extends C4Peer {
             }
         });
 
-        return new C4Document(NATIVE_IMPL, peer, lock);
+        return new C4Document(NATIVE_IMPL, peer, dbLock);
     }
 
     @Nullable
     static C4Document get(@NonNull C4Collection coll, @NonNull String docID)
         throws LiteCoreException {
-        final Object lock = coll.getDbLock();
+        final Object dbLock = coll.getDbLock();
         final long peer = coll.withPeerOrThrow(collPeer -> {
-            synchronized (lock) { return NATIVE_IMPL.nGetFromCollection(collPeer, docID, true, false); }
+            synchronized (dbLock) { return NATIVE_IMPL.nGetFromCollection(collPeer, docID, true, false); }
         });
-        return (peer == 0) ? null : new C4Document(NATIVE_IMPL, peer, lock);
+        return (peer == 0) ? null : new C4Document(NATIVE_IMPL, peer, dbLock);
     }
 
     @Nullable
     static C4Document getWithRevs(@NonNull C4Collection coll, @NonNull String docID)
         throws LiteCoreException {
-        final Object lock = coll.getDbLock();
+        final Object dbLock = coll.getDbLock();
         final long peer = coll.withPeerOrThrow(collPeer -> {
-            synchronized (lock) { return NATIVE_IMPL.nGetFromCollection(collPeer, docID, true, true); }
+            synchronized (dbLock) { return NATIVE_IMPL.nGetFromCollection(collPeer, docID, true, true); }
         });
-        return (peer == 0) ? null : new C4Document(NATIVE_IMPL, peer, lock);
+        return (peer == 0) ? null : new C4Document(NATIVE_IMPL, peer, dbLock);
     }
 
     @VisibleForTesting
     @NonNull
     static C4Document getOrCreateDocument(@NonNull C4Collection coll, @NonNull String docID) throws LiteCoreException {
-        final Object lock = coll.getDbLock();
+        final Object dbLock = coll.getDbLock();
         final long peer = coll.withPeerOrThrow(collPeer -> {
-            synchronized (lock) { return NATIVE_IMPL.nGetFromCollection(collPeer, docID, false, true); }
+            synchronized (dbLock) { return NATIVE_IMPL.nGetFromCollection(collPeer, docID, false, true); }
         });
 
         // This should never happen.  With "mustExist" set false we should get:
@@ -146,7 +147,7 @@ public final class C4Document extends C4Peer {
                 "Could not create document: " + docID);
         }
 
-        return new C4Document(NATIVE_IMPL, peer, lock);
+        return new C4Document(NATIVE_IMPL, peer, dbLock);
     }
 
 
@@ -156,7 +157,7 @@ public final class C4Document extends C4Peer {
 
     @NonNull
     private final NativeImpl impl;
-
+    // Always seize this lock *after* the C4Peer lock
     @NonNull
     private final Object dbLock;
 
@@ -164,15 +165,15 @@ public final class C4Document extends C4Peer {
     // Constructor
     //-------------------------------------------------------------------------
 
-    private C4Document(@NonNull NativeImpl impl, long peer, @NonNull Object lock) {
+    private C4Document(@NonNull NativeImpl impl, long peer, @NonNull Object dbLock) {
         // C4Documents cannot be explicitly closed so don't gripe when they aren't
         super(peer, impl::nFree, true);
         this.impl = impl;
-        this.dbLock = lock;
+        this.dbLock = dbLock;
     }
 
     @VisibleForTesting
-    C4Document(long peer, @NonNull Object lock) { this(NATIVE_IMPL, peer, lock); }
+    C4Document(long peer, @NonNull Object dbLock) { this(NATIVE_IMPL, peer, dbLock); }
 
     //-------------------------------------------------------------------------
     // public methods
@@ -195,9 +196,14 @@ public final class C4Document extends C4Peer {
     public String getRevisionHistory(@NonNull C4Collection coll, long maxRevs, @Nullable List<String> backToRevs)
         throws LiteCoreException {
         final String[] backToRevsArray = (backToRevs == null) ? null : backToRevs.toArray(new String[0]);
-        return coll.withPeerOrNull(collPeer ->
-            withPeerOrNull(peer -> impl.nGetRevisionHistory(collPeer, peer, maxRevs, backToRevsArray)));
+        return coll.withPeerOrNull(collPeer -> {
+            synchronized (dbLock) {
+                return withPeerOrNull(peer -> impl.nGetRevisionHistory(collPeer, peer, maxRevs, backToRevsArray));
+            }
+        });
     }
+
+    public long getTimestamp() { return withPeerOrDefault(0L, impl::nGetTimestamp); }
 
     public long getSelectedSequence() { return withPeerOrDefault(0L, impl::nGetSelectedSequence); }
 
@@ -210,8 +216,6 @@ public final class C4Document extends C4Peer {
     }
 
     // - Conflict resolution
-
-    public long getTimestamp() { return withPeerOrDefault(0L, impl::nGetTimestamp); }
 
     public void selectNextLeafRevision(boolean includeDeleted, boolean withBody) throws LiteCoreException {
         voidWithPeerOrThrow(peer -> {
@@ -226,6 +230,7 @@ public final class C4Document extends C4Peer {
         });
     }
 
+    // the C4Peer lock is sufficient to protect this method
     @Nullable
     public C4Document update(@Nullable FLSliceResult body, int flags) throws LiteCoreException {
         final long newDoc = withPeerOrDefault(
@@ -242,6 +247,7 @@ public final class C4Document extends C4Peer {
         return (newDoc == 0) ? null : new C4Document(impl, newDoc, dbLock);
     }
 
+    // the C4Peer lock is sufficient to protect this method
     public void save(int maxRevTreeDepth) throws LiteCoreException {
         voidWithPeerOrThrow(peer -> {
             synchronized (dbLock) { impl.nSave(peer, maxRevTreeDepth); }

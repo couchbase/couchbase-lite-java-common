@@ -15,6 +15,7 @@
 //
 package com.couchbase.lite.internal.core;
 
+import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -34,6 +35,7 @@ public final class C4CollectionObserver
     extends C4Peer
     implements ChangeNotifier.C4ChangeProducer<C4DocumentChange> {
     public interface NativeImpl {
+        @GuardedBy("dbLock")
         long nCreate(long token, long coll) throws LiteCoreException;
         @NonNull
         C4DocumentChange[] nGetChanges(long peer, int maxChanges);
@@ -63,12 +65,14 @@ public final class C4CollectionObserver
     // Static factory methods
     //-------------------------------------------------------------------------
 
+    @GuardedBy("dbLock")
     @NonNull
     static C4CollectionObserver newObserver(long c4Coll, @NonNull Runnable listener) throws LiteCoreException {
         return newObserver(NATIVE_IMPL, c4Coll, listener);
     }
 
     @VisibleForTesting
+    @GuardedBy("dbLock")
     @NonNull
     static C4CollectionObserver newObserver(@NonNull NativeImpl impl, long c4Coll, @NonNull Runnable listener)
         throws LiteCoreException {

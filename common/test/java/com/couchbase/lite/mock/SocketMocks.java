@@ -32,6 +32,7 @@ import com.couchbase.lite.internal.sockets.SocketToCore;
 import com.couchbase.lite.internal.sockets.SocketToRemote;
 import com.couchbase.lite.internal.utils.Fn;
 
+
 // Implementing this class in Kotlin will crash Kotlin compilers 2.[01].x
 public class SocketMocks {
     public static final class CBLWebSocket extends AbstractCBLWebSocket {
@@ -53,36 +54,22 @@ public class SocketMocks {
 
     public static class Core implements SocketToCore {
         @NonNull
-        private final Object mutex = new Object();
+        private final Object lock = new Object();
 
         @NonNull
-        public Object getLock() {
-            return this.mutex;
-        }
+        public Object getLock() { return this.lock; }
 
-        public void init(@NonNull SocketFromCore listener) {
-            throw new NotImplementedError();
-        }
+        public void init(@NonNull SocketFromCore listener) { throw new NotImplementedError(); }
 
-        public void close() {
-            throw new NotImplementedError();
-        }
+        public void close() { throw new NotImplementedError(); }
 
-        public void ackWriteToCore(long byteCount) {
-            throw new NotImplementedError();
-        }
+        public void ackWriteToCore(long byteCount) { throw new NotImplementedError(); }
 
-        public void writeToCore(@NonNull byte[] data) {
-            throw new NotImplementedError();
-        }
+        public void writeToCore(@NonNull byte[] data) { throw new NotImplementedError(); }
 
-        public void requestCoreClose(@NonNull CloseStatus status) {
-            throw new NotImplementedError();
-        }
+        public void requestCoreClose(@NonNull CloseStatus status) { throw new NotImplementedError(); }
 
-        public void closeCore(@NonNull CloseStatus status) {
-            throw new NotImplementedError();
-        }
+        public void closeCore(@NonNull CloseStatus status) { throw new NotImplementedError(); }
 
         public void ackOpenToCore(int httpStatus, @Nullable byte[] responseHeadersFleece) {
             throw new NotImplementedError();
@@ -96,9 +83,7 @@ public class SocketMocks {
 
         public boolean writeToRemote(@NonNull byte[] data) { throw new NotImplementedError(); }
 
-        public boolean closeRemote(@NonNull CloseStatus status) {
-            throw new NotImplementedError();
-        }
+        public boolean closeRemote(@NonNull CloseStatus status) { throw new NotImplementedError(); }
 
         public void cancelRemote() { throw new NotImplementedError(); }
 
