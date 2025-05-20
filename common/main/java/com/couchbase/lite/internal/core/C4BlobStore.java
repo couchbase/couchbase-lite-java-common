@@ -50,7 +50,7 @@ public abstract class C4BlobStore extends C4Peer {
         @GuardedBy("streamLock")
         void nCloseReadStream(long peer);
 
-        // BlobReadStream
+        // BlobWriteStream
         @GuardedBy("streamLock")
         void nWrite(long peer, byte[] data, int len) throws LiteCoreException;
         @GuardedBy("streamLock")
@@ -61,9 +61,8 @@ public abstract class C4BlobStore extends C4Peer {
         void nCloseWriteStream(long peer);
     }
 
-    // All of the blob stores used in production code are
-    // managed by LiteCore: it will free them
-    // Tests create blob stores that are managed by Java.
+    // All of the blob stores used in production code are managed by LiteCore:
+    // it will free them. Tests create blob stores that are managed by Java.
     // See C4TestUtils.ManagedC4BlobStore
     private static final class UnmanagedC4BlobStore extends C4BlobStore {
         UnmanagedC4BlobStore(@NonNull NativeImpl impl, long peer) { super(impl, peer, null); }
@@ -95,6 +94,7 @@ public abstract class C4BlobStore extends C4Peer {
     // Constructor
     //-------------------------------------------------------------------------
 
+    @VisibleForTesting
     protected C4BlobStore(@NonNull NativeImpl impl, long peer, @Nullable PeerCleaner cleaner) {
         super(peer, cleaner);
         this.impl = impl;
@@ -110,7 +110,9 @@ public abstract class C4BlobStore extends C4Peer {
      * be up to 16 bytes larger than the actual size.
      */
     public long getSize(@NonNull C4BlobKey blobKey) {
-        return withPeerOrDefault(-1L, peer -> blobKey.withPeerOrThrow(blobPeer -> impl.nGetSize(peer, blobPeer)));
+        return withPeerOrDefault(
+            -1L,
+            peer -> blobKey.withPeerOrThrow(blobPeer -> impl.nGetSize(peer, blobPeer)));
     }
 
     /**

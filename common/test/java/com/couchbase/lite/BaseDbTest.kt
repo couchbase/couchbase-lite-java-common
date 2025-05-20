@@ -242,7 +242,7 @@ abstract class BaseDbTest : BaseTest() {
         testDb = reopenDb(testDatabase)
 
         testCol = testDatabase.getCollection(cName, cScope)
-            ?: throw AssertionError("Could not create collection ${cScope}.${cName} in database ${testDb!!.name}")
+            ?: throw AssertionError("Could not create collection ${cScope}.${cName} in database ${testDatabase.name}")
     }
 
     protected fun recreateTestDb() {
@@ -255,7 +255,7 @@ abstract class BaseDbTest : BaseTest() {
         testDb = createDb("base_db")
 
         testCol = testDatabase.getCollection(cName, cScope)
-            ?: throw AssertionError("Could not create collection ${cScope}.${cName} in database ${testDb!!.name}")
+            ?: throw AssertionError("Could not create collection ${cScope}.${cName} in database ${testDatabase.name}")
     }
 
     protected fun duplicateTestDb(): Pair<Database, Collection> {

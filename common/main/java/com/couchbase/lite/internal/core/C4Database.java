@@ -370,8 +370,9 @@ public abstract class C4Database extends C4Peer {
     // This is subtle
     // The call to close() will fail horribly if the db is currently in a transaction.
     // On the other hand, the call to close(peer) will throw an exception if the db is in a transaction.
-    // That means that close() will never be called and the failure will be reported normally.
-    // Even if the close fails, the cleaner will backstop this rare case so that the Database doesn't leak.
+    // That means that if we are in a transaction, close() will never be called and the failure
+    // will be reported normally.  Even if the close fails, the cleaner will backstop this rare case
+    // so that the Database doesn't leak.
     public void closeDb() throws LiteCoreException {
         voidWithPeerOrThrow(peer -> {
             synchronized (lock) { impl.nClose(peer); }

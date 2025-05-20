@@ -31,7 +31,7 @@ public final class C4QueryObserver extends C4NativePeer {
     }
 
     public interface NativeImpl {
-        long nCreate(long token, long c4Query);
+        long nCreate(long peer, long token);
         void nEnable(long peer);
         void nFree(long peer);
     }
@@ -77,7 +77,7 @@ public final class C4QueryObserver extends C4NativePeer {
     static void onQueryChanged(long token, long results, int domain, int code, @Nullable String message) {
         final C4QueryObserver observer = QUERY_OBSERVER_CONTEXT.getBinding(token);
         if (observer == null) {
-            Log.w(LogDomain.QUERY, "No observer for token: " + token);
+            Log.w(LogDomain.QUERY, "No observer for token: %s", token);
             return;
         }
         observer.queryChanged(results, domain, code, message);

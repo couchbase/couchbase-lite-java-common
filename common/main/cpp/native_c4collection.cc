@@ -184,7 +184,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_setDocExpiration(
 
     C4Error error{};
     bool ok = c4coll_setDocExpiration((C4Collection *) coll, docId, timestamp, &error);
-    if (!ok && (error.code != 0))
+    if (!ok && error.code != 0)
         throwError(env, error);
 }
 

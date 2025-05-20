@@ -115,7 +115,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Query_run(
  */
 JNIEXPORT jint JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Query_columnCount(JNIEnv *env, jclass ignore, jlong jquery) {
-    return c4query_columnCount((C4Query *) jquery);
+    return (jint) c4query_columnCount((C4Query *) jquery);
 }
 
 /*

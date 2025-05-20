@@ -28,8 +28,9 @@ import com.couchbase.lite.internal.utils.Preconditions;
 
 /**
  * This object a frames a piece of native memory for which Java is responsible.
- * `base` points at the start of the block, base + size is its end. The JNI just creates one of these
- * whenever LiteCore returns a native FLSliceResult (or its alias, C4SliceResult).
+ * `base` points at the start of the block, base + size is its end. The JNI
+ * creates one of these whenever LiteCore returns a native FLSliceResult
+ * (or its alias, C4SliceResult).
  */
 public final class FLSliceResult implements AutoCloseable {
     public interface NativeImpl {

@@ -563,7 +563,7 @@ Java_com_couchbase_lite_internal_core_C4TestUtils_getIndexOptions(JNIEnv *env, j
             klass,
             "createIndexOptions",
             "(ZZLjava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcom/couchbase/lite/internal/core/C4TestUtils$C4IndexOptions;");
-    if (!ctor)
+    if (ctor == nullptr)
         return nullptr;
 
     C4IndexOptions opts;

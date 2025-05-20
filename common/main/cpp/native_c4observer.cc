@@ -48,63 +48,63 @@ bool litecore::jni::initC4Observer(JNIEnv *env) {
     // C4CollectionObserver.callback
     {
         jclass localClass = env->FindClass("com/couchbase/lite/internal/core/C4CollectionObserver");
-        if (!localClass)
+        if (localClass == nullptr)
             return false;
 
         cls_C4CollObs = reinterpret_cast<jclass>(env->NewGlobalRef(localClass));
-        if (!cls_C4CollObs)
+        if (cls_C4CollObs == nullptr)
             return false;
 
         m_C4CollObs_callback = env->GetStaticMethodID(cls_C4CollObs, "callback", "(J)V");
-        if (!m_C4CollObs_callback)
+        if (m_C4CollObs_callback == nullptr)
             return false;
     }
 
     // C4DocumentObserver.callback
     {
         jclass localClass = env->FindClass("com/couchbase/lite/internal/core/C4DocumentObserver");
-        if (!localClass)
+        if (localClass == nullptr)
             return false;
 
         cls_C4DocObs = reinterpret_cast<jclass>(env->NewGlobalRef(localClass));
-        if (!cls_C4DocObs)
+        if (cls_C4DocObs == nullptr)
             return false;
 
         m_C4DocObs_callback = env->GetStaticMethodID(cls_C4DocObs, "callback", "(JJLjava/lang/String;)V");
-        if (!m_C4DocObs_callback)
+        if (m_C4DocObs_callback == nullptr)
             return false;
     }
 
     // C4DocumentChange.create
     {
         jclass localClass = env->FindClass("com/couchbase/lite/internal/core/C4DocumentChange");
-        if (!localClass)
+        if (localClass == nullptr)
             return false;
 
         cls_C4DocChange = reinterpret_cast<jclass>(env->NewGlobalRef(localClass));
-        if (!cls_C4DocChange)
+        if (cls_C4DocChange == nullptr)
             return false;
 
         m_C4DocChange_create = env->GetStaticMethodID(
                 cls_C4DocChange,
                 "createC4DocumentChange",
                 "(Ljava/lang/String;Ljava/lang/String;JZ)Lcom/couchbase/lite/internal/core/C4DocumentChange;");
-        if (!m_C4DocChange_create)
+        if (m_C4DocChange_create == nullptr)
             return false;
     }
 
     // C4QueryObserver.onQueryChanged
     {
         jclass localClass = env->FindClass("com/couchbase/lite/internal/core/C4QueryObserver");
-        if (!localClass)
+        if (localClass == nullptr)
             return false;
 
         cls_C4QueryObs = reinterpret_cast<jclass>(env->NewGlobalRef(localClass));
-        if (!cls_C4QueryObs)
+        if (cls_C4QueryObs == nullptr)
             return false;
 
         m_C4QueryObs_callback = env->GetStaticMethodID(cls_C4QueryObs, "onQueryChanged", "(JJIILjava/lang/String;)V");
-        if (!m_C4QueryObs_callback)
+        if (m_C4QueryObs_callback == nullptr)
             return false;
     }
 
@@ -234,8 +234,7 @@ doC4QueryObserverCallback(JNIEnv *env, C4QueryObserver *observer, void *ctx) {
  */
 static void
 c4QueryObserverCallback(C4QueryObserver *observer, C4Query *ignore, void *ctx) {
-    if (!observer)
-        return;
+    if (!observer) return;
 
     JNIEnv *env = nullptr;
     jint envState = attachJVM(&env, "queryObserver");
@@ -268,17 +267,17 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4CollectionObserver_create(
         jlong token,
         jlong coll) {
     C4Error error{};
-    auto res = (jlong) c4dbobs_createOnCollection(
+    auto obs = c4dbobs_createOnCollection(
             (C4Collection *) coll,
             c4CollectionObsCallback,
             (void *) token,
             &error);
-    if (!res && error.code != 0) {
+    if ((obs == nullptr) && (error.code != 0)) {
         throwError(env, error);
         return 0;
     }
 
-    return res;
+    return (jlong) obs;
 }
 
 /*
@@ -336,18 +335,18 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4DocumentObserver_create(
     jstringSlice docID(env, jdocID);
 
     C4Error error{};
-    auto res = (jlong) c4docobs_createWithCollection(
+    auto obs = c4docobs_createWithCollection(
             (C4Collection *) coll,
             docID,
             c4DocObsCallback,
             (void *) token,
             &error);
-    if (!res && error.code != 0) {
+    if ((obs == nullptr) && (error.code != 0)) {
         throwError(env, error);
         return 0;
     }
 
-    return res;
+    return (jlong) obs;
 }
 
 /*

@@ -607,8 +607,9 @@ abstract class AbstractDatabase extends BaseDatabase
 
     /**
      * Returns a copy of the database configuration.
+     * Mutating the copy will not affect the configuration of the database
      *
-     * @return the READONLY copied config object
+     * @return a copy of the database configuration
      */
     @NonNull
     public DatabaseConfiguration getConfig() { return new DatabaseConfiguration(config); }

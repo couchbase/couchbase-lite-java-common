@@ -19,7 +19,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
-import org.junit.Ignore
 import org.junit.Test
 
 class PartialIndexTest : BaseDbTest() {
@@ -39,10 +38,7 @@ class PartialIndexTest : BaseDbTest() {
      *     5. Create a query object with an SQL++ string:
      *         - SELECT * FROM _ WHERE type = 'foo' AND num > 1000
      *     6. Get the query plan from the query object and check that the plan doesn't contain "USING INDEX numIndex" string.
-     *
-     *     Uncomment the code in native_c4collection.cc before trying enabling this test
      */
-    @Ignore("Partial index not yet supported")
     @Test
     fun testCreatePartialValueIndex() {
         testCollection.createIndex("numIndex", ValueIndexConfiguration("num").setWhere("type = 'number'"))
@@ -81,10 +77,7 @@ class PartialIndexTest : BaseDbTest() {
      *     5. Execute the query and check that:
      *         - There is one result returned
      *         - The returned content is "Couchbase Lite is a NoSQL syncable database.".
-     *
-     *     Uncomment the code in native_c4collection.cc before trying enabling this test
      */
-    @Ignore("Partial index not yet supported")
     @Test
     fun testCreatePartialFullTextIndex() {
         testCollection.save(MutableDocument().setString("content", "Couchbase Lite is a database."))

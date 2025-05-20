@@ -97,6 +97,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Document_createFromSlice(
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Document
  * Method:    getFlags
  * Signature: (J)I
+ *
+ * This is a uint-32.  It should be a jlong.
  */
 JNIEXPORT jint JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getFlags(
@@ -104,7 +106,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getFlags(
         jclass ignore2,
         jlong jdoc) {
     auto doc = (C4Document *) jdoc;
-    return doc->flags;
+    return (jint) doc->flags;
 }
 
 /*
@@ -132,7 +134,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getSequence(
         jclass ignore2,
         jlong jdoc) {
     auto doc = (C4Document *) jdoc;
-    return doc->sequence;
+    return (jlong) doc->sequence;
 }
 
 
@@ -204,7 +206,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getRevisionHistory(
     C4Document* allDoc = c4coll_getDoc((C4Collection*) jcoll, doc->docID, false, kDocGetAll, &error);
     if ((allDoc == nullptr) && (error.code != 0)) {
         throwError(env, error);
-        return 0;
+        return nullptr;
     }
 
     FLSliceResult revHistory = c4doc_getRevisionHistory(allDoc, (unsigned int) maxRevs, backToRevs, nBackToRevs);
@@ -227,7 +229,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getTimestamp(
         jlong jdoc) {
     auto doc = (C4Document *) jdoc;
     FLHeapSlice revId = doc->selectedRev.revID;
-    return c4rev_getTimestamp(revId);
+    return (jlong) c4rev_getTimestamp(revId);
 }
 
 /*
@@ -241,7 +243,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getSelectedSequence(
         jclass ignore2,
         jlong jdoc) {
     auto doc = (C4Document *) jdoc;
-    return doc->selectedRev.sequence;
+    return (jlong) doc->selectedRev.sequence;
 }
 
 /*
@@ -369,18 +371,20 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Document_bodyAsJSON(
         jlong jdoc,
         jboolean canonical) {
     C4Error error{};
-    C4StringResult result = c4doc_bodyAsJSON((C4Document *) jdoc, canonical, &error);
-    if (!result) {
+    C4StringResult res = c4doc_bodyAsJSON((C4Document *) jdoc, canonical, &error);
+    if (!res) {
         throwError(env, error);
         return nullptr;
     }
 
-    jstring jstr = toJString(env, result);
+    jstring jstr = toJString(env, res);
 
-    c4slice_free(result);
+    c4slice_free(res);
 
-    if (jstr == nullptr)
+    if (jstr == nullptr) {
         throwError(env, {LiteCoreDomain, kC4ErrorCorruptData});
+        return nullptr;
+    }
 
     return jstr;
 }

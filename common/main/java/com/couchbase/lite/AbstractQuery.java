@@ -137,7 +137,7 @@ abstract class AbstractQuery implements Listenable<QueryChange, QueryChangeListe
 
             if (parameters == null) { return; }
 
-            try (FLSliceResult encodedParams = parameters.encode()) { getC4QueryLocked().setParameters(encodedParams); }
+            try (FLSliceResult params = parameters.encode()) { getC4QueryLocked().setParameters(params); }
             catch (LiteCoreException e) {
                 throw CouchbaseLiteException.convertException(e, "Failed encoding parameters");
             }

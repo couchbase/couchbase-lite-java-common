@@ -362,7 +362,6 @@ static C4Listener *startListener(
     jstringSlice iFace(env, networkInterface);
 
     C4ListenerConfig config{};
-    config.apis = kC4SyncAPI; // !!! LiteCore 4.0.0-39
     config.port = (uint16_t) port;
     config.networkInterface = iFace;
     config.tlsConfig = tlsConfig;
@@ -616,7 +615,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_getUrls(
     FLMutableArray urls = c4listener_getURLs(
             reinterpret_cast<C4Listener *>(c4Listener),
             reinterpret_cast<C4Database *>(c4Database),
-            kC4SyncAPI, // !!! LiteCore 4.0.0-39
+            kC4SyncAPI, // !!! remove for v 3.3
             &error);
 
     if (urls == nullptr) {

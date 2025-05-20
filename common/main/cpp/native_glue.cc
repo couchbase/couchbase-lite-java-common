@@ -509,7 +509,7 @@ namespace litecore::jni {
         uint32_t n = FLArray_Count(array);
         jobject result = env->NewObject(cls_HashSet, m_HashSet_init, (jint) n);
 
-        if (!array)
+        if (array == nullptr)
             return result;
 
         for (int i = 0; i < n; i++) {
@@ -520,7 +520,7 @@ namespace litecore::jni {
             if (!str) continue;
 
             jstring jstr = toJString(env, str);
-            if (!jstr) continue;
+            if (jstr == nullptr) continue;
 
             env->CallBooleanMethod(result, m_HashSet_add, jstr);
 

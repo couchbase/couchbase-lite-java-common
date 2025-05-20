@@ -75,13 +75,13 @@ public abstract class C4Replicator extends C4Peer {
     public static final String C4_REPLICATOR_SCHEME_2 = "blip";
     public static final String C4_REPLICATOR_TLS_SCHEME_2 = "blips";
 
-    /// /// values for enum C4ReplicatorProgressLevel
+    ////// values for enum C4ReplicatorProgressLevel
 
     public static final int PROGRESS_OVERALL = 0;
     public static final int PROGRESS_PER_DOC = 1;
     public static final int PROGRESS_PER_ATTACHMENT = 2;
 
-    /// /// Replicator option dictionary keys:
+    ////// Replicator option dictionary keys:
 
     // begin: collection specific properties.
     // Docs to replicate: string[]
@@ -146,7 +146,7 @@ public abstract class C4Replicator extends C4Peer {
     // Data compression level, 0..9
     public static final String REPLICATOR_COMPRESSION_LEVEL = "BLIPCompressionLevel";
 
-    /// /// Auth dictionary keys:
+    ////// Auth dictionary keys:
 
     // Auth type; see [2] (string)
     public static final String REPLICATOR_AUTH_TYPE = "type";
@@ -165,7 +165,7 @@ public abstract class C4Replicator extends C4Peer {
     // Proxy authentications: password
     public static final String REPLICATOR_OPTION_PROXY_PASS = "proxyPassword";
 
-    /// /// auth.type values:
+    ////// auth.type values:
     // HTTP Basic (the default)
     public static final String AUTH_TYPE_BASIC = "Basic";
     // SG session cookie
@@ -190,7 +190,7 @@ public abstract class C4Replicator extends C4Peer {
         void documentsEnded(@NonNull List<C4DocumentEnded> docEnds, boolean pushing);
     }
 
-    /// /// Native API
+    ////// Native API
 
     public interface NativeImpl {
         @GuardedBy("dbLock")
@@ -252,7 +252,7 @@ public abstract class C4Replicator extends C4Peer {
         void nFree(long replPeer);
     }
 
-    /// /// Message Endpoint Replicator
+    ////// Message Endpoint Replicator
 
     static final class C4MessageEndpointReplicator extends C4Replicator {
         // Protect this socket from the GC.
@@ -283,7 +283,7 @@ public abstract class C4Replicator extends C4Peer {
         }
     }
 
-    /// /// Standard Replicator
+    ////// Standard Replicator
 
     static final class C4CommonReplicator extends C4Replicator {
         @NonNull

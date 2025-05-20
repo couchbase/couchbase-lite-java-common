@@ -259,8 +259,10 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_maintenance(
         jint type) {
     C4Error error{};
     bool ok = c4db_maintenance((C4Database *) db, (C4MaintenanceType) type, &error);
-    if (!ok && error.code != 0)
+    if (!ok && error.code != 0) {
         throwError(env, error);
+        return JNI_FALSE;
+    }
 
     return (jboolean) ok;
 }
@@ -324,14 +326,14 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getCookies(
     }
 
     C4Error error{};
-    C4StringResult result = c4db_getCookies((C4Database *) jdb, address, &error);
-    if (!result) {
+    C4StringResult res = c4db_getCookies((C4Database *) jdb, address, &error);
+    if (!res) {
         throwError(env, error);
         return nullptr;
     }
 
-    jstring cookies = toJString(env, result);
-    c4slice_free(result);
+    jstring cookies = toJString(env, res);
+    c4slice_free(res);
     return cookies;
 }
 

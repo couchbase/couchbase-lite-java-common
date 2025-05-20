@@ -39,14 +39,12 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Index_beginUpdate(
         jlong handle,
         jint limit) {
 #ifndef COUCHBASE_ENTERPRISE
-    return 0;
+    return (jlong) 0;
 #else
     C4Error error{};
     C4IndexUpdater *updater = c4index_beginUpdate((C4Index *) handle, (size_t) limit, &error);
-    if (updater == nullptr) {
-        if (error.code != 0)
-            throwError(env, error);
-
+    if ((updater == nullptr) && error.code != 0) {
+        throwError(env, error);
         return 0;
     }
 

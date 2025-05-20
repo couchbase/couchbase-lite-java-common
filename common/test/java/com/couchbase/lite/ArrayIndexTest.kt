@@ -17,7 +17,6 @@ package com.couchbase.lite
 
 import com.couchbase.lite.internal.core.C4TestUtils
 import org.junit.Assert
-import org.junit.Ignore
 import org.junit.Test
 
 // Implements test spec version 1.0.2

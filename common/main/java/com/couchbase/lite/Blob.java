@@ -625,7 +625,7 @@ public final class Blob implements FleeceEncodable, JSONEncodable {
     private byte[] getContentFromDatabase() {
         final byte[] newContent;
         try (C4BlobStore blobStore = Preconditions.assertNotNull(database, "database").getBlobStore();
-             C4BlobKey key = C4BlobKey.create(blobDigest)) {
+            C4BlobKey key = C4BlobKey.create(blobDigest)) {
             newContent = blobStore.getContents(key);
         }
         catch (LiteCoreException e) {

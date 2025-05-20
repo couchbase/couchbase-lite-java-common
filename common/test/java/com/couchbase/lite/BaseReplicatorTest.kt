@@ -227,9 +227,8 @@ abstract class BaseReplicatorTest : BaseDbTest() {
 
     protected fun Replicator.run(code: Int = 0): Replicator {
         return this.run(
-            expectedErrs = if (code == 0) emptyArray() else arrayOf(
-                CouchbaseLiteException("", CBLError.Domain.CBLITE, code)
-            )
+            expectedErrs = if (code == 0) emptyArray()
+            else arrayOf(CouchbaseLiteException("", CBLError.Domain.CBLITE, code))
         )
     }
 
@@ -257,7 +256,7 @@ abstract class BaseReplicatorTest : BaseDbTest() {
             }
         } else {
             if (!containsWithComparator(expectedErrs.toList(), err, BaseTest::compareExceptions)) {
-                throw AssertionError("Expecting error in ${expectedErrs} but got:", err)
+                throw AssertionError("Expecting error in [${expectedErrs.joinToString(", ")}] but got:", err)
             }
         }
 

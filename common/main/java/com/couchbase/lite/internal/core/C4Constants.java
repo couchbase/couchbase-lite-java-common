@@ -81,7 +81,7 @@ public final class C4Constants {
         private static final long NON_OBSERVABLE = 0x40; // Disable database/collection observers, for slightly faster writes
         public static final long DISC_FULL_SYNC = 0x80;  // Flush to disk after each transaction
         @VisibleForTesting
-        static final long FAKE_CLOCK = 0x100;    // Use counters instead of timestamps in version vectors (TESTS ONLY)
+        static final long FAKE_CLOCK = 0x100;            // Use counters instead of timestamps in version vectors (TESTS ONLY)
         // @formatter:on
     }
 

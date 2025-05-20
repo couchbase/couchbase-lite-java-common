@@ -59,15 +59,12 @@ namespace litecore {
 
         // Sets a Java exception based on the LiteCore error.
         void throwError(JNIEnv *env, C4Error);
-
-        // Sets a Java exception based on the LiteCore error.
         void throwError(JNIEnv *env, C4Error, const char *msg);
 
         std::string JstringToUTF8(JNIEnv *env, jstring jstr);
 
-        jstring UTF8ToJstring(JNIEnv *env, const char *s, size_t size);
-
         jstring UTF8ToJstring(JNIEnv *env, const char *s);
+        jstring UTF8ToJstring(JNIEnv *env, const char *s, size_t size);
 
         std::string JcharsToUTF8(const jchar *jchars, jsize len);
 
@@ -124,13 +121,10 @@ namespace litecore {
         // Creates a Java String from the contents of a C4Slice.
 
         jstring toJString(JNIEnv *, C4Slice);
-
         jstring toJString(JNIEnv *, C4SliceResult);
 
         // Creates a Java byte[] from the contents of a C4Slice.
-
         jbyteArray toJByteArray(JNIEnv *, C4Slice);
-
         jbyteArray toJByteArray(JNIEnv *, C4SliceResult);
 
         // Copy a FLMutableArray of strings to a Java ArrayList<String>

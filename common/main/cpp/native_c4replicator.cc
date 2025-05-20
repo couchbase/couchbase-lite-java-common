@@ -172,9 +172,9 @@ static jobject toJavaReplStatus(JNIEnv *env, C4ReplicatorStatus status) {
             (jlong) status.progress.unitsCompleted,
             (jlong) status.progress.unitsTotal,
             (jlong) status.progress.documentCount,
-            (int) status.error.domain,
-            (int) status.error.code,
-            (int) status.error.internal_info);
+            (jint) status.error.domain,
+            (jint) status.error.code,
+            (jint) status.error.internal_info);
 }
 
 static jobject toJavaDocumentEnded(JNIEnv *env, const C4DocumentEnded *document) {

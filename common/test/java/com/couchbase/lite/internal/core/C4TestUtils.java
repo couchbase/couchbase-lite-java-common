@@ -159,7 +159,7 @@ public class C4TestUtils {
     // managed: Java code is responsible for deleting and freeing it
     static final class ManagedC4BlobStore extends C4BlobStore {
         ManagedC4BlobStore(@NonNull String dirPath, long flags) throws LiteCoreException {
-            super( C4BlobStore.NATIVE_IMPL, openStore(dirPath, flags), C4TestUtils::deleteBlobStore);
+            super(C4BlobStore.NATIVE_IMPL, openStore(dirPath, flags), C4TestUtils::deleteBlobStore);
         }
     }
 

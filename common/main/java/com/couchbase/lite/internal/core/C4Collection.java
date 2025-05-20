@@ -130,13 +130,11 @@ public final class C4Collection extends C4Peer {
         @NonNull String scope,
         @NonNull String collection)
         throws LiteCoreException {
-
         final long peer = c4db.withPeerOrThrow(dbPeer -> {
             synchronized (LockManager.INSTANCE.getLock(dbPeer)) {
                 return impl.nCreateCollection(dbPeer, scope, collection);
             }
         });
-
         return new C4Collection(impl, peer, c4db, scope, collection);
     }
 
