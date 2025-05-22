@@ -39,7 +39,12 @@ import com.couchbase.lite.internal.fleece.FLDict;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.logging.Log;
 
-
+/*
+ * This class is nearly identical to MultipeerReplicationCollection.
+ * It just ruins my day that I am unable to abstract out the common concepts.
+ *
+ * ??? WHy is this not a C4Peer?
+ */
 public final class ReplicationCollection implements AutoCloseable {
 
     //-------------------------------------------------------------------------
@@ -51,7 +56,7 @@ public final class ReplicationCollection implements AutoCloseable {
     // Types
     //-------------------------------------------------------------------------
     @FunctionalInterface
-    interface C4Filter {
+    public interface C4Filter {
         boolean test(@NonNull String docId, @NonNull String revId, long body, int flags);
     }
 

@@ -51,8 +51,10 @@ public final class C4Constants {
         public static final String BLOB = "Blob";
         public static final String CHANGES = "Changes";
         public static final String DATABASE = "DB";
+        public static final String DISCOVERY = "Discovery";
         public static final String ENUM = "Enum";
         public static final String LISTENER = "Listener";
+        public static final String P2P = "P2P";
         public static final String QUERY = "Query";
         public static final String SQL = "SQL";
         public static final String SYNC = "Sync";

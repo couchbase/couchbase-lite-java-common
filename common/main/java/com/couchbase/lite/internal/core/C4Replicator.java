@@ -180,16 +180,6 @@ public abstract class C4Replicator extends C4Peer {
     // Types
     //-------------------------------------------------------------------------
 
-    @FunctionalInterface
-    public interface StatusListener {
-        void statusChanged(@NonNull C4Replicator replicator, @NonNull C4ReplicatorStatus status);
-    }
-
-    @FunctionalInterface
-    public interface DocEndsListener {
-        void documentsEnded(@NonNull List<C4DocumentEnded> docEnds, boolean pushing);
-    }
-
     ////// Native API
 
     public interface NativeImpl {
@@ -250,6 +240,24 @@ public abstract class C4Replicator extends C4Peer {
         void nSetHostReachable(long replPeer, boolean reachable);
         void nStop(long replPeer);
         void nFree(long replPeer);
+    }
+
+    ////// Listeners
+    //
+    // These functional interfaces allow the MultipeerReplicator to pass
+    // function references to this class, to be used as Listeners.
+    // Uncharacteristically, we pass the C4 status and doc end data
+    // classes up, so that the constructors for those API visible data classes
+    // can stay package protected.
+
+    @FunctionalInterface
+    public interface StatusListener {
+        void statusChanged(@NonNull C4Replicator replicator, @NonNull C4ReplicatorStatus status);
+    }
+
+    @FunctionalInterface
+    public interface DocEndsListener {
+        void documentsEnded(@NonNull List<C4DocumentEnded> docEnds, boolean pushing);
     }
 
     ////// Message Endpoint Replicator

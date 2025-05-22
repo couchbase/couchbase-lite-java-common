@@ -19,408 +19,322 @@
 #include <vector>
 #include "c4Base.h"
 #include "native_glue.hh"
+#include "native_c4replutils.hh"
 #include "socket_factory.h"
 #include "com_couchbase_lite_internal_core_impl_NativeC4Replicator.h"
 
 using namespace litecore;
 using namespace litecore::jni;
 
-// ----------------------------------------------------------------------------
-// com_couchbase_lite_internal_core_impl_NativeC4Replicator
-// ----------------------------------------------------------------------------
+namespace litecore::jni {
+    // ----------------------------------------------------------------------------
+    // com_couchbase_lite_internal_core_impl_NativeC4Replicator
+    // ----------------------------------------------------------------------------
 
-// C4Replicator
-static jclass cls_C4Replicator;                         // global reference
-static jmethodID m_C4Replicator_statusChangedCallback;  // statusChangedCallback method
-static jmethodID m_C4Replicator_documentEndedCallback;  // documentEndedCallback method
+    // C4Replicator
+    static jclass cls_C4Replicator;                         // global reference
+    static jmethodID m_C4Replicator_statusChangedCallback;  // statusChangedCallback method
+    static jmethodID m_C4Replicator_documentEndedCallback;  // documentEndedCallback method
 
-// C4ReplicatorStatus
-static jclass cls_C4ReplStatus; // global reference
-static jmethodID m_C4ReplStatus_init;
+    // ReplicationCollection
+    static jclass cls_ReplColl;                             // global reference
+    static jfieldID f_ReplColl_token;
+    static jfieldID f_ReplColl_scope;
+    static jfieldID f_ReplColl_name;
+    static jfieldID f_ReplColl_options;
+    static jfieldID f_ReplColl_pushFilter;
+    static jfieldID f_ReplColl_pullFilter;
+    static jmethodID m_ReplColl_filterCallback;             // validationFunction method
 
-// C4DocumentEnded
-static jclass cls_C4DocEnded;
-static jmethodID m_C4DocEnded_init;
+    static bool pullFilterFunction(C4CollectionSpec, C4String, C4String, C4RevisionFlags, FLDict, void *);
 
-// ReplicationCollection
-static jclass cls_ReplColl;                             // global reference
-static jfieldID f_ReplColl_token;
-static jfieldID f_ReplColl_scope;
-static jfieldID f_ReplColl_name;
-static jfieldID f_ReplColl_options;
-static jfieldID f_ReplColl_pushFilter;
-static jfieldID f_ReplColl_pullFilter;
-static jmethodID m_ReplColl_filterCallback;             // validationFunction method
-static bool pullFilterFunction(C4CollectionSpec, C4String, C4String, C4RevisionFlags, FLDict, void *);
+    static bool pushFilterFunction(C4CollectionSpec, C4String, C4String, C4RevisionFlags, FLDict, void *);
 
-static bool pushFilterFunction(C4CollectionSpec, C4String, C4String, C4RevisionFlags, FLDict, void *);
+    bool initC4Replicator(JNIEnv *env) {
+        {
+            jclass localClass = env->FindClass("com/couchbase/lite/internal/core/C4Replicator");
+            if (localClass == nullptr)
+                return false;
 
-bool litecore::jni::initC4Replicator(JNIEnv *env) {
-    {
-        jclass localClass = env->FindClass("com/couchbase/lite/internal/core/C4Replicator");
-        if (localClass == nullptr)
-            return false;
+            cls_C4Replicator = reinterpret_cast<jclass>(env->NewGlobalRef(localClass));
+            if (cls_C4Replicator == nullptr)
+                return false;
 
-        cls_C4Replicator = reinterpret_cast<jclass>(env->NewGlobalRef(localClass));
-        if (cls_C4Replicator == nullptr)
-            return false;
+            m_C4Replicator_statusChangedCallback = env->GetStaticMethodID(
+                    cls_C4Replicator,
+                    "statusChangedCallback",
+                    "(JLcom/couchbase/lite/internal/core/C4ReplicatorStatus;)V");
+            if (m_C4Replicator_statusChangedCallback == nullptr)
+                return false;
 
-        m_C4Replicator_statusChangedCallback = env->GetStaticMethodID(
-                cls_C4Replicator,
-                "statusChangedCallback",
-                "(JLcom/couchbase/lite/internal/core/C4ReplicatorStatus;)V");
-        if (m_C4Replicator_statusChangedCallback == nullptr)
-            return false;
-
-        m_C4Replicator_documentEndedCallback = env->GetStaticMethodID(
-                cls_C4Replicator,
-                "documentEndedCallback",
-                "(JZ[Lcom/couchbase/lite/internal/core/C4DocumentEnded;)V");
-        if (m_C4Replicator_documentEndedCallback == nullptr)
-            return false;
-    }
-
-    // C4ReplicatorStatus, constructor, and fields
-    {
-        jclass localClass = env->FindClass("com/couchbase/lite/internal/core/C4ReplicatorStatus");
-        if (localClass == nullptr)
-            return false;
-
-        cls_C4ReplStatus = reinterpret_cast<jclass>(env->NewGlobalRef(localClass));
-        if (cls_C4ReplStatus == nullptr)
-            return false;
-
-        m_C4ReplStatus_init = env->GetMethodID(cls_C4ReplStatus, "<init>", "(IJJJIII)V");
-        if (m_C4ReplStatus_init == nullptr)
-            return false;
-    }
-
-    // C4DocumentEnded, constructor, and fields
-    {
-        jclass localClass = env->FindClass("com/couchbase/lite/internal/core/C4DocumentEnded");
-        if (localClass == nullptr)
-            return false;
-
-        cls_C4DocEnded = reinterpret_cast<jclass>(env->NewGlobalRef(localClass));
-        if (cls_C4DocEnded == nullptr)
-            return false;
-
-        m_C4DocEnded_init = env->GetMethodID(
-                cls_C4DocEnded,
-                "<init>",
-                "(JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;IJIIIZ)V");
-        if (m_C4DocEnded_init == nullptr)
-            return false;
-    }
-
-    {
-        jclass localClass = env->FindClass("com/couchbase/lite/internal/ReplicationCollection");
-        if (localClass == nullptr)
-            return false;
-
-        cls_ReplColl = reinterpret_cast<jclass>(env->NewGlobalRef(localClass));
-        if (cls_ReplColl == nullptr)
-            return false;
-
-        f_ReplColl_token = env->GetFieldID(cls_ReplColl, "token", "J");
-        if (f_ReplColl_token == nullptr)
-            return false;
-
-        f_ReplColl_scope = env->GetFieldID(cls_ReplColl, "scope", "Ljava/lang/String;");
-        if (f_ReplColl_scope == nullptr)
-            return false;
-
-        f_ReplColl_name = env->GetFieldID(cls_ReplColl, "name", "Ljava/lang/String;");
-        if (f_ReplColl_name == nullptr)
-            return false;
-
-        f_ReplColl_options = env->GetFieldID(cls_ReplColl, "options", "[B");
-        if (f_ReplColl_options == nullptr)
-            return false;
-
-        f_ReplColl_pushFilter = env->GetFieldID(
-                cls_ReplColl,
-                "c4PushFilter",
-                "Lcom/couchbase/lite/internal/ReplicationCollection$C4Filter;");
-        if (f_ReplColl_pushFilter == nullptr)
-            return false;
-
-        f_ReplColl_pullFilter = env->GetFieldID(
-                cls_ReplColl,
-                "c4PullFilter",
-                "Lcom/couchbase/lite/internal/ReplicationCollection$C4Filter;");
-        if (f_ReplColl_pullFilter == nullptr)
-            return false;
-
-        m_ReplColl_filterCallback = env->GetStaticMethodID(
-                cls_ReplColl,
-                "filterCallback",
-                "(JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;IJZ)Z");
-        if (m_ReplColl_filterCallback == nullptr)
-            return false;
-    }
-
-    jniLog("replicator initialized");
-    return true;
-}
-
-static jobject toJavaReplStatus(JNIEnv *env, C4ReplicatorStatus status) {
-    return env->NewObject(
-            cls_C4ReplStatus,
-            m_C4ReplStatus_init,
-            (jint) status.level,
-            (jlong) status.progress.unitsCompleted,
-            (jlong) status.progress.unitsTotal,
-            (jlong) status.progress.documentCount,
-            (jint) status.error.domain,
-            (jint) status.error.code,
-            (jint) status.error.internal_info);
-}
-
-static jobject toJavaDocumentEnded(JNIEnv *env, const C4DocumentEnded *document) {
-    jstring _scope = toJString(env, document->collectionSpec.scope);
-    jstring _name = toJString(env, document->collectionSpec.name);
-    jstring _docID = toJString(env, document->docID);
-    jstring _revID = toJString(env, document->docID);
-
-    jobject _docEnd = env->NewObject(
-            cls_C4DocEnded,
-            m_C4DocEnded_init,
-            (jlong) document->collectionContext,
-            _scope,
-            _name,
-            _docID,
-            _revID,
-            (jint) document->flags,
-            (jlong) document->sequence,
-            (jint) document->error.domain,
-            (jint) document->error.code,
-            (jint) document->error.internal_info,
-            (jboolean) document->errorIsTransient);
-
-    if (_scope != nullptr) env->DeleteLocalRef(_scope);
-    if (_name != nullptr) env->DeleteLocalRef(_name);
-    if (_docID != nullptr) env->DeleteLocalRef(_docID);
-    if (_revID != nullptr) env->DeleteLocalRef(_revID);
-
-    return _docEnd;
-}
-
-static jobjectArray toJavaDocumentEndedArray(JNIEnv *env, int arraySize, const C4DocumentEnded *array[]) {
-    jobjectArray ds = env->NewObjectArray(arraySize, cls_C4DocEnded, nullptr);
-    for (int i = 0; i < arraySize; i++) {
-        jobject d = toJavaDocumentEnded(env, array[i]);
-        env->SetObjectArrayElement(ds, i, d);
-        if (d != nullptr) env->DeleteLocalRef(d);
-    }
-    return ds;
-}
-
-// I am so sorry.  IANAC++P.
-// The second and third vectors here, the 4th & 5th arguments,
-// are just around to keep the slices they contain from going out of scope.
-// All they do is hold on to them, so that the C4ReplicationCollections
-// in colls can point to them, until the end of the *caller's* scope.
-static int fromJavaReplColls(
-        JNIEnv *env,
-        jobjectArray jColls,
-        std::vector<C4ReplicationCollection> &colls,
-        std::vector<std::shared_ptr<jstringSlice>> &collNames,
-        std::vector<std::shared_ptr<jbyteArraySlice>> &collOptions,
-        C4ReplicatorMode pushMode,
-        C4ReplicatorMode pullMode) {
-    int nColls = env->GetArrayLength(jColls);
-    colls.resize(nColls);
-
-    for (jsize i = 0; i < nColls; i++) {
-        jobject replColl = env->GetObjectArrayElement(jColls, i);
-        if (replColl == nullptr) continue;
-
-        jobject jscope = env->GetObjectField(replColl, f_ReplColl_scope);
-        auto pScope = std::make_shared<jstringSlice>(env, (jstring) jscope);
-        if (jscope != nullptr) env->DeleteLocalRef(jscope);
-        collNames.push_back(pScope);
-        colls[i].collection.scope = *pScope;
-
-        jobject jname = env->GetObjectField(replColl, f_ReplColl_name);
-        auto pName = std::make_shared<jstringSlice>(env, (jstring) jname);
-        if (jname != nullptr) env->DeleteLocalRef(jname);
-        collNames.push_back(pName);
-        colls[i].collection.name = *pName;
-
-        colls[i].push = pushMode;
-        colls[i].pull = pullMode;
-
-        jobject joptions = env->GetObjectField(replColl, f_ReplColl_options);
-        auto pOptions = std::make_shared<jbyteArraySlice>(env, true, (jbyteArray) joptions);
-        collOptions.push_back(pOptions);
-        colls[i].optionsDictFleece = *pOptions;
-
-        jobject pushf = env->GetObjectField(replColl, f_ReplColl_pushFilter);
-        if (pushf != nullptr) {
-            colls[i].pushFilter = &pushFilterFunction;
-            env->DeleteLocalRef(pushf);
-        }
-        jobject pullf = env->GetObjectField(replColl, f_ReplColl_pullFilter);
-        if (pullf != nullptr) {
-            colls[i].pullFilter = &pullFilterFunction;
-            env->DeleteLocalRef(pullf);
+            m_C4Replicator_documentEndedCallback = env->GetStaticMethodID(
+                    cls_C4Replicator,
+                    "documentEndedCallback",
+                    "(JZ[Lcom/couchbase/lite/internal/core/C4DocumentEnded;)V");
+            if (m_C4Replicator_documentEndedCallback == nullptr)
+                return false;
         }
 
-        colls[i].callbackContext = (void *) env->GetLongField(replColl, f_ReplColl_token);
+        // ReplicationCollection, constructor, and fields
+        {
+            jclass localClass = env->FindClass("com/couchbase/lite/internal/ReplicationCollection");
+            if (localClass == nullptr)
+                return false;
 
-        env->DeleteLocalRef(replColl);
+            cls_ReplColl = reinterpret_cast<jclass>(env->NewGlobalRef(localClass));
+            if (cls_ReplColl == nullptr)
+                return false;
+
+            f_ReplColl_token = env->GetFieldID(cls_ReplColl, "token", "J");
+            if (f_ReplColl_token == nullptr)
+                return false;
+
+            f_ReplColl_scope = env->GetFieldID(cls_ReplColl, "scope", "Ljava/lang/String;");
+            if (f_ReplColl_scope == nullptr)
+                return false;
+
+            f_ReplColl_name = env->GetFieldID(cls_ReplColl, "name", "Ljava/lang/String;");
+            if (f_ReplColl_name == nullptr)
+                return false;
+
+            f_ReplColl_options = env->GetFieldID(cls_ReplColl, "options", "[B");
+            if (f_ReplColl_options == nullptr)
+                return false;
+
+            f_ReplColl_pushFilter = env->GetFieldID(
+                    cls_ReplColl,
+                    "c4PushFilter",
+                    "Lcom/couchbase/lite/internal/ReplicationCollection$C4Filter;");
+            if (f_ReplColl_pushFilter == nullptr)
+                return false;
+
+            f_ReplColl_pullFilter = env->GetFieldID(
+                    cls_ReplColl,
+                    "c4PullFilter",
+                    "Lcom/couchbase/lite/internal/ReplicationCollection$C4Filter;");
+            if (f_ReplColl_pullFilter == nullptr)
+                return false;
+
+            m_ReplColl_filterCallback = env->GetStaticMethodID(
+                    cls_ReplColl,
+                    "filterCallback",
+                    "(JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;IJZ)Z");
+            if (m_ReplColl_filterCallback == nullptr)
+                return false;
+        }
+
+        jniLog("replicator initialized");
+
+        return initC4ReplicatorUtils(env);
     }
 
-    return nColls;
-}
+    // I am so sorry.  IANAC++P.
+    // The second and third vectors here, the 4th & 5th arguments,
+    // are just around to keep the slices they contain from going out of scope.
+    // All they do is hold on to them, so that the C4ReplicationCollections
+    // in colls can point to them, until the end of the *caller's* scope.
+    static int fromJavaReplColls(
+            JNIEnv *env,
+            jobjectArray jColls,
+            std::vector<C4ReplicationCollection> &colls,
+            std::vector<std::shared_ptr<jstringSlice>> &collNames,
+            std::vector<std::shared_ptr<jbyteArraySlice>> &collOptions,
+            C4ReplicatorMode pushMode,
+            C4ReplicatorMode pullMode) {
+        int nColls = env->GetArrayLength(jColls);
+        colls.resize(nColls);
 
-/**
- * Callback a client can register, to get progress information.
- * This will be called on arbitrary background threads and should not block.
- *
- * @param ignored
- * @param status
- * @param token
- */
-static void statusChangedCallback(C4Replicator *ignored, C4ReplicatorStatus status, void *token) {
-    JNIEnv *env = nullptr;
-    jint envState = attachJVM(&env, "statusChanged");
-    if ((envState != JNI_OK) && (envState != JNI_EDETACHED))
-        return;
+        for (jsize i = 0; i < nColls; i++) {
+            jobject replColl = env->GetObjectArrayElement(jColls, i);
+            if (replColl == nullptr) continue;
 
-    jobject _status = toJavaReplStatus(env, status);
-    env->CallStaticVoidMethod(cls_C4Replicator, m_C4Replicator_statusChangedCallback, (jlong) token, _status);
+            jobject jscope = env->GetObjectField(replColl, f_ReplColl_scope);
+            auto pScope = std::make_shared<jstringSlice>(env, (jstring) jscope);
+            if (jscope != nullptr) env->DeleteLocalRef(jscope);
+            collNames.push_back(pScope);
+            colls[i].collection.scope = *pScope;
 
-    if (envState == JNI_EDETACHED) {
-        detachJVM("statusChanged");
-    } else {
-        if (_status != nullptr) env->DeleteLocalRef(_status);
+            jobject jname = env->GetObjectField(replColl, f_ReplColl_name);
+            auto pName = std::make_shared<jstringSlice>(env, (jstring) jname);
+            if (jname != nullptr) env->DeleteLocalRef(jname);
+            collNames.push_back(pName);
+            colls[i].collection.name = *pName;
+
+            colls[i].push = pushMode;
+            colls[i].pull = pullMode;
+
+            jobject joptions = env->GetObjectField(replColl, f_ReplColl_options);
+            auto pOptions = std::make_shared<jbyteArraySlice>(env, true, (jbyteArray) joptions);
+            collOptions.push_back(pOptions);
+            colls[i].optionsDictFleece = *pOptions;
+
+            jobject pushf = env->GetObjectField(replColl, f_ReplColl_pushFilter);
+            if (pushf != nullptr) {
+                colls[i].pushFilter = &pushFilterFunction;
+                env->DeleteLocalRef(pushf);
+            }
+            jobject pullf = env->GetObjectField(replColl, f_ReplColl_pullFilter);
+            if (pullf != nullptr) {
+                colls[i].pullFilter = &pullFilterFunction;
+                env->DeleteLocalRef(pullf);
+            }
+
+            colls[i].callbackContext = (void *) env->GetLongField(replColl, f_ReplColl_token);
+
+            env->DeleteLocalRef(replColl);
+        }
+
+        return nColls;
+    }
+
+    /**
+     * Callback a client can register, to get progress information.
+     * This will be called on arbitrary background threads and should not block.
+     *
+     * @param ignored
+     * @param status
+     * @param token
+     */
+    static void statusChangedCallback(C4Replicator *ignored, C4ReplicatorStatus status, void *token) {
+        JNIEnv *env = nullptr;
+        jint envState = attachJVM(&env, "statusChanged");
+        if ((envState != JNI_OK) && (envState != JNI_EDETACHED))
+            return;
+
+        jobject _status = toJavaReplStatus(env, status);
+        env->CallStaticVoidMethod(cls_C4Replicator, m_C4Replicator_statusChangedCallback, (jlong) token, _status);
+
+        if (envState == JNI_EDETACHED) {
+            detachJVM("statusChanged");
+        } else {
+            if (_status != nullptr) env->DeleteLocalRef(_status);
+        }
+    }
+
+    /**
+     * Callback a client can register, to hear about errors replicating individual documents.
+     *
+     * @param ignored
+     * @param pushing
+     * @param numDocs
+     * @param documentEnded
+     * @param token
+     */
+    static void documentEndedCallback(
+            C4Replicator *ignore,
+            bool pushing,
+            size_t numDocs,
+            const C4DocumentEnded *documentEnded[],
+            void *token) {
+        assert(numDocs < 16384);
+        int nDocs = (int) numDocs;
+
+        JNIEnv *env = nullptr;
+        jint envState = attachJVM(&env, "docEnded");
+        if ((envState != JNI_OK) && (envState != JNI_EDETACHED))
+            return;
+
+        jobjectArray docs = toJavaDocumentEndedArray(env, nDocs, documentEnded);
+        env->CallStaticVoidMethod(cls_C4Replicator, m_C4Replicator_documentEndedCallback, (jlong) token, pushing, docs);
+
+        if (envState == JNI_EDETACHED) {
+            detachJVM("docEnded");
+        } else {
+            if (docs != nullptr) env->DeleteLocalRef(docs);
+        }
+    }
+
+    static jboolean replicationFilter(
+            void *token,
+            C4CollectionSpec coll,
+            C4String docID,
+            C4String revID,
+            C4RevisionFlags flags,
+            FLDict dict,
+            bool isPush) {
+        JNIEnv *env = nullptr;
+        jint envState = attachJVM(&env, "replicationFilter");
+        if ((envState != JNI_OK) && (envState != JNI_EDETACHED))
+            return false;
+
+        jstring _scope = toJString(env, coll.scope);
+        jstring _name = toJString(env, coll.name);
+        jstring _docID = toJString(env, docID);
+        jstring _revID = toJString(env, revID);
+
+        jboolean ok = env->CallStaticBooleanMethod(
+                cls_ReplColl,
+                m_ReplColl_filterCallback,
+                (jlong) token,
+                _scope,
+                _name,
+                _docID,
+                _revID,
+                flags,
+                (jlong) dict,
+                isPush);
+
+        if (envState == JNI_EDETACHED) {
+            detachJVM("replicationFilter");
+        } else {
+            if (_scope != nullptr) env->DeleteLocalRef(_scope);
+            if (_name != nullptr) env->DeleteLocalRef(_name);
+            if (_docID != nullptr) env->DeleteLocalRef(_docID);
+            if (_revID != nullptr) env->DeleteLocalRef(_revID);
+        }
+
+        return ok != JNI_FALSE;
+    }
+
+    /**
+     * Callback that can choose to reject an incoming pulled revision by returning false.
+     * (Note: In the case of an incoming revision, no flags other than 'deletion' and
+     * 'hasAttachments' will be set.)
+     *
+     * @param coll
+     * @param token
+     * @param docID
+     * @param revID
+     * @param flags
+     * @param dict
+     */
+    static bool pullFilterFunction(
+            C4CollectionSpec coll,
+            C4String docID,
+            C4String revID,
+            C4RevisionFlags flags,
+            FLDict dict,
+            void *token) {
+        return replicationFilter(token, coll, docID, revID, flags, dict, false) == JNI_TRUE;
+    }
+
+    /**
+     * Callback that can stop a local revision from being pushed by returning false.
+     * (Note: In the case of an incoming revision, no flags other than 'deletion' and
+     * 'hasAttachments' will be set.)
+     *
+     * @param coll
+     * @param token
+     * @param docID
+     * @param revID
+     * @param flags
+     * @param dict
+     * @param token
+     */
+    static bool pushFilterFunction(
+            C4CollectionSpec coll,
+            C4String docID,
+            C4String revID,
+            C4RevisionFlags flags,
+            FLDict dict,
+            void *token) {
+        return replicationFilter(token, coll, docID, revID, flags, dict, true) == JNI_TRUE;
     }
 }
 
-/**
- * Callback a client can register, to hear about errors replicating individual documents.
- *
- * @param ignored
- * @param pushing
- * @param numDocs
- * @param documentEnded
- * @param token
- */
-static void documentEndedCallback(
-        C4Replicator *ignore,
-        bool pushing,
-        size_t numDocs,
-        const C4DocumentEnded *documentEnded[],
-        void *token) {
-    assert(numDocs < 16384);
-    int nDocs = (int) numDocs;
-
-    JNIEnv *env = nullptr;
-    jint envState = attachJVM(&env, "docEnded");
-    if ((envState != JNI_OK) && (envState != JNI_EDETACHED))
-        return;
-
-    jobjectArray docs = toJavaDocumentEndedArray(env, nDocs, documentEnded);
-    env->CallStaticVoidMethod(cls_C4Replicator, m_C4Replicator_documentEndedCallback, (jlong) token, pushing, docs);
-
-    if (envState == JNI_EDETACHED) {
-        detachJVM("docEnded");
-    } else {
-        if (docs != nullptr) env->DeleteLocalRef(docs);
-    }
-}
-
-static jboolean replicationFilter(
-        void *token,
-        C4CollectionSpec coll,
-        C4String docID,
-        C4String revID,
-        C4RevisionFlags flags,
-        FLDict dict,
-        bool isPush) {
-    JNIEnv *env = nullptr;
-    jint envState = attachJVM(&env, "replicationFilter");
-    if ((envState != JNI_OK) && (envState != JNI_EDETACHED))
-        return false;
-
-    jstring _scope = toJString(env, coll.scope);
-    jstring _name = toJString(env, coll.name);
-    jstring _docID = toJString(env, docID);
-    jstring _revID = toJString(env, revID);
-
-    jboolean ok = env->CallStaticBooleanMethod(
-            cls_ReplColl,
-            m_ReplColl_filterCallback,
-            (jlong) token,
-            _scope,
-            _name,
-            _docID,
-            _revID,
-            flags,
-            (jlong) dict,
-            isPush);
-
-    if (envState == JNI_EDETACHED) {
-        detachJVM("replicationFilter");
-    } else {
-        if (_scope != nullptr) env->DeleteLocalRef(_scope);
-        if (_name != nullptr) env->DeleteLocalRef(_name);
-        if (_docID != nullptr) env->DeleteLocalRef(_docID);
-        if (_revID != nullptr) env->DeleteLocalRef(_revID);
-    }
-
-    return ok != JNI_FALSE;
-}
-
-/**
- * Callback that can choose to reject an incoming pulled revision by returning false.
- * (Note: In the case of an incoming revision, no flags other than 'deletion' and
- * 'hasAttachments' will be set.)
- *
- * @param coll
- * @param token
- * @param docID
- * @param revID
- * @param flags
- * @param dict
- */
-static bool pullFilterFunction(
-        C4CollectionSpec coll,
-        C4String docID,
-        C4String revID,
-        C4RevisionFlags flags,
-        FLDict dict,
-        void *token) {
-    return replicationFilter(token, coll, docID, revID, flags, dict, false) == JNI_TRUE;
-}
-
-/**
- * Callback that can stop a local revision from being pushed by returning false.
- * (Note: In the case of an incoming revision, no flags other than 'deletion' and
- * 'hasAttachments' will be set.)
- *
- * @param coll
- * @param token
- * @param docID
- * @param revID
- * @param flags
- * @param dict
- * @param token
- */
-static bool pushFilterFunction(
-        C4CollectionSpec coll,
-        C4String docID,
-        C4String revID,
-        C4RevisionFlags flags,
-        FLDict dict,
-        void *token) {
-    return (bool) replicationFilter(token, coll, docID, revID, flags, dict, true) == JNI_TRUE;
-}
-
-
+#ifdef __cplusplus
 extern "C" {
+#endif
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Replicator
  * Method:    create
@@ -767,4 +681,6 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_setHostReachable(
         jboolean reachable) {
     c4repl_setHostReachable((C4Replicator *) repl, (bool) reachable);
 }
+#ifdef __cplusplus
 }
+#endif

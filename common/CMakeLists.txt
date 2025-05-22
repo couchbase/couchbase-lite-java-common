@@ -66,11 +66,13 @@ add_library( LiteCoreJNI SHARED
     ${JNI_SRC}/native_c4document.cc
     ${JNI_SRC}/native_c4index.cc
     ${JNI_SRC}/native_c4listener.cc
+    ${JNI_SRC}/native_c4multipeerreplicator.cc
     ${JNI_SRC}/native_c4observer.cc
     ${JNI_SRC}/native_c4prediction.cc
     ${JNI_SRC}/native_c4query.cc
     ${JNI_SRC}/native_c4queryenumerator.cc
     ${JNI_SRC}/native_c4replicator.cc
+    ${JNI_SRC}/native_c4replutils.cc
     ${JNI_SRC}/native_c4socket.cc
     ${JNI_SRC}/native_c4testutils.cc
     ${JNI_SRC}/native_fleece.cc

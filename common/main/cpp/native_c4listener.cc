@@ -392,44 +392,6 @@ static jobject toConnectionStatus(JNIEnv *env, unsigned connectionCount, unsigne
             (jint) activeConnectionCount);
 }
 
-static C4Cert *getCert(JNIEnv *env, jbyteArray cert, bool &didThrow) {
-    didThrow = false;
-
-    if (cert == nullptr)
-        return nullptr;
-
-    jsize certSize = env->GetArrayLength(cert);
-    if (certSize <= 0)
-        return nullptr;
-
-    jbyte *certData = env->GetByteArrayElements(cert, nullptr);
-    FLSlice certSlice = {certData, (size_t) certSize};
-
-    C4Error error{};
-    C4Cert *c4cert = c4cert_fromData(certSlice, &error);
-
-    env->ReleaseByteArrayElements(cert, certData, 0);
-
-    if (c4cert == nullptr) {
-        throwError(env, error);
-        didThrow = true;
-        return nullptr;
-    }
-
-    return c4cert;
-}
-
-static jbyteArray getCertData(JNIEnv *env, C4Cert *cert) {
-    if (cert == nullptr)
-        return nullptr;
-
-    FLSliceResult certData = c4cert_copyData(cert, false);
-    jbyteArray jData = toJByteArray(env, certData);
-    FLSliceResult_Release(certData);
-
-    return jData;
-}
-
 static C4KeyPair *createKeyPair(JNIEnv *env, jbyte algorithm, jint keySizeInBits, jlong context) {
     C4Error error{};
     C4KeyPair* keyPair = c4keypair_fromExternal(
@@ -507,7 +469,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_startTls(
     tlsConfig.key = (C4KeyPair *) keyPair;
 
     bool failed;
-    tlsConfig.certificate = getCert(env, cert, failed);
+    tlsConfig.certificate = toC4Cert(env, cert, failed);
     if (failed)
         return 0;
 
@@ -518,7 +480,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_startTls(
             tlsConfig.certAuthCallback = &certAuthCallback;
             tlsConfig.tlsCallbackContext = reinterpret_cast<void *>(context);
         } else {
-            tlsConfig.rootClientCerts = getCert(env, rootClientCerts, failed);
+            tlsConfig.rootClientCerts = toC4Cert(env, rootClientCerts, failed);
             if (failed) {
                 c4cert_release(tlsConfig.certificate);
                 return 0;
@@ -615,7 +577,6 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_getUrls(
     FLMutableArray urls = c4listener_getURLs(
             reinterpret_cast<C4Listener *>(c4Listener),
             reinterpret_cast<C4Database *>(c4Database),
-            kC4SyncAPI, // !!! remove for v 3.3
             &error);
 
     if (urls == nullptr) {
@@ -739,7 +700,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4KeyPair_generateSelfSignedCer
         return nullptr;
     }
 
-    jbyteArray certData = getCertData(env, cert);
+    jbyteArray certData = fromC4Cert(env, cert);
     c4cert_release(cert);
 
     return certData;
