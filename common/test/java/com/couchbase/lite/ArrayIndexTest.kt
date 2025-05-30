@@ -56,29 +56,37 @@ class ArrayIndexTest : BaseDbTest() {
      *     - path: "contacts"
      *     - expressions: [""]
      * 4. Check that an invalid argument exception is thrown.
-     * 5. Create a ArrayIndexConfiguration object. This case can be ignore if the platform doesn't allow null.
+     * 5. Create a ArrayIndexConfiguration object. This case can be ignored if the platform doesn't allow null.
      *     - path: "contacts"
      *     - expressions: ["address.state", null, "address.city"]
      * 6. Check that an invalid argument exception is thrown.
      */
     @Test
-    fun testArrayIndexConfigInvalidExpressions1() = assertThrows(IllegalArgumentException::class.java) {
-        ArrayIndexConfiguration("contacts", emptyList())
+    fun testArrayIndexConfigInvalidExpressions1() {
+        Assert.assertThrows(IllegalArgumentException::class.java) {
+            ArrayIndexConfiguration("contacts", emptyList())
+        }
     }
 
     @Test
-    fun testArrayIndexConfigInvalidExpressions3a() = assertThrows(IllegalArgumentException::class.java) {
-        ArrayIndexConfiguration("contacts", listOf(""))
+    fun testArrayIndexConfigInvalidExpressions3a() {
+        Assert.assertThrows(IllegalArgumentException::class.java) {
+            ArrayIndexConfiguration("contacts", listOf(""))
+        }
     }
 
     @Test
-    fun testArrayIndexConfigInvalidExpressions3b() = assertThrows(IllegalArgumentException::class.java) {
-        ArrayIndexConfiguration("contacts", "")
+    fun testArrayIndexConfigInvalidExpressions3b() {
+        Assert.assertThrows(IllegalArgumentException::class.java) {
+            ArrayIndexConfiguration("contacts", "")
+        }
     }
 
     @Test
-    fun testArrayIndexConfigInvalidExpressions5() = assertThrows(IllegalArgumentException::class.java) {
-        ArrayIndexConfiguration("contacts", listOf("address.state", null, "address.city"))
+    fun testArrayIndexConfigInvalidExpressions5() {
+        Assert.assertThrows(IllegalArgumentException::class.java) {
+            ArrayIndexConfiguration("contacts", listOf("address.state", null, "address.city"))
+        }
     }
 
     /**

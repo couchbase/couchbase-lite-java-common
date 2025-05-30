@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 import com.couchbase.lite.LiteCoreException;
@@ -38,12 +39,6 @@ import com.couchbase.lite.internal.fleece.FLValue;
 import com.couchbase.lite.internal.fleece.MCollection;
 import com.couchbase.lite.internal.fleece.MRoot;
 import com.couchbase.lite.internal.fleece.MValue;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 
 
 public class C4MutableFleeceTest extends C4BaseTest {
@@ -64,8 +59,8 @@ public class C4MutableFleeceTest extends C4BaseTest {
     @Test
     public void testMValue() {
         MValue val = new MValue("hi");
-        assertEquals("hi", val.toJFleece(null));
-        assertNull(val.getFLValue());
+        Assert.assertEquals("hi", val.toJFleece(null));
+        Assert.assertNull(val.getFLValue());
     }
 
     @Test
@@ -82,27 +77,27 @@ public class C4MutableFleeceTest extends C4BaseTest {
         try (FLSliceResult data = encodeObj(map)) {
             MRoot root = new MRoot(new TestContext(data), FLValue.fromData(data), true);
 
-            assertFalse(root.isMutated());
+            Assert.assertFalse(root.isMutated());
             Object dict = root.toJFleece();
-            assertNotNull(dict);
-            assertTrue(dict instanceof MutableDictionary);
+            Assert.assertNotNull(dict);
+            Assert.assertTrue(dict instanceof MutableDictionary);
             MutableDictionary mDict = (MutableDictionary) dict;
 
-            assertEquals("hi", mDict.getString("greeting"));
-            assertEquals(subMap, mDict.getDictionary("dict").toMap());
+            Assert.assertEquals("hi", mDict.getString("greeting"));
+            Assert.assertEquals(subMap, mDict.getDictionary("dict").toMap());
 
             try (FLSliceResult encodedRoot = encodeCollection(root)) {
-                assertEquals(
+                Assert.assertEquals(
                     "{array:[\"boo\",false],dict:{boil:212,melt:32},greeting:\"hi\"}",
                     fleece2JSON(encodedRoot));
             }
 
             MutableArray mArray = mDict.getArray("array");
-            assertEquals(Arrays.asList("boo", false), mArray.toList());
+            Assert.assertEquals(Arrays.asList("boo", false), mArray.toList());
             mDict.setArray("new", mArray);
             mArray.addBoolean(true);
             try (FLSliceResult encodedRoot = encodeCollection(root)) {
-                assertEquals(
+                Assert.assertEquals(
                     "{array:[\"boo\",false,true],dict:{boil:212,melt:32},greeting:\"hi\",new:[\"boo\",false,true]}",
                     fleece2JSON(encodedRoot));
             }
@@ -117,32 +112,32 @@ public class C4MutableFleeceTest extends C4BaseTest {
         try (FLSliceResult data = encodeObj(map)) {
             MRoot root = new MRoot(new TestContext(data), FLValue.fromData(data), true);
 
-            assertFalse(root.isMutated());
+            Assert.assertFalse(root.isMutated());
             Object dict = root.toJFleece();
-            assertNotNull(dict);
-            assertTrue(dict instanceof MutableDictionary);
+            Assert.assertNotNull(dict);
+            Assert.assertTrue(dict instanceof MutableDictionary);
             MutableDictionary mDict = (MutableDictionary) dict;
 
-            assertEquals("hi", mDict.getString("greeting"));
+            Assert.assertEquals("hi", mDict.getString("greeting"));
 
             try (FLSliceResult encodedRoot = encodeCollection(root)) {
-                assertEquals("{greeting:\"hi\"}", fleece2JSON(encodedRoot));
+                Assert.assertEquals("{greeting:\"hi\"}", fleece2JSON(encodedRoot));
             }
 
             try (FLSliceResult encodedRoot = encodeCollection(root)) {
-                assertEquals("{greeting:\"hi\"}", fleece2JSON(encodedRoot));
+                Assert.assertEquals("{greeting:\"hi\"}", fleece2JSON(encodedRoot));
             }
 
             mDict.setString("hello", "world");
-            assertEquals("hi", mDict.getString("greeting"));
-            assertEquals("world", mDict.getString("hello"));
+            Assert.assertEquals("hi", mDict.getString("greeting"));
+            Assert.assertEquals("world", mDict.getString("hello"));
 
             String expected = "{greeting:\"hi\",hello:\"world\"}";
-            assertEquals(expected, fleece2JSON(encodeObj(dict)));
-            assertEquals(expected, fleece2JSON(encodeObj(root.toJFleece())));
-            assertEquals(expected, fleece2JSON(encodeCollection(root)));
+            Assert.assertEquals(expected, fleece2JSON(encodeObj(dict)));
+            Assert.assertEquals(expected, fleece2JSON(encodeObj(root.toJFleece())));
+            Assert.assertEquals(expected, fleece2JSON(encodeCollection(root)));
             try (FLSliceResult encodedRoot = encodeCollection(root)) {
-                assertEquals(expected, fleece2JSON(encodedRoot));
+                Assert.assertEquals(expected, fleece2JSON(encodedRoot));
             }
         }
     }
@@ -163,60 +158,60 @@ public class C4MutableFleeceTest extends C4BaseTest {
             MRoot root = new MRoot(new TestContext(data), FLValue.fromData(data), true);
 
             Object dict = root.toJFleece();
-            assertNotNull(dict);
-            assertTrue(dict instanceof MutableDictionary);
+            Assert.assertNotNull(dict);
+            Assert.assertTrue(dict instanceof MutableDictionary);
             MutableDictionary mDict = (MutableDictionary) dict;
 
-            assertEquals(3, mDict.count());
-            assertTrue(mDict.contains("greeting"));
-            assertFalse(mDict.contains("x"));
-            assertEquals(Arrays.asList("array", "dict", "greeting"), sortedKeys(mDict));
-            assertEquals("hi", mDict.getString("greeting"));
-            assertNull(mDict.getValue("x"));
+            Assert.assertEquals(3, mDict.count());
+            Assert.assertTrue(mDict.contains("greeting"));
+            Assert.assertFalse(mDict.contains("x"));
+            Assert.assertEquals(Arrays.asList("array", "dict", "greeting"), sortedKeys(mDict));
+            Assert.assertEquals("hi", mDict.getString("greeting"));
+            Assert.assertNull(mDict.getValue("x"));
 
             verifyDictIterator(mDict);
 
             MutableDictionary mSubDict = mDict.getDictionary("dict");
-            assertNotNull(mSubDict);
-            assertEquals(Arrays.asList("boil", "melt"), sortedKeys(mSubDict));
-            assertEquals(32L, mSubDict.getNumber("melt"));
-            assertEquals(212L, mSubDict.getNumber("boil"));
-            assertEquals(subMap, mSubDict.toMap());
+            Assert.assertNotNull(mSubDict);
+            Assert.assertEquals(Arrays.asList("boil", "melt"), sortedKeys(mSubDict));
+            Assert.assertEquals(32L, mSubDict.getNumber("melt"));
+            Assert.assertEquals(212L, mSubDict.getNumber("boil"));
+            Assert.assertEquals(subMap, mSubDict.toMap());
 
-            assertNull(mSubDict.getNumber("freeze"));
+            Assert.assertNull(mSubDict.getNumber("freeze"));
 
             verifyDictIterator(mSubDict);
 
-            assertFalse(root.isMutated());
-            assertFalse(mDictHasChanged(mDict));
-            assertFalse(mDictHasChanged(mSubDict));
+            Assert.assertFalse(root.isMutated());
+            Assert.assertFalse(mDictHasChanged(mDict));
+            Assert.assertFalse(mDictHasChanged(mSubDict));
 
             MutableArray mArray = new MutableArray();
             mArray.addLong(32L);
             mArray.addString("Fahrenheit");
             mSubDict.setArray("freeze", mArray);
-            assertTrue(root.isMutated());
+            Assert.assertTrue(root.isMutated());
 
-            assertEquals(32L, mSubDict.getNumber("melt"));
+            Assert.assertEquals(32L, mSubDict.getNumber("melt"));
             mSubDict.remove("melt");
-            assertNull(mSubDict.getValue("melt"));
+            Assert.assertNull(mSubDict.getValue("melt"));
 
             Map<String, Object> expected = new HashMap<>();
             expected.put("freeze", Arrays.asList(32L, "Fahrenheit"));
             expected.put("boil", 212L);
-            assertEquals(expected, mSubDict.toMap());
+            Assert.assertEquals(expected, mSubDict.toMap());
 
             verifyDictIterator(mDict);
             verifyDictIterator(mSubDict);
 
             try (FLSliceResult encodedDict = encodeObj(dict)) {
-                assertEquals(
+                Assert.assertEquals(
                     "{array:[\"boo\",false],dict:{boil:212,freeze:[32,\"Fahrenheit\"]},greeting:\"hi\"}",
                     fleece2JSON(encodedDict));
             }
 
             try (FLSliceResult encodedRoot = encodeCollection(root)) {
-                assertEquals(
+                Assert.assertEquals(
                     "{array:[\"boo\",false],dict:{boil:212,freeze:[32,\"Fahrenheit\"]},greeting:\"hi\"}",
                     fleece2JSON(encodedRoot));
             }
@@ -231,19 +226,19 @@ public class C4MutableFleeceTest extends C4BaseTest {
         try (FLSliceResult data = encodeObj(expected)) {
             MRoot root = new MRoot(new TestContext(data), FLValue.fromData(data), true);
 
-            assertFalse(root.isMutated());
+            Assert.assertFalse(root.isMutated());
             Object array = root.toJFleece();
-            assertNotNull(array);
-            assertTrue(array instanceof MutableArray);
+            Assert.assertNotNull(array);
+            Assert.assertTrue(array instanceof MutableArray);
             MutableArray mArray = (MutableArray) array;
 
-            assertEquals(3, mArray.count());
-            assertEquals("hi", mArray.getString(0));
-            assertEquals(42L, mArray.getNumber(2));
+            Assert.assertEquals(3, mArray.count());
+            Assert.assertEquals("hi", mArray.getString(0));
+            Assert.assertEquals(42L, mArray.getNumber(2));
 
             MutableArray subArray = mArray.getArray(1);
-            assertNotNull(subArray);
-            assertEquals(Arrays.asList("boo", false), subArray.toList());
+            Assert.assertNotNull(subArray);
+            Assert.assertEquals(Arrays.asList("boo", false), subArray.toList());
 
             MutableArray subArray2 = new MutableArray();
             subArray2.addDouble(3.14);
@@ -251,25 +246,25 @@ public class C4MutableFleeceTest extends C4BaseTest {
 
             mArray.setArray(0, subArray2);
             mArray.insertString(2, "NEW");
-            assertEquals(Arrays.asList(3.14D, 2.17D), mArray.getArray(0).toList());
-            assertEquals(Arrays.asList("boo", false), mArray.getArray(1).toList());
-            assertEquals("NEW", mArray.getString(2));
-            assertEquals(42L, mArray.getNumber(3));
-            assertEquals(4, mArray.count());
+            Assert.assertEquals(Arrays.asList(3.14D, 2.17D), mArray.getArray(0).toList());
+            Assert.assertEquals(Arrays.asList("boo", false), mArray.getArray(1).toList());
+            Assert.assertEquals("NEW", mArray.getString(2));
+            Assert.assertEquals(42L, mArray.getNumber(3));
+            Assert.assertEquals(4, mArray.count());
 
             expected = Arrays.asList(Arrays.asList(3.14, 2.17), Arrays.asList("boo", false), "NEW", 42L);
-            assertEquals(expected, mArray.toList());
+            Assert.assertEquals(expected, mArray.toList());
 
             subArray = mArray.getArray(1);
-            assertNotNull(subArray);
+            Assert.assertNotNull(subArray);
             subArray.setBoolean(1, true);
 
             try (FLSliceResult encodedArray = encodeObj(array)) {
-                assertEquals("[[3.14,2.17],[\"boo\",true],\"NEW\",42]", fleece2JSON(encodedArray));
+                Assert.assertEquals("[[3.14,2.17],[\"boo\",true],\"NEW\",42]", fleece2JSON(encodedArray));
             }
 
             try (FLSliceResult encodedRoot = encodeCollection(root)) {
-                assertEquals("[[3.14,2.17],[\"boo\",true],\"NEW\",42]", fleece2JSON(encodedRoot));
+                Assert.assertEquals("[[3.14,2.17],[\"boo\",true],\"NEW\",42]", fleece2JSON(encodedRoot));
             }
         }
     }
@@ -289,10 +284,10 @@ public class C4MutableFleeceTest extends C4BaseTest {
         try (FLSliceResult data = encodeObj(map)) {
             MRoot root = new MRoot(new TestContext(data), FLValue.fromData(data), true);
 
-            assertFalse(root.isMutated());
+            Assert.assertFalse(root.isMutated());
             Object dict = root.toJFleece();
-            assertNotNull(dict);
-            assertTrue(dict instanceof MutableDictionary);
+            Assert.assertNotNull(dict);
+            Assert.assertTrue(dict instanceof MutableDictionary);
             MutableDictionary mDict = (MutableDictionary) dict;
 
             MutableArray mArray = mDict.getArray("array");
@@ -300,13 +295,13 @@ public class C4MutableFleeceTest extends C4BaseTest {
             mArray.addBoolean(true);
 
             try (FLSliceResult encodedRoot = encodeCollection(root)) {
-                assertEquals(
+                Assert.assertEquals(
                     "{array:[\"boo\",false,true],dict:{boil:212,melt:32},greeting:\"hi\",new:[\"boo\",false,true]}",
                     fleece2JSON(encodedRoot));
             }
 
             try (FLSliceResult encodedRoot = encodeCollection(root)) {
-                assertEquals(
+                Assert.assertEquals(
                     "{array:[\"boo\",false,true],dict:{boil:212,melt:32},greeting:\"hi\",new:[\"boo\",false,true]}",
                     fleece2JSON(encodedRoot));
             }
@@ -323,17 +318,17 @@ public class C4MutableFleeceTest extends C4BaseTest {
             MRoot root = new MRoot(new TestContext(data), FLValue.fromData(data), true);
 
             Object array = root.toJFleece();
-            assertNotNull(array);
-            assertTrue(array instanceof MutableArray);
+            Assert.assertNotNull(array);
+            Assert.assertTrue(array instanceof MutableArray);
 
             MutableArray mArray = (MutableArray) array;
             int i = 0;
             for (Object o: mArray.toList()) {
-                assertEquals(expected.get(i), o);
+                Assert.assertEquals(expected.get(i), o);
                 i++;
             }
 
-            assertEquals(expected.size(), i);
+            Assert.assertEquals(expected.size(), i);
         }
     }
 
@@ -363,11 +358,11 @@ public class C4MutableFleeceTest extends C4BaseTest {
         Set<String> keys = new HashSet<>();
         for (String key: dict.getKeys()) {
             count++;
-            assertNotNull(key);
+            Assert.assertNotNull(key);
             keys.add(key);
         }
-        assertEquals(dict.count(), keys.size());
-        assertEquals(dict.count(), count);
+        Assert.assertEquals(dict.count(), keys.size());
+        Assert.assertEquals(dict.count(), count);
     }
 
     private String fleece2JSON(FLSliceResult fleece) {

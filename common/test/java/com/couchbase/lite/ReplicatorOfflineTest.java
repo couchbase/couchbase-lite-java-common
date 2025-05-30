@@ -18,10 +18,8 @@ package com.couchbase.lite;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import org.junit.Assert;
 import org.junit.Test;
-
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 
 @SuppressWarnings("ConstantConditions")
@@ -52,9 +50,9 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
 
         try {
             repl.start();
-            assertTrue(offline.await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
+            Assert.assertTrue(offline.await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
             repl.stop();
-            assertTrue(stopped.await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
+            Assert.assertTrue(stopped.await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
         }
         finally { token.remove(); }
     }
@@ -74,7 +72,7 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
 
         try {
             repl.start();
-            assertTrue(stopped.await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
+            Assert.assertTrue(stopped.await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
         }
         finally { token.remove(); }
     }
@@ -84,10 +82,10 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
         Replicator repl = makeRepl();
 
         ListenerToken token = repl.addDocumentReplicationListener(replication -> { });
-        assertNotNull(token);
+        Assert.assertNotNull(token);
         token.remove();
 
-        assertThrows(IllegalArgumentException.class, () -> repl.addDocumentReplicationListener(null));
+        Assert.assertThrows(IllegalArgumentException.class, () -> repl.addDocumentReplicationListener(null));
     }
 
     @Test
@@ -95,17 +93,17 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
         Replicator repl = makeRepl();
 
         ListenerToken token = repl.addDocumentReplicationListener(replication -> { });
-        assertNotNull(token);
+        Assert.assertNotNull(token);
         token.remove();
 
-        assertThrows(
+        Assert.assertThrows(
             IllegalArgumentException.class,
             () -> repl.addDocumentReplicationListener(getTestSerialExecutor(), null));
     }
 
     @Test
     public void testAddNullChangeListener() {
-        assertThrows(
+        Assert.assertThrows(
             IllegalArgumentException.class,
             () -> {
                 try (ListenerToken token = makeRepl().addChangeListener(null)) { }
@@ -114,7 +112,7 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
 
     @Test
     public void testNullChangeListenerWithExecutor() {
-        assertThrows(
+        Assert.assertThrows(
             IllegalArgumentException.class,
             () -> {
                 try (ListenerToken token = makeRepl().addChangeListener(getTestSerialExecutor(), null)) { }

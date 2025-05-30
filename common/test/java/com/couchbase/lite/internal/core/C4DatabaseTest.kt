@@ -22,13 +22,7 @@ import com.couchbase.lite.MaintenanceType
 import com.couchbase.lite.Scope
 import com.couchbase.lite.internal.utils.FileUtils
 import com.couchbase.lite.internal.utils.VerySlowTest
-import org.junit.Assert.assertArrayEquals
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
-import org.junit.Assert.fail
+import org.junit.Assert
 import org.junit.Test
 import java.io.File
 import java.nio.charset.StandardCharsets
@@ -90,8 +84,7 @@ class C4DatabaseTest : C4BaseTest() {
             0L,
             C4Constants.EncryptionAlgorithm.NONE,
             null
-        )
-            .use { c4Database -> assertNotNull(c4Database) }
+        ).use { c4Database -> Assert.assertNotNull(c4Database) }
     }
 
     @Test
@@ -103,8 +96,7 @@ class C4DatabaseTest : C4BaseTest() {
             0L,
             C4Constants.EncryptionAlgorithm.NONE,
             null
-        )
-            .use { c4Database -> assertNotNull(c4Database.sharedFleeceEncoder) }
+        ).use { c4Database -> Assert.assertNotNull(c4Database.sharedFleeceEncoder) }
     }
 
     @Test
@@ -116,8 +108,7 @@ class C4DatabaseTest : C4BaseTest() {
             0L,
             C4Constants.EncryptionAlgorithm.NONE,
             null
-        )
-            .use { c4Database -> assertNotNull(c4Database.flSharedKeys) }
+        ).use { c4Database -> Assert.assertNotNull(c4Database.flSharedKeys) }
     }
 
     /**
@@ -129,11 +120,11 @@ class C4DatabaseTest : C4BaseTest() {
     fun testDatabaseErrorMessages() {
         try {
             C4Database.getDatabase("", "", 0L)
-            fail()
+            Assert.fail()
         } catch (e: LiteCoreException) {
-            assertEquals(C4Constants.ErrorDomain.LITE_CORE, e.domain)
-            assertEquals(C4Constants.LiteCoreError.WRONG_FORMAT, e.code)
-            assertTrue(e.message.contains("Parent directory does not exist"))
+            Assert.assertEquals(C4Constants.ErrorDomain.LITE_CORE, e.domain)
+            Assert.assertEquals(C4Constants.LiteCoreError.WRONG_FORMAT, e.code)
+            Assert.assertTrue(e.message.contains("Parent directory does not exist"))
         }
     }
 
@@ -141,26 +132,26 @@ class C4DatabaseTest : C4BaseTest() {
     @Test
     fun testDatabaseInfo() {
         val publicUUID = c4Database.publicUUID
-        assertNotNull(publicUUID)
-        assertTrue(publicUUID.isNotEmpty())
+        Assert.assertNotNull(publicUUID)
+        Assert.assertTrue(publicUUID.isNotEmpty())
 
         //Weird requirements of UUIDs according to the spec
-        assertEquals(0x40.toByte(), (publicUUID[6] and 0xF0.toByte()))
-        assertEquals(0x80.toUByte(), (publicUUID[8].toUByte() and 0xC0.toUByte()))
+        Assert.assertEquals(0x40.toByte(), (publicUUID[6] and 0xF0.toByte()))
+        Assert.assertEquals(0x80.toUByte(), (publicUUID[8].toUByte() and 0xC0.toUByte()))
         val privateUUID = C4TestUtils.privateUUIDForDb(c4Database)
-        assertNotNull(privateUUID)
-        assertTrue(privateUUID.isNotEmpty())
-        assertEquals(0x40.toByte(), (privateUUID[6] and 0xF0.toByte()))
-        assertEquals(0x80.toUByte(), (privateUUID[8].toUByte() and 0xC0.toUByte()))
-        assertFalse(publicUUID.contentEquals(privateUUID))
+        Assert.assertNotNull(privateUUID)
+        Assert.assertTrue(privateUUID.isNotEmpty())
+        Assert.assertEquals(0x40.toByte(), (privateUUID[6] and 0xF0.toByte()))
+        Assert.assertEquals(0x80.toUByte(), (privateUUID[8].toUByte() and 0xC0.toUByte()))
+        Assert.assertFalse(publicUUID.contentEquals(privateUUID))
 
         reopenDB()
 
         //Make sure UUIDs are persistent
         val publicUUID2 = c4Database.publicUUID
         val privateUUID2 = C4TestUtils.privateUUIDForDb(c4Database)
-        assertArrayEquals(publicUUID, publicUUID2)
-        assertArrayEquals(privateUUID, privateUUID2)
+        Assert.assertArrayEquals(publicUUID, publicUUID2)
+        Assert.assertArrayEquals(privateUUID, privateUUID2)
     }
 
     // - Database deletion lock
@@ -170,26 +161,26 @@ class C4DatabaseTest : C4BaseTest() {
         // Try it using the C4Db's idea of the location of the db
         try {
             val name = c4Database.dbName
-            assertNotNull(name)
+            Assert.assertNotNull(name)
             val dir = c4Database.dbDirectory
-            assertNotNull(dir)
+            Assert.assertNotNull(dir)
             if (dir != null && name != null) {
                 C4Database.deleteNamedDb(dir, name)
-                fail()
+                Assert.fail()
             }
 
         } catch (e: LiteCoreException) {
-            assertEquals(C4Constants.ErrorDomain.LITE_CORE, e.domain)
-            assertEquals(C4Constants.LiteCoreError.BUSY, e.code)
+            Assert.assertEquals(C4Constants.ErrorDomain.LITE_CORE, e.domain)
+            Assert.assertEquals(C4Constants.LiteCoreError.BUSY, e.code)
         }
 
         // Try it using our idea of the location of the db
         try {
             C4Database.deleteNamedDb(dbParentDirPath, dbName)
-            fail()
+            Assert.fail()
         } catch (e: LiteCoreException) {
-            assertEquals(C4Constants.ErrorDomain.LITE_CORE, e.domain)
-            assertEquals(C4Constants.LiteCoreError.BUSY, e.code)
+            Assert.assertEquals(C4Constants.ErrorDomain.LITE_CORE, e.domain)
+            Assert.assertEquals(C4Constants.LiteCoreError.BUSY, e.code)
         }
     }
 
@@ -202,9 +193,9 @@ class C4DatabaseTest : C4BaseTest() {
             dbName,
             (testDbFlags and NOT_CREATE_FLAG) or C4Constants.DatabaseFlags.READ_ONLY
         )
-        assertNotNull(c4Database)
-        assertNotNull(c4Database.publicUUID)
-        assertNotNull(C4TestUtils.privateUUIDForDb(c4Database))
+        Assert.assertNotNull(c4Database)
+        Assert.assertNotNull(c4Database.publicUUID)
+        Assert.assertNotNull(C4TestUtils.privateUUIDForDb(c4Database))
     }
 
     // - "Database OpenBundle"
@@ -218,7 +209,7 @@ class C4DatabaseTest : C4BaseTest() {
             // Open nonexistent bundle with just the create flag.
             try {
                 bundle = C4Database.getDatabase(bundleDirPath, bundleName, C4Constants.DatabaseFlags.CREATE)
-                assertNotNull(bundle)
+                Assert.assertNotNull(bundle)
             } finally {
                 if (bundle != null) {
                     bundle.closeDb()
@@ -229,7 +220,7 @@ class C4DatabaseTest : C4BaseTest() {
             // Reopen without 'create' flag:
             try {
                 bundle = C4Database.getDatabase(bundleDirPath, bundleName, testDbFlags and NOT_CREATE_FLAG)
-                assertNotNull(bundle)
+                Assert.assertNotNull(bundle)
             } finally {
                 bundle?.closeDb()
             }
@@ -247,10 +238,10 @@ class C4DatabaseTest : C4BaseTest() {
                 getUniqueName("bundle"),
                 testDbFlags and NOT_CREATE_FLAG
             )
-            fail()
+            Assert.fail()
         } catch (e: LiteCoreException) {
-            assertEquals(C4Constants.ErrorDomain.LITE_CORE, e.domain)
-            assertEquals(C4Constants.LiteCoreError.NOT_FOUND, e.code)
+            Assert.assertEquals(C4Constants.ErrorDomain.LITE_CORE, e.domain)
+            Assert.assertEquals(C4Constants.LiteCoreError.NOT_FOUND, e.code)
         }
     }
 
@@ -295,40 +286,40 @@ class C4DatabaseTest : C4BaseTest() {
             }
 
             val store = c4Database.blobStore
-            assertNotNull(store)
+            Assert.assertNotNull(store)
             c4Database.performMaintenance(MaintenanceType.COMPACT)
-            assertTrue(store.getSize(key1) > 0)
-            assertTrue(store.getSize(key2) > 0)
-            assertTrue(store.getSize(key3) > 0)
+            Assert.assertTrue(store.getSize(key1) > 0)
+            Assert.assertTrue(store.getSize(key2) > 0)
+            Assert.assertTrue(store.getSize(key3) > 0)
 
             // Only reference to first blob is gone
             createRev(doc1ID, REV_ID_2, null, C4Constants.DocumentFlags.DELETED)
             c4Database.performMaintenance(MaintenanceType.COMPACT)
-            assertEquals(store.getSize(key1), -1)
-            assertTrue(store.getSize(key2) > 0)
-            assertTrue(store.getSize(key3) > 0)
+            Assert.assertEquals(store.getSize(key1), -1)
+            Assert.assertTrue(store.getSize(key2) > 0)
+            Assert.assertTrue(store.getSize(key3) > 0)
 
             // Two references exist to the second blob, so it should still
             // exist after deleting doc002
             createRev(doc2ID, REV_ID_2, null, C4Constants.DocumentFlags.DELETED)
             c4Database.performMaintenance(MaintenanceType.COMPACT)
-            assertEquals(store.getSize(key1), -1)
-            assertTrue(store.getSize(key2) > 0)
-            assertTrue(store.getSize(key3) > 0)
+            Assert.assertEquals(store.getSize(key1), -1)
+            Assert.assertTrue(store.getSize(key2) > 0)
+            Assert.assertTrue(store.getSize(key3) > 0)
 
             // After deleting doc4 both blobs should be gone
             createRev(doc4ID, REV_ID_2, null, C4Constants.DocumentFlags.DELETED)
             c4Database.performMaintenance(MaintenanceType.COMPACT)
-            assertEquals(store.getSize(key1), -1)
-            assertEquals(store.getSize(key2), -1)
-            assertTrue(store.getSize(key3) > 0)
+            Assert.assertEquals(store.getSize(key1), -1)
+            Assert.assertEquals(store.getSize(key2), -1)
+            Assert.assertTrue(store.getSize(key3) > 0)
 
             // Delete doc with legacy attachment, and it too will be gone
             createRev(doc3ID, REV_ID_2, null, C4Constants.DocumentFlags.DELETED)
             c4Database.performMaintenance(MaintenanceType.COMPACT)
-            assertEquals(store.getSize(key1), -1)
-            assertEquals(store.getSize(key2), -1)
-            assertEquals(store.getSize(key3), -1)
+            Assert.assertEquals(store.getSize(key1), -1)
+            Assert.assertEquals(store.getSize(key2), -1)
+            Assert.assertEquals(store.getSize(key3), -1)
         } finally {
             closeKeys(allKeys)
         }
@@ -343,10 +334,10 @@ class C4DatabaseTest : C4BaseTest() {
                 getUniqueName("c4_copy_test_db"),
                 testDbFlags
             )
-            fail("Copy to non-existent directory should fail")
+            Assert.fail("Copy to non-existent directory should fail")
         } catch (ex: LiteCoreException) {
-            assertEquals(C4Constants.ErrorDomain.LITE_CORE.toLong(), ex.domain.toLong())
-            assertEquals(C4Constants.LiteCoreError.NOT_FOUND.toLong(), ex.code.toLong())
+            Assert.assertEquals(C4Constants.ErrorDomain.LITE_CORE.toLong(), ex.domain.toLong())
+            Assert.assertEquals(C4Constants.LiteCoreError.NOT_FOUND.toLong(), ex.code.toLong())
         }
     }
 
@@ -359,10 +350,10 @@ class C4DatabaseTest : C4BaseTest() {
                 getUniqueName("c4_copy_test_db"),
                 testDbFlags
             )
-            fail("Copy from non-existent database should fail")
+            Assert.fail("Copy from non-existent database should fail")
         } catch (ex: LiteCoreException) {
-            assertEquals(C4Constants.ErrorDomain.LITE_CORE, ex.domain)
-            assertEquals(C4Constants.LiteCoreError.NOT_FOUND, ex.code)
+            Assert.assertEquals(C4Constants.ErrorDomain.LITE_CORE, ex.domain)
+            Assert.assertEquals(C4Constants.LiteCoreError.NOT_FOUND, ex.code)
         }
     }
 
@@ -375,17 +366,17 @@ class C4DatabaseTest : C4BaseTest() {
         val dbName = getUniqueName("c4_test_db")
         val c4Db = C4Database.getDatabase(dbParentDirPath, dbName, testDbFlags)
 
-        assertEquals(1, c4Db.scopeNames.size)
-        assertEquals(setOf(Scope.DEFAULT_NAME), c4Db.scopeNames)
+        Assert.assertEquals(1, c4Db.scopeNames.size)
+        Assert.assertEquals(setOf(Scope.DEFAULT_NAME), c4Db.scopeNames)
 
         c4Db.addCollection("test_scope", "test_coll")
-        assertEquals(2, c4Db.scopeNames.size)
+        Assert.assertEquals(2, c4Db.scopeNames.size)
 
-        assertTrue(c4Db.hasScope("test_scope"))
-        assertEquals(setOf(Scope.DEFAULT_NAME, "test_scope"), c4Db.scopeNames)
+        Assert.assertTrue(c4Db.hasScope("test_scope"))
+        Assert.assertEquals(setOf(Scope.DEFAULT_NAME, "test_scope"), c4Db.scopeNames)
 
-        assertEquals(1, c4Db.getCollectionNames("test_scope").size)
-        assertEquals(setOf("test_coll"), c4Db.getCollectionNames("test_scope"))
+        Assert.assertEquals(1, c4Db.getCollectionNames("test_scope").size)
+        Assert.assertEquals(setOf("test_coll"), c4Db.getCollectionNames("test_scope"))
     }
 
     // Test create multiple collections in a scope
@@ -396,9 +387,9 @@ class C4DatabaseTest : C4BaseTest() {
         c4Database.addCollection(scope, "test_coll_2")
         c4Database.addCollection(scope, "test_coll_3")
 
-        assertEquals(2, c4Database.scopeNames.size) // +1 for the default
-        assertEquals(4, c4Database.getCollectionNames(scope).size) // +1 for the test collection (c4Collection)
-        assertEquals(
+        Assert.assertEquals(2, c4Database.scopeNames.size) // +1 for the default
+        Assert.assertEquals(4, c4Database.getCollectionNames(scope).size) // +1 for the test collection (c4Collection)
+        Assert.assertEquals(
             setOf("test_coll_1", "test_coll_2", "test_coll_3", c4Collection.name),
             c4Database.getCollectionNames(scope)
         )
@@ -411,12 +402,12 @@ class C4DatabaseTest : C4BaseTest() {
     @Test
     fun testDeleteCollection() {
         val coll = c4Database.addCollection("test_scope", "test_coll")
-        assertNotNull(c4Database.getCollection("test_scope", "test_coll"))
+        Assert.assertNotNull(c4Database.getCollection("test_scope", "test_coll"))
         c4Database.deleteCollection("test_scope", "test_coll")
 
         //getting a non-existent collection should return null, not an exception
-        assertNull(c4Database.getCollection("test_scope", "test_coll"))
-        assertEquals(0, coll.documentCount)
+        Assert.assertNull(c4Database.getCollection("test_scope", "test_coll"))
+        Assert.assertEquals(0, coll.documentCount)
 
         assertThrowsLiteCoreException(
             C4Constants.ErrorDomain.LITE_CORE,
@@ -446,15 +437,15 @@ class C4DatabaseTest : C4BaseTest() {
     fun testDatabaseCopySucceeds() {
         createRev("doc001", REV_ID_1, fleeceBody)
         createRev("doc002", REV_ID_1, fleeceBody)
-        assertEquals(2L, c4Collection.documentCount)
+        Assert.assertEquals(2L, c4Collection.documentCount)
 
 
         val dbName = getUniqueName("c4_copy_test_db")
         val dstParentDirPath = getScratchDirectoryPath(getUniqueName("c4_test_2"))
         C4Database.copyDb(c4Database.dbPath!!, dstParentDirPath, dbName, testDbFlags)
         val copyDb = C4Database.getDatabase(dstParentDirPath, dbName, testDbFlags)
-        assertNotNull(copyDb)
-        assertEquals(2L, c4Collection.documentCount)
+        Assert.assertNotNull(copyDb)
+        Assert.assertEquals(2L, c4Collection.documentCount)
     }
 
     @Test
@@ -465,7 +456,7 @@ class C4DatabaseTest : C4BaseTest() {
         val dstParentDirPath = getScratchDirectoryPath(getUniqueName("c4_test_2"))
         var targetDb = C4Database.getDatabase(dstParentDirPath, dbName, testDbFlags)
         createRev(targetDb.defaultCollection, "doc001", REV_ID_1, fleeceBody)
-        assertEquals(1L, targetDb.defaultCollection.documentCount)
+        Assert.assertEquals(1L, targetDb.defaultCollection.documentCount)
         targetDb.close()
         try {
             C4Database.copyDb(
@@ -475,11 +466,11 @@ class C4DatabaseTest : C4BaseTest() {
                 testDbFlags
             )
         } catch (ex: LiteCoreException) {
-            assertEquals(C4Constants.ErrorDomain.POSIX, ex.domain)
-            assertEquals(POSIX_EEXIST, ex.code)
+            Assert.assertEquals(C4Constants.ErrorDomain.POSIX, ex.domain)
+            Assert.assertEquals(POSIX_EEXIST, ex.code)
         }
         targetDb = C4Database.getDatabase(dstParentDirPath, dbName, testDbFlags)
-        assertEquals(1L, targetDb.defaultCollection.documentCount)
+        Assert.assertEquals(1L, targetDb.defaultCollection.documentCount)
         targetDb.close()
     }
 
@@ -494,18 +485,18 @@ class C4DatabaseTest : C4BaseTest() {
         // No start or end ID:
         val iteratorFlags = C4Constants.EnumeratorFlags.DEFAULT
         val allDocs = C4TestUtils.enumerateDocsForCollection(c4Collection, iteratorFlags)
-        assertNotNull(allDocs)
+        Assert.assertNotNull(allDocs)
         while (allDocs.next()) {
             val doc = allDocs.document
-            assertEquals(docId(i), C4TestUtils.idForDoc(doc))
-            assertEquals(REV_ID_1, doc.revID)
-            assertEquals(REV_ID_1, doc.selectedRevID)
-            assertEquals(i.toLong(), doc.sequence)
-            assertEquals(i.toLong(), doc.selectedSequence)
-            assertTrue(doc.docExists())
+            Assert.assertEquals(docId(i), C4TestUtils.idForDoc(doc))
+            Assert.assertEquals(REV_ID_1, doc.revID)
+            Assert.assertEquals(REV_ID_1, doc.selectedRevID)
+            Assert.assertEquals(i.toLong(), doc.sequence)
+            Assert.assertEquals(i.toLong(), doc.selectedSequence)
+            Assert.assertTrue(doc.docExists())
             i++
         }
-        assertEquals(100, i)
+        Assert.assertEquals(100, i)
     }
 
 
@@ -517,29 +508,29 @@ class C4DatabaseTest : C4BaseTest() {
 
         var docID = "expire_me"
         createRev(docID, REV_ID_1, fleeceBody)
-        assertEquals(0L, c4Collection.getDocumentExpiration(docID))
+        Assert.assertEquals(0L, c4Collection.getDocumentExpiration(docID))
 
         c4Collection.setDocumentExpiration(docID, longExpire)
-        assertEquals(longExpire, c4Collection.getDocumentExpiration(docID))
+        Assert.assertEquals(longExpire, c4Collection.getDocumentExpiration(docID))
 
         c4Collection.setDocumentExpiration(docID, shortExpire)
-        assertEquals(shortExpire, c4Collection.getDocumentExpiration(docID))
+        Assert.assertEquals(shortExpire, c4Collection.getDocumentExpiration(docID))
 
         docID = "expire_me_too"
         createRev(docID, REV_ID_1, fleeceBody)
         c4Collection.setDocumentExpiration(docID, shortExpire)
-        assertEquals(shortExpire, c4Collection.getDocumentExpiration(docID))
+        Assert.assertEquals(shortExpire, c4Collection.getDocumentExpiration(docID))
 
         docID = "expire_me_later"
         createRev(docID, REV_ID_1, fleeceBody)
         c4Collection.setDocumentExpiration(docID, longExpire)
-        assertEquals(longExpire, c4Collection.getDocumentExpiration(docID))
+        Assert.assertEquals(longExpire, c4Collection.getDocumentExpiration(docID))
 
         docID = "dont_expire_me_at_all"
         createRev(docID, REV_ID_1, fleeceBody)
 
-        assertEquals(0L, c4Collection.getDocumentExpiration(docID))
-        assertEquals(4L, c4Collection.documentCount)
+        Assert.assertEquals(0L, c4Collection.getDocumentExpiration(docID))
+        Assert.assertEquals(4L, c4Collection.documentCount)
 
         // There should be a time at which exactly two of the docs have expired (the other two have not).
         // That time should be less than the long-expire timeout
@@ -554,7 +545,7 @@ class C4DatabaseTest : C4BaseTest() {
         val docID2 = "dont_expire_me"
         createRev(docID2, REV_ID_1, fleeceBody)
 
-        assertEquals(2L, c4Collection.documentCount)
+        Assert.assertEquals(2L, c4Collection.documentCount)
 
         val expire = System.currentTimeMillis() + 100
         c4Collection.setDocumentExpiration(docID1, expire)
@@ -563,7 +554,7 @@ class C4DatabaseTest : C4BaseTest() {
 
         waitUntil(STD_TIMEOUT_MS) { 1L == c4Collection.documentCount }
 
-        assertNotNull(c4Collection.getDocument(docID2))
+        Assert.assertNotNull(c4Collection.getDocument(docID2))
     }
 
     @Test
@@ -573,13 +564,13 @@ class C4DatabaseTest : C4BaseTest() {
 
         c4Collection?.purgeDocument(docID)
 
-        assertNull(c4Database.defaultCollection.getDocument(docID))
+        Assert.assertNull(c4Database.defaultCollection.getDocument(docID))
     }
 
     @Test
     fun testDatabaseBlobStore() {
         val blobs = c4Database.blobStore
-        assertNotNull(blobs)
+        Assert.assertNotNull(blobs)
         // NOTE: BlobStore is from the database. Not necessary to call free()?
     }
 
@@ -628,7 +619,7 @@ class C4DatabaseTest : C4BaseTest() {
 
         C4TestUtils.encodeJSONInDb(c4Database, json5(json.toString())).use { body ->
             // Don't try to autoclose this: See C4Document.close()
-            assertNotNull(
+            Assert.assertNotNull(
                 C4TestUtils.create(
                     c4Collection,
                     body,

@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.ClassRule;
 import org.junit.Rule;
@@ -38,12 +39,6 @@ import com.couchbase.lite.internal.utils.JSONUtils;
 import com.couchbase.lite.internal.utils.Report;
 import com.couchbase.lite.internal.utils.StringUtils;
 import com.couchbase.lite.utils.TestTimer;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 
 @SuppressWarnings("ConstantConditions")
@@ -119,7 +114,7 @@ public abstract class BaseTest extends PlatformBaseTest {
 
     @NonNull
     public static <T> T assertNonNull(T obj) {
-        assertNotNull(obj);
+        Assert.assertNotNull(obj);
         return obj;
     }
 
@@ -127,26 +122,14 @@ public abstract class BaseTest extends PlatformBaseTest {
     // Even though it can work pretty will in a very limited number of cases, please, always prefer
     // one of these methods (or their equivalents in C4BaseTest and OKHttpSocketTest
 
-    public static <T extends Exception> void assertThrows(Class<T> ex, @NonNull Fn.TaskThrows<Exception> test) {
-        Throwable err = null;
-        try { test.run(); }
-        catch (Throwable e) {
-            if (ex.isAssignableFrom(e.getClass())) { return; }
-            err = e;
-        }
-
-        if (err != null) { Report.log(err, "Unexpected exception"); }
-        fail("Expecting exception: " + ex + " but got " + err);
-    }
-
     public static void assertIsCBLException(@Nullable Exception e, @Nullable String domain, int code) {
-        assertNotNull(e);
+        Assert.assertNotNull(e);
         if (!(e instanceof CouchbaseLiteException)) {
             throw new AssertionError("Expected CBL exception (" + domain + ", " + code + ") but got:", e);
         }
         final CouchbaseLiteException err = (CouchbaseLiteException) e;
-        if (domain != null) { assertEquals(domain, err.getDomain()); }
-        if (code > 0) { assertEquals(code, err.getCode()); }
+        if (domain != null) { Assert.assertEquals(domain, err.getDomain()); }
+        if (code > 0) { Assert.assertEquals(code, err.getCode()); }
     }
 
     public static void assertThrowsCBLException(
@@ -155,7 +138,7 @@ public abstract class BaseTest extends PlatformBaseTest {
         @NonNull Fn.TaskThrows<Exception> block) {
         try {
             block.run();
-            fail("Expected CBL exception (" + domain + ", " + code + ")");
+            Assert.fail("Expected CBL exception (" + domain + ", " + code + ")");
         }
         catch (Exception e) {
             assertIsCBLException(e, domain, code);
@@ -231,13 +214,13 @@ public abstract class BaseTest extends PlatformBaseTest {
 
         final String dbName = getUniqueName(name);
         final File dbDir = new File(config.getDirectory(), dbName + C4Database.DB_EXTENSION);
-        assertFalse(dbDir.exists());
+        Assert.assertFalse(dbDir.exists());
 
         final Database db;
         try { db = (config == null) ? new Database(dbName) : new Database(dbName, config); }
         catch (Exception e) { throw new AssertionError("Failed creating database " + name, e); }
 
-        assertTrue(dbDir.exists());
+        Assert.assertTrue(dbDir.exists());
         return db;
     }
 
@@ -260,11 +243,11 @@ public abstract class BaseTest extends PlatformBaseTest {
         if (config == null) { config = new DatabaseConfiguration(); }
 
         final File srcDbFile = new File(srcDbPath, srcDbName + C4Database.DB_EXTENSION);
-        assertTrue(srcDbFile.exists());
+        Assert.assertTrue(srcDbFile.exists());
 
         final String dbName = getUniqueName(dstDbName);
         final File dstDbFile = new File(config.getDirectory(), dbName + C4Database.DB_EXTENSION);
-        assertFalse(dstDbFile.exists());
+        Assert.assertFalse(dstDbFile.exists());
 
         final Database db;
         try {
@@ -273,7 +256,7 @@ public abstract class BaseTest extends PlatformBaseTest {
         }
         catch (Exception e) { throw new AssertionError("Failed creating database " + dstDbFile.getPath(), e); }
 
-        assertTrue(dstDbFile.exists());
+        Assert.assertTrue(dstDbFile.exists());
         return db;
     }
 
@@ -302,7 +285,7 @@ public abstract class BaseTest extends PlatformBaseTest {
 
     // Close the db or fail.
     protected final void closeDb(@NonNull Database db) {
-        assertNotNull(db);
+        Assert.assertNotNull(db);
         try { db.close(); }
         catch (Exception e) { throw new AssertionError("Failed closing database " + db, e); }
     }

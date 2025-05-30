@@ -18,16 +18,15 @@ package com.couchbase.lite.utils;
 import java.net.URI;
 import java.net.URISyntaxException;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 import com.couchbase.lite.BaseTest;
-
-import static org.junit.Assert.assertEquals;
 
 
 public class URIUtilsTest extends BaseTest {
     @Test
     public void testGetPort() throws URISyntaxException {
-        assertEquals(-1, new URI("ws://foo.couchbase.com/db").getPort());
+        Assert.assertEquals(-1, new URI("ws://foo.couchbase.com/db").getPort());
     }
 }

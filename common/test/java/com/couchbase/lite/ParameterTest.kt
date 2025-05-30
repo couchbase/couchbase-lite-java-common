@@ -65,7 +65,6 @@ class ParameterTest : BaseDbTest() {
         )
 
         query.parameters = params
-
         verifyParams(query.parameters)
     }
 

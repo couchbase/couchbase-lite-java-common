@@ -15,7 +15,7 @@
 //
 package com.couchbase.lite
 
-import org.junit.Assert.assertNotNull
+import org.junit.Assert
 import org.junit.Test
 
 class IteratorTest : BaseDbTest() {
@@ -29,7 +29,7 @@ class IteratorTest : BaseDbTest() {
 
         var n = 0
         val itr = array.iterator()
-        assertThrows(ConcurrentModificationException::class.java) {
+        Assert.assertThrows(ConcurrentModificationException::class.java) {
             while (itr.hasNext()) {
                 if (n++ == 3) {
                     array.addValue(10)
@@ -45,12 +45,12 @@ class IteratorTest : BaseDbTest() {
         (0..5).forEach { array.addValue(it) }
 
         val sa = saveDocInCollection(MutableDocument().setValue("array", array)).getArray("array")
-        assertNotNull(sa)
+        Assert.assertNotNull(sa)
         val savedArray = sa!!.toMutable()
 
         var n = 0
         val itr = savedArray.iterator()
-        assertThrows(ConcurrentModificationException::class.java) {
+        Assert.assertThrows(ConcurrentModificationException::class.java) {
             while (itr.hasNext()) {
                 if (n++ == 3) {
                     savedArray.addValue(10)
@@ -66,14 +66,14 @@ class IteratorTest : BaseDbTest() {
         (0..5).forEach { array.addValue(it) }
 
         val sa = saveDocInCollection(MutableDocument().setValue("array", array)).getArray("array")
-        assertNotNull(sa)
+        Assert.assertNotNull(sa)
         val savedArray = sa!!.toMutable()
 
         savedArray.addValue(9)
 
         var n = 0
         val itr = savedArray.iterator()
-        assertThrows(ConcurrentModificationException::class.java) {
+        Assert.assertThrows(ConcurrentModificationException::class.java) {
             while (itr.hasNext()) {
                 if (n++ == 3) {
                     savedArray.addValue(10)
@@ -105,11 +105,11 @@ class IteratorTest : BaseDbTest() {
         (1..5).forEach { array.addValue(it) }
 
         val sa = saveDocInCollection(MutableDocument().setValue("array", array)).getArray("array")
-        assertNotNull(sa)
+        Assert.assertNotNull(sa)
         val savedArray = sa!!.toMutable()
 
         val ssa = savedArray.getArray(0)
-        assertNotNull(ssa)
+        Assert.assertNotNull(ssa)
         val savedSubArray = ssa!!
 
         var n = 0
@@ -128,11 +128,11 @@ class IteratorTest : BaseDbTest() {
         (1..5).forEach { array.addValue(it) }
 
         val sa = saveDocInCollection(MutableDocument().setValue("array", array)).getArray("array")
-        assertNotNull(sa)
+        Assert.assertNotNull(sa)
         val savedArray = sa!!
 
         val ssa = savedArray.getArray(0)
-        assertNotNull(ssa)
+        Assert.assertNotNull(ssa)
         val savedSubArray = ssa!!.toMutable()
 
         var n = 0
@@ -151,11 +151,11 @@ class IteratorTest : BaseDbTest() {
         (1..5).forEach { array.addValue(it) }
 
         val sa = saveDocInCollection(MutableDocument().setValue("array", array)).getArray("array")
-        assertNotNull(sa)
+        Assert.assertNotNull(sa)
         val savedArray = sa!!.toMutable()
 
         val ssa = savedArray.getArray(0)
-        assertNotNull(ssa)
+        Assert.assertNotNull(ssa)
         val savedSubArray = ssa!!
 
         savedSubArray.addValue(9)
@@ -176,11 +176,11 @@ class IteratorTest : BaseDbTest() {
         (1..5).forEach { array.addValue(it) }
 
         val sa = saveDocInCollection(MutableDocument().setValue("array", array)).getArray("array")
-        assertNotNull(sa)
+        Assert.assertNotNull(sa)
         val savedArray = sa!!
 
         val ssa = savedArray.getArray(0)
-        assertNotNull(ssa)
+        Assert.assertNotNull(ssa)
         val savedSubArray = ssa!!.toMutable()
 
         savedSubArray.addValue(9)
@@ -217,11 +217,11 @@ class IteratorTest : BaseDbTest() {
         (1..5).forEach { array.addValue(it) }
 
         val sa = saveDocInCollection(MutableDocument().setValue("array", array)).getArray("array")
-        assertNotNull(sa)
+        Assert.assertNotNull(sa)
         val savedArray = sa!!.toMutable()
 
         val ssd = savedArray.getDictionary(0)
-        assertNotNull(ssd)
+        Assert.assertNotNull(ssd)
         val savedSubDict = ssd!!
 
         var n = 0
@@ -240,11 +240,11 @@ class IteratorTest : BaseDbTest() {
         (1..5).forEach { array.addValue(it) }
 
         val sa = saveDocInCollection(MutableDocument().setValue("array", array)).getArray("array")
-        assertNotNull(sa)
+        Assert.assertNotNull(sa)
         val savedArray = sa!!
 
         val ssd = savedArray.getDictionary(0)
-        assertNotNull(ssd)
+        Assert.assertNotNull(ssd)
         val savedSubDict = ssd!!.toMutable()
 
         var n = 0
@@ -263,11 +263,11 @@ class IteratorTest : BaseDbTest() {
         (1..5).forEach { array.addValue(it) }
 
         val sa = saveDocInCollection(MutableDocument().setValue("array", array)).getArray("array")
-        assertNotNull(sa)
+        Assert.assertNotNull(sa)
         val savedArray = sa!!.toMutable()
 
         val ssd = savedArray.getDictionary(0)
-        assertNotNull(ssd)
+        Assert.assertNotNull(ssd)
         val savedSubDict = ssd!!
 
         savedSubDict.setValue("9", 9)
@@ -288,11 +288,11 @@ class IteratorTest : BaseDbTest() {
         (1..5).forEach { array.addValue(it) }
 
         val sa = saveDocInCollection(MutableDocument().setValue("array", array)).getArray("array")
-        assertNotNull(sa)
+        Assert.assertNotNull(sa)
         val savedArray = sa!!
 
         val ssd = savedArray.getDictionary(0)
-        assertNotNull(ssd)
+        Assert.assertNotNull(ssd)
         val savedSubDict = ssd!!.toMutable()
 
         savedSubDict.setValue("9", 9)
@@ -316,7 +316,7 @@ class IteratorTest : BaseDbTest() {
 
         var n = 0
         val itr = dict.iterator()
-        assertThrows(ConcurrentModificationException::class.java) {
+        Assert.assertThrows(ConcurrentModificationException::class.java) {
             while (itr.hasNext()) {
                 if (n++ == 3) {
                     dict.setValue("10", 10)
@@ -332,12 +332,12 @@ class IteratorTest : BaseDbTest() {
         (0..5).forEach { dict.setValue("${it}", it) }
 
         val sd = saveDocInCollection(MutableDocument().setValue("dict", dict)).getDictionary("dict")
-        assertNotNull(sd)
+        Assert.assertNotNull(sd)
         val savedDict = sd!!.toMutable()
 
         var n = 0
         val itr = savedDict.iterator()
-        assertThrows(ConcurrentModificationException::class.java) {
+        Assert.assertThrows(ConcurrentModificationException::class.java) {
             while (itr.hasNext()) {
                 if (n++ == 3) {
                     savedDict.setValue("10", 10)
@@ -353,14 +353,14 @@ class IteratorTest : BaseDbTest() {
         (0..5).forEach { dict.setValue("${it}", it) }
 
         val sd = saveDocInCollection(MutableDocument().setValue("dict", dict)).getDictionary("dict")
-        assertNotNull(sd)
+        Assert.assertNotNull(sd)
         val savedDict = sd!!.toMutable()
 
         savedDict.setValue("9", 9)
 
         var n = 0
         val itr = savedDict.iterator()
-        assertThrows(ConcurrentModificationException::class.java) {
+        Assert.assertThrows(ConcurrentModificationException::class.java) {
             while (itr.hasNext()) {
                 if (n++ == 3) {
                     savedDict.setValue("10", 10)
@@ -392,11 +392,11 @@ class IteratorTest : BaseDbTest() {
         (1..5).forEach { dict.setValue("${it}", it) }
 
         val sd = saveDocInCollection(MutableDocument().setValue("dict", dict)).getDictionary("dict")
-        assertNotNull(sd)
+        Assert.assertNotNull(sd)
         val savedDict = sd!!.toMutable()
 
         val ssa = savedDict.getArray("0")
-        assertNotNull(ssa)
+        Assert.assertNotNull(ssa)
         val savedSubArray = ssa!!
 
         var n = 0
@@ -415,11 +415,11 @@ class IteratorTest : BaseDbTest() {
         (1..5).forEach { dict.setValue("${it}", it) }
 
         val sd = saveDocInCollection(MutableDocument().setValue("dict", dict)).getDictionary("dict")
-        assertNotNull(sd)
+        Assert.assertNotNull(sd)
         val savedDict = sd!!
 
         val ssa = savedDict.getArray("0")
-        assertNotNull(ssa)
+        Assert.assertNotNull(ssa)
         val savedSubArray = ssa!!.toMutable()
 
         var n = 0
@@ -438,11 +438,11 @@ class IteratorTest : BaseDbTest() {
         (1..5).forEach { dict.setValue("${it}", it) }
 
         val sd = saveDocInCollection(MutableDocument().setValue("dict", dict)).getDictionary("dict")
-        assertNotNull(sd)
+        Assert.assertNotNull(sd)
         val savedDict = sd!!.toMutable()
 
         val ssa = savedDict.getArray("0")
-        assertNotNull(ssa)
+        Assert.assertNotNull(ssa)
         val savedSubArray = ssa!!
 
         savedSubArray.addValue(9)
@@ -463,11 +463,11 @@ class IteratorTest : BaseDbTest() {
         (1..5).forEach { dict.setValue("${it}", it) }
 
         val sd = saveDocInCollection(MutableDocument().setValue("dict", dict)).getDictionary("dict")
-        assertNotNull(sd)
+        Assert.assertNotNull(sd)
         val savedDict = sd!!
 
         val ssa = savedDict.getArray("0")
-        assertNotNull(ssa)
+        Assert.assertNotNull(ssa)
         val savedSubArray = ssa!!.toMutable()
 
         savedSubArray.addValue(9)
@@ -504,11 +504,11 @@ class IteratorTest : BaseDbTest() {
         (1..5).forEach { dict.setValue("${it}", it) }
 
         val sd = saveDocInCollection(MutableDocument().setValue("dict", dict)).getDictionary("dict")
-        assertNotNull(sd)
+        Assert.assertNotNull(sd)
         val savedDict = sd!!.toMutable()
 
         val ssd = savedDict.getDictionary("0")
-        assertNotNull(ssd)
+        Assert.assertNotNull(ssd)
         val savedSubDict = ssd!!
 
         var n = 0
@@ -527,11 +527,11 @@ class IteratorTest : BaseDbTest() {
         (1..5).forEach { dict.setValue("${it}", it) }
 
         val sd = saveDocInCollection(MutableDocument().setValue("dict", dict)).getDictionary("dict")
-        assertNotNull(sd)
+        Assert.assertNotNull(sd)
         val savedDict = sd!!
 
         val ssd = savedDict.getDictionary("0")
-        assertNotNull(ssd)
+        Assert.assertNotNull(ssd)
         val savedSubDict = ssd!!.toMutable()
 
         var n = 0
@@ -550,11 +550,11 @@ class IteratorTest : BaseDbTest() {
         (1..5).forEach { dict.setValue("${it}", it) }
 
         val sd = saveDocInCollection(MutableDocument().setValue("dict", dict)).getDictionary("dict")
-        assertNotNull(sd)
+        Assert.assertNotNull(sd)
         val savedDict = sd!!.toMutable()
 
         val ssd = savedDict.getDictionary("0")
-        assertNotNull(ssd)
+        Assert.assertNotNull(ssd)
         val savedSubDict = ssd!!
 
         savedSubDict.setValue("9", 9)
@@ -575,11 +575,11 @@ class IteratorTest : BaseDbTest() {
         (1..5).forEach { dict.setValue("${it}", it) }
 
         val sd = saveDocInCollection(MutableDocument().setValue("dict", dict)).getDictionary("dict")
-        assertNotNull(sd)
+        Assert.assertNotNull(sd)
         val savedDict = sd!!
 
         val ssd = savedDict.getDictionary("0")
-        assertNotNull(ssd)
+        Assert.assertNotNull(ssd)
         val savedSubDict = ssd!!.toMutable()
 
         savedSubDict.setValue("9", 9)
@@ -604,7 +604,7 @@ class IteratorTest : BaseDbTest() {
 
         var n = 0
         val itr = doc.iterator()
-        assertThrows(ConcurrentModificationException::class.java) {
+        Assert.assertThrows(ConcurrentModificationException::class.java) {
             while (itr.hasNext()) {
                 if (n++ == 3) {
                     doc.setValue("10", 10)
@@ -623,7 +623,7 @@ class IteratorTest : BaseDbTest() {
 
         var n = 0
         val itr = savedDoc.iterator()
-        assertThrows(ConcurrentModificationException::class.java) {
+        Assert.assertThrows(ConcurrentModificationException::class.java) {
             while (itr.hasNext()) {
                 if (n++ == 3) {
                     savedDoc.setValue("10", 10)
@@ -644,7 +644,7 @@ class IteratorTest : BaseDbTest() {
 
         var n = 0
         val itr = savedDoc.iterator()
-        assertThrows(ConcurrentModificationException::class.java) {
+        Assert.assertThrows(ConcurrentModificationException::class.java) {
             while (itr.hasNext()) {
                 if (n++ == 3) {
                     savedDoc.setValue("10", 10)
@@ -678,7 +678,7 @@ class IteratorTest : BaseDbTest() {
         val savedDoc = saveDocInCollection(doc).toMutable()
 
         val ssa = savedDoc.getArray("0")
-        assertNotNull(ssa)
+        Assert.assertNotNull(ssa)
         val savedSubArray = ssa!!
 
         var n = 0
@@ -699,7 +699,7 @@ class IteratorTest : BaseDbTest() {
         val savedDoc = saveDocInCollection(doc)
 
         val ssa = savedDoc.getArray("0")
-        assertNotNull(ssa)
+        Assert.assertNotNull(ssa)
         val savedSubArray = ssa!!.toMutable()
 
         var n = 0
@@ -720,7 +720,7 @@ class IteratorTest : BaseDbTest() {
         val savedDoc = saveDocInCollection(doc).toMutable()
 
         val ssa = savedDoc.getArray("0")
-        assertNotNull(ssa)
+        Assert.assertNotNull(ssa)
         val savedSubArray = ssa!!
 
         savedSubArray.addValue(9)
@@ -743,7 +743,7 @@ class IteratorTest : BaseDbTest() {
         val savedDoc = saveDocInCollection(doc)
 
         val ssa = savedDoc.getArray("0")
-        assertNotNull(ssa)
+        Assert.assertNotNull(ssa)
         val savedSubArray = ssa!!.toMutable()
 
         savedSubArray.addValue(9)
@@ -782,7 +782,7 @@ class IteratorTest : BaseDbTest() {
         val savedDoc = saveDocInCollection(doc).toMutable()
 
         val ssd = savedDoc.getDictionary("0")
-        assertNotNull(ssd)
+        Assert.assertNotNull(ssd)
         val savedSubDict = ssd!!
 
         var n = 0
@@ -803,7 +803,7 @@ class IteratorTest : BaseDbTest() {
         val savedDoc = saveDocInCollection(doc)
 
         val ssd = savedDoc.getDictionary("0")
-        assertNotNull(ssd)
+        Assert.assertNotNull(ssd)
         val savedSubDict = ssd!!.toMutable()
 
         var n = 0
@@ -824,7 +824,7 @@ class IteratorTest : BaseDbTest() {
         val savedDoc = saveDocInCollection(doc).toMutable()
 
         val ssd = savedDoc.getDictionary("0")
-        assertNotNull(ssd)
+        Assert.assertNotNull(ssd)
         val savedSubDict = ssd!!
 
         savedSubDict.setValue("9", 9)
@@ -847,7 +847,7 @@ class IteratorTest : BaseDbTest() {
         val savedDoc = saveDocInCollection(doc)
 
         val ssd = savedDoc.getDictionary("0")
-        assertNotNull(ssd)
+        Assert.assertNotNull(ssd)
         val savedSubDict = ssd!!.toMutable()
 
         savedSubDict.setValue("9", 9)

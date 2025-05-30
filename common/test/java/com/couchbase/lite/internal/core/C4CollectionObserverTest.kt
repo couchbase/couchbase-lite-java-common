@@ -2,8 +2,7 @@ package com.couchbase.lite.internal.core
 
 import com.couchbase.lite.Collection
 import com.couchbase.lite.LiteCoreException
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
+import org.junit.Assert
 import org.junit.Test
 
 class C4CollectionObserverTest : C4BaseTest() {
@@ -21,7 +20,8 @@ class C4CollectionObserverTest : C4BaseTest() {
     fun testCreateCollectionObserver() {
         C4Collection.create(c4Database, Collection.DEFAULT_NAME, Collection.DEFAULT_NAME).use { coll ->
             coll.voidWithPeerOrThrow<LiteCoreException> { peer ->
-                C4CollectionObserver.newObserver(mockCollectionObserver, peer, {}).use { obs -> assertNotNull(obs) }
+                C4CollectionObserver.newObserver(mockCollectionObserver, peer, {})
+                    .use { obs -> Assert.assertNotNull(obs) }
             }
         }
     }
@@ -40,7 +40,7 @@ class C4CollectionObserverTest : C4BaseTest() {
             }
         }
 
-        assertEquals(3, i)
+        Assert.assertEquals(3, i)
     }
 
     /**
@@ -57,29 +57,29 @@ class C4CollectionObserverTest : C4BaseTest() {
         C4Collection.create(c4Database, Collection.DEFAULT_NAME, Collection.DEFAULT_NAME).use { coll ->
             coll.voidWithPeerOrThrow<LiteCoreException> { peer ->
                 C4CollectionObserver.newObserver(peer, { i++ }).use { obs ->
-                    assertEquals(0, i)
+                    Assert.assertEquals(0, i)
                     val revId1 = getTestRevId("aa", 1)
                     createRev(coll, "A", revId1, fleeceBody)
-                    assertEquals(1, i)
+                    Assert.assertEquals(1, i)
                     val revId2 = getTestRevId("bb", 1)
                     createRev(coll, "B", revId2, fleeceBody)
-                    assertEquals(1, i)
+                    Assert.assertEquals(1, i)
 
                     checkChanges(obs, arrayListOf("A", "B"), arrayListOf(revId1, revId2), false)
 
                     val revId3 = getTestRevId("bbbb", 2)
                     createRev(coll, "B", revId3, fleeceBody)
-                    assertEquals(2, i)
+                    Assert.assertEquals(2, i)
                     val revId4 = getTestRevId("cc", 1)
                     createRev(coll, "C", revId4, fleeceBody)
-                    assertEquals(2, i)
+                    Assert.assertEquals(2, i)
 
                     checkChanges(obs, arrayListOf("B", "C"), arrayListOf(revId3, revId4), false)
                 }
 
                 // no call back if observer is closed
                 createRev(coll, "A", getTestRevId("aaaa", 2), fleeceBody)
-                assertEquals(2, i)
+                Assert.assertEquals(2, i)
             }
         }
     }
@@ -93,14 +93,16 @@ class C4CollectionObserverTest : C4BaseTest() {
                 C4CollectionObserver.newObserver(peer, { i++ }).use { obs ->
                     val otherColl = C4Database.getDatabase(dbParentDirPath, dbName, getTestDbFlags())
                         .getCollection(coll.name, coll.scope)
-                    assertNotNull(otherColl)
+                    Assert.assertNotNull(otherColl)
+
                     val revId1 = getTestRevId("cc", 1)
                     createRev(otherColl, "c", revId1, fleeceBody)
                     val revId2 = getTestRevId("dd", 1)
                     createRev(otherColl, "d", revId2, fleeceBody)
                     val revId3 = getTestRevId("ee", 1)
                     createRev(otherColl, "e", revId3, fleeceBody)
-                    assertEquals(1, i)
+                    Assert.assertEquals(1, i)
+
                     checkChanges(obs, arrayListOf("c", "d", "e"), arrayListOf(revId1, revId2, revId3), true)
                 }
             }
@@ -122,16 +124,16 @@ class C4CollectionObserverTest : C4BaseTest() {
                     C4CollectionObserver.newObserver(peer, { j++ }).use { obs2 ->
                         val revId1 = getTestRevId("aa", 1)
                         createRev(coll, "A", revId1, fleeceBody)
-                        assertEquals(1, i)
-                        assertEquals(1, j)
+                        Assert.assertEquals(1, i)
+                        Assert.assertEquals(1, j)
 
                         checkChanges(obs1, arrayListOf("A"), arrayListOf(revId1), false)
                         checkChanges(obs2, arrayListOf("A"), arrayListOf(revId1), false)
 
                         val revId2 = getTestRevId("aaaa", 2)
                         createRev(coll, "A", revId2, fleeceBody)
-                        assertEquals(2, i)
-                        assertEquals(2, j)
+                        Assert.assertEquals(2, i)
+                        Assert.assertEquals(2, j)
 
                         checkChanges(obs1, arrayListOf("A"), arrayListOf(revId2), false)
                         checkChanges(obs2, arrayListOf("A"), arrayListOf(revId2), false)

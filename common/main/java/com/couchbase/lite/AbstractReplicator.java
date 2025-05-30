@@ -30,7 +30,6 @@ import java.util.Deque;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -740,11 +739,8 @@ public abstract class AbstractReplicator extends BaseReplicator
             if (closed) { throw new CouchbaseLiteError("Attempt to operate on a closed replicator"); }
 
             C4Replicator c4Repl = getC4Replicator();
-
-            final Map<String, Object> options = config.getConnectionOptions();
-
             if (c4Repl != null) {
-                c4Repl.setOptions(FLEncoder.encodeMap(options));
+                c4Repl.setOptions(FLEncoder.encodeMap(config.getConnectionOptions()));
                 synchronized (getReplicatorLock()) { setProgressLevel(); }
                 return c4Repl;
             }

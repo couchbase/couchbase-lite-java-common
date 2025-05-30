@@ -27,15 +27,12 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.Report;
 import com.couchbase.lite.internal.utils.SlowTest;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 
 @SuppressWarnings("ConstantConditions")
@@ -60,7 +57,7 @@ public class ConcurrencyTest extends BaseDbTest {
             });
 
         // validate stored documents
-        for (int i = 0; i < copies; i++) { assertEquals(nDocs, countTaggedDocs("TAG@CREATES-" + i)); }
+        for (int i = 0; i < copies; i++) { Assert.assertEquals(nDocs, countTaggedDocs("TAG@CREATES-" + i)); }
     }
 
     @Test
@@ -82,7 +79,7 @@ public class ConcurrencyTest extends BaseDbTest {
             });
 
         // validate stored documents
-        for (int i = 0; i < copies; i++) { assertEquals(nDocs, countTaggedDocs("TAG@CREATESBATCH-" + i)); }
+        for (int i = 0; i < copies; i++) { Assert.assertEquals(nDocs, countTaggedDocs("TAG@CREATESBATCH-" + i)); }
     }
 
     @Test
@@ -115,7 +112,7 @@ public class ConcurrencyTest extends BaseDbTest {
         int count = 0;
         for (int i = 0; i < copies; i++) { count += countTaggedDocs("TAG@UPDATED-" + i); }
 
-        assertEquals(docIDs.size(), count);
+        Assert.assertEquals(docIDs.size(), count);
     }
 
     @Test
@@ -143,7 +140,7 @@ public class ConcurrencyTest extends BaseDbTest {
                 }
             });
 
-        assertEquals(0, getTestCollection().getCount());
+        Assert.assertEquals(0, getTestCollection().getCount());
     }
 
     @Test
@@ -175,7 +172,7 @@ public class ConcurrencyTest extends BaseDbTest {
                 }
             });
 
-        assertEquals(0, getTestCollection().getCount());
+        Assert.assertEquals(0, getTestCollection().getCount());
     }
 
     @Test
@@ -186,7 +183,7 @@ public class ConcurrencyTest extends BaseDbTest {
             () -> readDocs(docIDs, 50),
             () -> updateDocs(docIDs, 50, "TAG@READ&UPDATED"));
 
-        assertEquals(docIDs.size(), countTaggedDocs("TAG@READ&UPDATED"));
+        Assert.assertEquals(docIDs.size(), countTaggedDocs("TAG@READ&UPDATED"));
     }
 
     @Test
@@ -295,7 +292,7 @@ public class ConcurrencyTest extends BaseDbTest {
                 catch (Exception e) { error.compareAndSet(null, e); }
             });
 
-            assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
+            Assert.assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
         }
 
         Exception e = error.get();
@@ -317,7 +314,7 @@ public class ConcurrencyTest extends BaseDbTest {
                 catch (Exception e) { error.compareAndSet(null, e); }
             });
 
-            assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
+            Assert.assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
         }
 
         Exception e = error.get();
@@ -342,8 +339,8 @@ public class ConcurrencyTest extends BaseDbTest {
             }
         );
 
-        assertEquals(10, nResults.size());
-        for (Integer n: nResults) { assertEquals(getTestCollection().getCount(), (long) n); }
+        Assert.assertEquals(10, nResults.size());
+        for (Integer n: nResults) { Assert.assertEquals(getTestCollection().getCount(), (long) n); }
     }
 
     private List<String> saveDocs(List<MutableDocument> mDocs) {
@@ -361,13 +358,13 @@ public class ConcurrencyTest extends BaseDbTest {
                 mDoc.setValue(TEST_DOC_TAG_KEY, tag);
 
                 MutableDictionary address = mDoc.getDictionary("address");
-                assertNotNull(address);
+                Assert.assertNotNull(address);
                 String street = String.format(Locale.ENGLISH, "%d street.", i);
                 address.setValue("street", street);
 
                 MutableArray phones = mDoc.getArray("phones");
-                assertNotNull(phones);
-                assertEquals(2, phones.count());
+                Assert.assertNotNull(phones);
+                Assert.assertEquals(2, phones.count());
                 String phone = String.format(Locale.ENGLISH, "650-000-%04d", i);
                 phones.setValue(0, phone);
 
@@ -384,8 +381,8 @@ public class ConcurrencyTest extends BaseDbTest {
                 Document doc;
                 try { doc = getTestCollection().getDocument(docID); }
                 catch (CouchbaseLiteException e) { throw new AssertionError("Failed reading document: " + docID, e); }
-                assertNotNull(doc);
-                assertEquals(docID, doc.getId());
+                Assert.assertNotNull(doc);
+                Assert.assertEquals(docID, doc.getId());
             }
         }
     }
@@ -411,7 +408,7 @@ public class ConcurrencyTest extends BaseDbTest {
 
         checkForFailure(error);
 
-        assertTrue(ok);
+        Assert.assertTrue(ok);
     }
 
     private void runConcurrentCopies(final int nThreads, final Fn.Consumer<Integer> task)
@@ -423,7 +420,7 @@ public class ConcurrencyTest extends BaseDbTest {
         createTestThreads("Concurrency-test", nThreads, barrier, latch, error, task);
 
         // wait
-        assertTrue(latch.await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
+        Assert.assertTrue(latch.await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
 
         checkForFailure(error);
     }

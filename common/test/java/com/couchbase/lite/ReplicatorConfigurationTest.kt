@@ -17,13 +17,7 @@ package com.couchbase.lite
 
 import com.couchbase.lite.internal.ImmutableReplicatorConfiguration
 import com.couchbase.lite.internal.core.C4Replicator
-import org.junit.Assert.assertArrayEquals
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNotSame
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
+import org.junit.Assert
 import org.junit.Test
 
 
@@ -31,31 +25,37 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
 
     @Test
     fun testIllegalMaxAttempts() {
-        assertThrows(IllegalArgumentException::class.java) { makeSimpleReplConfig(maxAttempts = -1) }
+        Assert.assertThrows(IllegalArgumentException::class.java) { makeSimpleReplConfig(maxAttempts = -1) }
     }
 
     @Test
-    fun testMaxAttemptsZero() { makeSimpleReplConfig(maxAttempts = 0) }
+    fun testMaxAttemptsZero() {
+        makeSimpleReplConfig(maxAttempts = 0)
+    }
 
     @Test
     fun testIllegalAttemptsWaitTime() {
-        assertThrows(IllegalArgumentException::class.java) { makeSimpleReplConfig(maxAttemptWaitTime = -1) }
+        Assert.assertThrows(IllegalArgumentException::class.java) { makeSimpleReplConfig(maxAttemptWaitTime = -1) }
     }
 
     @Test
-    fun testMaxAttemptsWaitTimeZero() { makeSimpleReplConfig(maxAttemptWaitTime = 0) }
+    fun testMaxAttemptsWaitTimeZero() {
+        makeSimpleReplConfig(maxAttemptWaitTime = 0)
+    }
 
     @Test
     fun testIllegalHeartbeatMin() {
-        assertThrows(IllegalArgumentException::class.java) { makeSimpleReplConfig().heartbeat = -1 }
+        Assert.assertThrows(IllegalArgumentException::class.java) { makeSimpleReplConfig().heartbeat = -1 }
     }
 
     @Test
-    fun testHeartbeatZero() { makeSimpleReplConfig().heartbeat = 0 }
+    fun testHeartbeatZero() {
+        makeSimpleReplConfig().heartbeat = 0
+    }
 
     @Test
     fun testIllegalHeartbeatMax() {
-        assertThrows(IllegalArgumentException::class.java) { makeSimpleReplConfig().heartbeat = 2147484 }
+        Assert.assertThrows(IllegalArgumentException::class.java) { makeSimpleReplConfig().heartbeat = 2147484 }
     }
 
     // Can't test the EE parameter (self-signed only) here
@@ -65,15 +65,24 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
         config.addCollection(testCollection, null)
 
         val immutableConfig = ImmutableReplicatorConfiguration(config)
-        assertEquals(Defaults.Replicator.TYPE, immutableConfig.type)
-        assertEquals(Defaults.Replicator.CONTINUOUS, immutableConfig.isContinuous)
+        Assert.assertEquals(Defaults.Replicator.TYPE, immutableConfig.type)
+        Assert.assertEquals(Defaults.Replicator.CONTINUOUS, immutableConfig.isContinuous)
 
         val opts = immutableConfig.connectionOptions
-        assertEquals(Defaults.Replicator.HEARTBEAT, opts[C4Replicator.REPLICATOR_HEARTBEAT_INTERVAL])
-        assertEquals(Defaults.Replicator.MAX_ATTEMPTS_SINGLE_SHOT - 1, opts[C4Replicator.REPLICATOR_OPTION_MAX_RETRIES])
-        assertEquals(Defaults.Replicator.MAX_ATTEMPTS_WAIT_TIME, opts[C4Replicator.REPLICATOR_OPTION_MAX_RETRY_INTERVAL])
-        assertEquals(Defaults.Replicator.ENABLE_AUTO_PURGE, opts[C4Replicator.REPLICATOR_OPTION_ENABLE_AUTO_PURGE])
-        assertEquals(
+        Assert.assertEquals(Defaults.Replicator.HEARTBEAT, opts[C4Replicator.REPLICATOR_HEARTBEAT_INTERVAL])
+        Assert.assertEquals(
+            Defaults.Replicator.MAX_ATTEMPTS_SINGLE_SHOT - 1,
+            opts[C4Replicator.REPLICATOR_OPTION_MAX_RETRIES]
+        )
+        Assert.assertEquals(
+            Defaults.Replicator.MAX_ATTEMPTS_WAIT_TIME,
+            opts[C4Replicator.REPLICATOR_OPTION_MAX_RETRY_INTERVAL]
+        )
+        Assert.assertEquals(
+            Defaults.Replicator.ENABLE_AUTO_PURGE,
+            opts[C4Replicator.REPLICATOR_OPTION_ENABLE_AUTO_PURGE]
+        )
+        Assert.assertEquals(
             Defaults.Replicator.ACCEPT_PARENT_COOKIES,
             opts[C4Replicator.REPLICATOR_OPTION_ACCEPT_PARENT_COOKIES]
         )
@@ -90,21 +99,21 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
         config.maxAttemptWaitTime = 6
 
         val opts1 = ImmutableReplicatorConfiguration(config).connectionOptions
-        assertEquals(6, opts1[C4Replicator.REPLICATOR_HEARTBEAT_INTERVAL])
-        assertEquals(6, opts1[C4Replicator.REPLICATOR_OPTION_MAX_RETRY_INTERVAL])
-        assertEquals(6 - 1, opts1[C4Replicator.REPLICATOR_OPTION_MAX_RETRIES])
+        Assert.assertEquals(6, opts1[C4Replicator.REPLICATOR_HEARTBEAT_INTERVAL])
+        Assert.assertEquals(6, opts1[C4Replicator.REPLICATOR_OPTION_MAX_RETRY_INTERVAL])
+        Assert.assertEquals(6 - 1, opts1[C4Replicator.REPLICATOR_OPTION_MAX_RETRIES])
 
         config.heartbeat = 0
         config.maxAttempts = 0
         config.maxAttemptWaitTime = 0
 
         val opts2 = ImmutableReplicatorConfiguration(config).connectionOptions
-        assertEquals(Defaults.Replicator.HEARTBEAT, opts2[C4Replicator.REPLICATOR_HEARTBEAT_INTERVAL])
-        assertEquals(
+        Assert.assertEquals(Defaults.Replicator.HEARTBEAT, opts2[C4Replicator.REPLICATOR_HEARTBEAT_INTERVAL])
+        Assert.assertEquals(
             Defaults.Replicator.MAX_ATTEMPTS_WAIT_TIME,
             opts2[C4Replicator.REPLICATOR_OPTION_MAX_RETRY_INTERVAL]
         )
-        assertEquals(
+        Assert.assertEquals(
             Defaults.Replicator.MAX_ATTEMPTS_SINGLE_SHOT - 1,
             opts2[C4Replicator.REPLICATOR_OPTION_MAX_RETRIES]
         )
@@ -126,9 +135,9 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
     fun testCreateConfigWithDatabaseA() {
         val replConfig = ReplicatorConfiguration(testDatabase, mockURLEndpoint)
         val collections = replConfig.collections
-        assertEquals(1, collections.size)
-        assertTrue(collections.contains(testDatabase.defaultCollection))
-        assertEquals(testDatabase, replConfig.database)
+        Assert.assertEquals(1, collections.size)
+        Assert.assertTrue(collections.contains(testDatabase.defaultCollection))
+        Assert.assertEquals(testDatabase, replConfig.database)
     }
 
     // 8.13.1b Create a config object with ReplicatorConfiguration.init(database: database,
@@ -147,12 +156,12 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
     fun testCreateConfigWithDatabaseB() {
         val collectionConfig = ReplicatorConfiguration(testDatabase, mockURLEndpoint)
             .getCollectionConfiguration(testDatabase.defaultCollection)
-        assertNotNull(collectionConfig)
-        assertNull(collectionConfig!!.conflictResolver)
-        assertNull(collectionConfig.pushFilter)
-        assertNull(collectionConfig.pullFilter)
-        assertNull(collectionConfig.channels)
-        assertNull(collectionConfig.documentIDs)
+        Assert.assertNotNull(collectionConfig)
+        Assert.assertNull(collectionConfig!!.conflictResolver)
+        Assert.assertNull(collectionConfig.pushFilter)
+        Assert.assertNull(collectionConfig.pullFilter)
+        Assert.assertNull(collectionConfig.channels)
+        Assert.assertNull(collectionConfig.documentIDs)
     }
 
     // 8.13.2 Create a config object with ReplicatorConfiguration.init(database: database,
@@ -170,10 +179,10 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
     fun testCreateConfigWithDatabaseAndConflictResolver() {
         val resolver = localResolver
         val replConfig = ReplicatorConfiguration(testDatabase, mockURLEndpoint).setConflictResolver(resolver)
-        assertEquals(resolver, replConfig.conflictResolver)
+        Assert.assertEquals(resolver, replConfig.conflictResolver)
         val collectionConfig = replConfig.getCollectionConfiguration(testDatabase.defaultCollection)
-        assertNotNull(collectionConfig)
-        assertEquals(resolver, collectionConfig?.conflictResolver)
+        Assert.assertNotNull(collectionConfig)
+        Assert.assertEquals(resolver, collectionConfig?.conflictResolver)
     }
 
     // 8.13.3Create a config object with ReplicatorConfiguration.init(database: database,
@@ -202,13 +211,13 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
     fun testUpdateConflictResolverForDefaultCollection() {
         val resolver = localResolver
         val replConfig = ReplicatorConfiguration(testDatabase, mockURLEndpoint).setConflictResolver(resolver)
-        assertEquals(
+        Assert.assertEquals(
             replConfig.conflictResolver,
             replConfig.getCollectionConfiguration(testDatabase.defaultCollection)?.conflictResolver
         )
         val resolver2 = localResolver
         replConfig.conflictResolver = resolver2
-        assertEquals(
+        Assert.assertEquals(
             resolver2,
             replConfig.getCollectionConfiguration(testDatabase.defaultCollection)?.conflictResolver
         )
@@ -234,17 +243,17 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
             .setPullFilter(pullFilter1)
             .setChannels(listOf("CNBC", "ABC"))
             .setDocumentIDs(listOf("doc1", "doc2"))
-        assertEquals(pushFilter1, replConfig1.pushFilter)
-        assertEquals(pullFilter1, replConfig1.pullFilter)
-        assertArrayEquals(arrayOf("CNBC", "ABC"), replConfig1.channels?.toTypedArray())
-        assertArrayEquals(arrayOf("doc1", "doc2"), replConfig1.documentIDs?.toTypedArray())
+        Assert.assertEquals(pushFilter1, replConfig1.pushFilter)
+        Assert.assertEquals(pullFilter1, replConfig1.pullFilter)
+        Assert.assertArrayEquals(arrayOf("CNBC", "ABC"), replConfig1.channels?.toTypedArray())
+        Assert.assertArrayEquals(arrayOf("doc1", "doc2"), replConfig1.documentIDs?.toTypedArray())
 
         val collectionConfig1 = replConfig1.getCollectionConfiguration(testDatabase.defaultCollection)
-        assertNotNull(collectionConfig1)
-        assertEquals(pushFilter1, collectionConfig1!!.pushFilter)
-        assertEquals(pullFilter1, collectionConfig1.pullFilter)
-        assertArrayEquals(arrayOf("CNBC", "ABC"), collectionConfig1.channels?.toTypedArray())
-        assertArrayEquals(arrayOf("doc1", "doc2"), collectionConfig1.documentIDs?.toTypedArray())
+        Assert.assertNotNull(collectionConfig1)
+        Assert.assertEquals(pushFilter1, collectionConfig1!!.pushFilter)
+        Assert.assertEquals(pullFilter1, collectionConfig1.pullFilter)
+        Assert.assertArrayEquals(arrayOf("CNBC", "ABC"), collectionConfig1.channels?.toTypedArray())
+        Assert.assertArrayEquals(arrayOf("doc1", "doc2"), collectionConfig1.documentIDs?.toTypedArray())
     }
 
     // 8.13.5a Create a config object with ReplicatorConfiguration.init(database: database,
@@ -281,17 +290,17 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
             .setPullFilter(pullFilter1)
             .setChannels(listOf("CNBC", "ABC"))
             .setDocumentIDs(listOf("doc1", "doc2"))
-        assertEquals(pushFilter1, replConfig1.pushFilter)
-        assertEquals(pullFilter1, replConfig1.pullFilter)
-        assertArrayEquals(arrayOf("CNBC", "ABC"), replConfig1.channels?.toTypedArray())
-        assertArrayEquals(arrayOf("doc1", "doc2"), replConfig1.documentIDs?.toTypedArray())
+        Assert.assertEquals(pushFilter1, replConfig1.pushFilter)
+        Assert.assertEquals(pullFilter1, replConfig1.pullFilter)
+        Assert.assertArrayEquals(arrayOf("CNBC", "ABC"), replConfig1.channels?.toTypedArray())
+        Assert.assertArrayEquals(arrayOf("doc1", "doc2"), replConfig1.documentIDs?.toTypedArray())
 
         val collectionConfig1 = replConfig1.getCollectionConfiguration(testDatabase.defaultCollection)
-        assertNotNull(collectionConfig1)
-        assertEquals(pushFilter1, collectionConfig1!!.pushFilter)
-        assertEquals(pullFilter1, collectionConfig1.pullFilter)
-        assertArrayEquals(arrayOf("CNBC", "ABC"), collectionConfig1.channels?.toTypedArray())
-        assertArrayEquals(arrayOf("doc1", "doc2"), collectionConfig1.documentIDs?.toTypedArray())
+        Assert.assertNotNull(collectionConfig1)
+        Assert.assertEquals(pushFilter1, collectionConfig1!!.pushFilter)
+        Assert.assertEquals(pullFilter1, collectionConfig1.pullFilter)
+        Assert.assertArrayEquals(arrayOf("CNBC", "ABC"), collectionConfig1.channels?.toTypedArray())
+        Assert.assertArrayEquals(arrayOf("doc1", "doc2"), collectionConfig1.documentIDs?.toTypedArray())
 
         val pushFilter2 = ReplicationFilter { _, _ -> true }
         val pullFilter2 = ReplicationFilter { _, _ -> true }
@@ -300,17 +309,17 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
             .setPullFilter(pullFilter2)
             .setChannels(listOf("Peacock", "History")).documentIDs = listOf("doc3")
 
-        assertEquals(pushFilter1, collectionConfig1.pushFilter)
-        assertEquals(pullFilter1, collectionConfig1.pullFilter)
-        assertArrayEquals(arrayOf("CNBC", "ABC"), collectionConfig1.channels?.toTypedArray())
-        assertArrayEquals(arrayOf("doc1", "doc2"), collectionConfig1.documentIDs?.toTypedArray())
+        Assert.assertEquals(pushFilter1, collectionConfig1.pushFilter)
+        Assert.assertEquals(pullFilter1, collectionConfig1.pullFilter)
+        Assert.assertArrayEquals(arrayOf("CNBC", "ABC"), collectionConfig1.channels?.toTypedArray())
+        Assert.assertArrayEquals(arrayOf("doc1", "doc2"), collectionConfig1.documentIDs?.toTypedArray())
 
         val collectionConfig2 = replConfig1.getCollectionConfiguration(testDatabase.defaultCollection)
-        assertNotNull(collectionConfig2)
-        assertEquals(pushFilter2, collectionConfig2!!.pushFilter)
-        assertEquals(pullFilter2, collectionConfig2.pullFilter)
-        assertArrayEquals(arrayOf("Peacock", "History"), collectionConfig2.channels?.toTypedArray())
-        assertArrayEquals(arrayOf("doc3"), collectionConfig2.documentIDs?.toTypedArray())
+        Assert.assertNotNull(collectionConfig2)
+        Assert.assertEquals(pushFilter2, collectionConfig2!!.pushFilter)
+        Assert.assertEquals(pullFilter2, collectionConfig2.pullFilter)
+        Assert.assertArrayEquals(arrayOf("Peacock", "History"), collectionConfig2.channels?.toTypedArray())
+        Assert.assertArrayEquals(arrayOf("doc3"), collectionConfig2.documentIDs?.toTypedArray())
     }
 
 
@@ -345,17 +354,17 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
             .setPullFilter(pullFilter1)
             .setChannels(listOf("CNBC", "ABC"))
             .setDocumentIDs(listOf("doc1", "doc2"))
-        assertEquals(pushFilter1, replConfig1.pushFilter)
-        assertEquals(pullFilter1, replConfig1.pullFilter)
-        assertArrayEquals(arrayOf("CNBC", "ABC"), replConfig1.channels?.toTypedArray())
-        assertArrayEquals(arrayOf("doc1", "doc2"), replConfig1.documentIDs?.toTypedArray())
+        Assert.assertEquals(pushFilter1, replConfig1.pushFilter)
+        Assert.assertEquals(pullFilter1, replConfig1.pullFilter)
+        Assert.assertArrayEquals(arrayOf("CNBC", "ABC"), replConfig1.channels?.toTypedArray())
+        Assert.assertArrayEquals(arrayOf("doc1", "doc2"), replConfig1.documentIDs?.toTypedArray())
 
         val collectionConfig1 = replConfig1.getCollectionConfiguration(testDatabase.defaultCollection)
-        assertNotNull(collectionConfig1)
-        assertEquals(pushFilter1, collectionConfig1!!.pushFilter)
-        assertEquals(pullFilter1, collectionConfig1.pullFilter)
-        assertArrayEquals(arrayOf("CNBC", "ABC"), collectionConfig1.channels?.toTypedArray())
-        assertArrayEquals(arrayOf("doc1", "doc2"), collectionConfig1.documentIDs?.toTypedArray())
+        Assert.assertNotNull(collectionConfig1)
+        Assert.assertEquals(pushFilter1, collectionConfig1!!.pushFilter)
+        Assert.assertEquals(pullFilter1, collectionConfig1.pullFilter)
+        Assert.assertArrayEquals(arrayOf("CNBC", "ABC"), collectionConfig1.channels?.toTypedArray())
+        Assert.assertArrayEquals(arrayOf("doc1", "doc2"), collectionConfig1.documentIDs?.toTypedArray())
 
         val pushFilter2 = ReplicationFilter { _, _ -> true }
         val pullFilter2 = ReplicationFilter { _, _ -> true }
@@ -366,17 +375,17 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
             .setDocumentIDs(listOf("doc3"))
         replConfig1.addCollection(testDatabase.defaultCollection, collectionConfig2)
 
-        assertEquals(pushFilter2, replConfig1.pushFilter)
-        assertEquals(pullFilter2, replConfig1.pullFilter)
-        assertArrayEquals(arrayOf("Peacock", "History"), replConfig1.channels?.toTypedArray())
-        assertArrayEquals(arrayOf("doc3"), replConfig1.documentIDs?.toTypedArray())
+        Assert.assertEquals(pushFilter2, replConfig1.pushFilter)
+        Assert.assertEquals(pullFilter2, replConfig1.pullFilter)
+        Assert.assertArrayEquals(arrayOf("Peacock", "History"), replConfig1.channels?.toTypedArray())
+        Assert.assertArrayEquals(arrayOf("doc3"), replConfig1.documentIDs?.toTypedArray())
 
         val collectionConfig3 = replConfig1.getCollectionConfiguration(testDatabase.defaultCollection)
-        assertNotNull(collectionConfig3)
-        assertEquals(pushFilter2, collectionConfig3!!.pushFilter)
-        assertEquals(pullFilter2, collectionConfig3.pullFilter)
-        assertArrayEquals(arrayOf("Peacock", "History"), collectionConfig3.channels?.toTypedArray())
-        assertArrayEquals(arrayOf("doc3"), collectionConfig3.documentIDs?.toTypedArray())
+        Assert.assertNotNull(collectionConfig3)
+        Assert.assertEquals(pushFilter2, collectionConfig3!!.pushFilter)
+        Assert.assertEquals(pullFilter2, collectionConfig3.pullFilter)
+        Assert.assertArrayEquals(arrayOf("Peacock", "History"), collectionConfig3.channels?.toTypedArray())
+        Assert.assertArrayEquals(arrayOf("doc3"), collectionConfig3.documentIDs?.toTypedArray())
     }
 
     // 8.13.6a Create a config object with ReplicatorConfiguration.init(endpoint: endpoint).
@@ -386,8 +395,8 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
         val replConfig1 = ReplicatorConfiguration(mockURLEndpoint)
 
         val collections = replConfig1.collections
-        assertNotNull(collections)
-        assertTrue(collections.isEmpty())
+        Assert.assertNotNull(collections)
+        Assert.assertTrue(collections.isEmpty())
     }
 
     // 8.13.6b Create a config object with ReplicatorConfiguration.init(endpoint: endpoint).
@@ -397,7 +406,7 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
     @Test
     fun testCreateConfigWithEndpointOnly2() {
         val replConfig1 = ReplicatorConfiguration(mockURLEndpoint)
-        assertThrows(CouchbaseLiteError::class.java) { replConfig1.database }
+        Assert.assertThrows(CouchbaseLiteError::class.java) { replConfig1.database }
     }
 
     // 8.13.7 Create Collection "colA" and "colB" in the scope "scopeA".
@@ -423,22 +432,22 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
         replConfig1.addCollections(setOf(collectionA, collectionB), null)
 
         val collectionConfig1 = replConfig1.getCollectionConfiguration(collectionA)
-        assertNotNull(collectionConfig1)
-        assertNull(collectionConfig1!!.conflictResolver)
-        assertNull(collectionConfig1.pushFilter)
-        assertNull(collectionConfig1.pullFilter)
-        assertNull(collectionConfig1.channels)
-        assertNull(collectionConfig1.documentIDs)
+        Assert.assertNotNull(collectionConfig1)
+        Assert.assertNull(collectionConfig1!!.conflictResolver)
+        Assert.assertNull(collectionConfig1.pushFilter)
+        Assert.assertNull(collectionConfig1.pullFilter)
+        Assert.assertNull(collectionConfig1.channels)
+        Assert.assertNull(collectionConfig1.documentIDs)
 
         val collectionConfig2 = replConfig1.getCollectionConfiguration(collectionB)
-        assertNotNull(collectionConfig2)
-        assertNull(collectionConfig1.conflictResolver)
-        assertNull(collectionConfig1.pushFilter)
-        assertNull(collectionConfig1.pullFilter)
-        assertNull(collectionConfig1.channels)
-        assertNull(collectionConfig1.documentIDs)
+        Assert.assertNotNull(collectionConfig2)
+        Assert.assertNull(collectionConfig1.conflictResolver)
+        Assert.assertNull(collectionConfig1.pushFilter)
+        Assert.assertNull(collectionConfig1.pullFilter)
+        Assert.assertNull(collectionConfig1.channels)
+        Assert.assertNull(collectionConfig1.documentIDs)
 
-        assertNotSame(collectionConfig1, collectionConfig2)
+        Assert.assertNotSame(collectionConfig1, collectionConfig2)
     }
 
     // 8.13.8 Create Collection "colA" and "colB" in the scope "scopeA".
@@ -475,18 +484,18 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
         replConfig1.addCollections(setOf(collectionA, collectionB), collectionConfig0)
 
         val collectionConfig1 = replConfig1.getCollectionConfiguration(collectionA)
-        assertNotNull(collectionConfig1)
-        assertEquals(pushFilter1, collectionConfig1!!.pushFilter)
-        assertEquals(pullFilter1, collectionConfig1.pullFilter)
-        assertEquals(resolver, collectionConfig1.conflictResolver)
+        Assert.assertNotNull(collectionConfig1)
+        Assert.assertEquals(pushFilter1, collectionConfig1!!.pushFilter)
+        Assert.assertEquals(pullFilter1, collectionConfig1.pullFilter)
+        Assert.assertEquals(resolver, collectionConfig1.conflictResolver)
 
         val collectionConfig2 = replConfig1.getCollectionConfiguration(collectionB)
-        assertNotNull(collectionConfig2)
-        assertEquals(pushFilter1, collectionConfig2!!.pushFilter)
-        assertEquals(pullFilter1, collectionConfig2.pullFilter)
-        assertEquals(resolver, collectionConfig2.conflictResolver)
+        Assert.assertNotNull(collectionConfig2)
+        Assert.assertEquals(pushFilter1, collectionConfig2!!.pushFilter)
+        Assert.assertEquals(pullFilter1, collectionConfig2.pullFilter)
+        Assert.assertEquals(resolver, collectionConfig2.conflictResolver)
 
-        assertNotSame(collectionConfig1, collectionConfig2)
+        Assert.assertNotSame(collectionConfig1, collectionConfig2)
     }
 
     // 8.13.9 Create Collection "colA" and "colB" in the scope "scopeA".
@@ -526,20 +535,20 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
             .setConflictResolver(resolver)
         replConfig1.addCollection(collectionB, collectionConfig0)
 
-        assertTrue(replConfig1.collections.contains(collectionA))
-        assertTrue(replConfig1.collections.contains(collectionB))
+        Assert.assertTrue(replConfig1.collections.contains(collectionA))
+        Assert.assertTrue(replConfig1.collections.contains(collectionB))
 
         val collectionConfig1 = replConfig1.getCollectionConfiguration(collectionA)
-        assertNotNull(collectionConfig1)
-        assertNull(collectionConfig1!!.pushFilter)
-        assertNull(collectionConfig1.pullFilter)
-        assertNull(collectionConfig1.conflictResolver)
+        Assert.assertNotNull(collectionConfig1)
+        Assert.assertNull(collectionConfig1!!.pushFilter)
+        Assert.assertNull(collectionConfig1.pullFilter)
+        Assert.assertNull(collectionConfig1.conflictResolver)
 
         val collectionConfig2 = replConfig1.getCollectionConfiguration(collectionB)
-        assertNotNull(collectionConfig2)
-        assertEquals(pushFilter1, collectionConfig2!!.pushFilter)
-        assertEquals(pullFilter1, collectionConfig2.pullFilter)
-        assertEquals(resolver, collectionConfig2.conflictResolver)
+        Assert.assertNotNull(collectionConfig2)
+        Assert.assertEquals(pushFilter1, collectionConfig2!!.pushFilter)
+        Assert.assertEquals(pullFilter1, collectionConfig2.pullFilter)
+        Assert.assertEquals(resolver, collectionConfig2.conflictResolver)
     }
 
     // 8.13.10a Create Collection "colA" and "colB" in the scope "scopeA".
@@ -589,20 +598,20 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
         replConfig1.addCollection(collectionB, collectionConfig0)
 
 
-        assertTrue(replConfig1.collections.contains(collectionA))
-        assertTrue(replConfig1.collections.contains(collectionB))
+        Assert.assertTrue(replConfig1.collections.contains(collectionA))
+        Assert.assertTrue(replConfig1.collections.contains(collectionB))
 
         val collectionConfig1 = replConfig1.getCollectionConfiguration(collectionA)
-        assertNotNull(collectionConfig1)
-        assertEquals(pushFilter1, collectionConfig1!!.pushFilter)
-        assertEquals(pullFilter1, collectionConfig1.pullFilter)
-        assertEquals(resolver1, collectionConfig1.conflictResolver)
+        Assert.assertNotNull(collectionConfig1)
+        Assert.assertEquals(pushFilter1, collectionConfig1!!.pushFilter)
+        Assert.assertEquals(pullFilter1, collectionConfig1.pullFilter)
+        Assert.assertEquals(resolver1, collectionConfig1.conflictResolver)
 
         val collectionConfig2 = replConfig1.getCollectionConfiguration(collectionB)
-        assertNotNull(collectionConfig2)
-        assertEquals(pushFilter1, collectionConfig2!!.pushFilter)
-        assertEquals(pullFilter1, collectionConfig2.pullFilter)
-        assertEquals(resolver1, collectionConfig2.conflictResolver)
+        Assert.assertNotNull(collectionConfig2)
+        Assert.assertEquals(pushFilter1, collectionConfig2!!.pushFilter)
+        Assert.assertEquals(pullFilter1, collectionConfig2.pullFilter)
+        Assert.assertEquals(resolver1, collectionConfig2.conflictResolver)
 
         val pushFilter2 = ReplicationFilter { _, _ -> true }
         val pullFilter2 = ReplicationFilter { _, _ -> true }
@@ -616,16 +625,16 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
         replConfig1.addCollection(collectionB, collectionConfig3)
 
         val collectionConfig4 = replConfig1.getCollectionConfiguration(collectionA)
-        assertNotNull(collectionConfig3)
-        assertNull(collectionConfig4!!.pushFilter)
-        assertNull(collectionConfig4.pullFilter)
-        assertNull(collectionConfig4.conflictResolver)
+        Assert.assertNotNull(collectionConfig3)
+        Assert.assertNull(collectionConfig4!!.pushFilter)
+        Assert.assertNull(collectionConfig4.pullFilter)
+        Assert.assertNull(collectionConfig4.conflictResolver)
 
         val collectionConfig5 = replConfig1.getCollectionConfiguration(collectionB)
-        assertNotNull(collectionConfig5)
-        assertEquals(pushFilter2, collectionConfig5!!.pushFilter)
-        assertEquals(pullFilter2, collectionConfig5.pullFilter)
-        assertEquals(resolver2, collectionConfig5.conflictResolver)
+        Assert.assertNotNull(collectionConfig5)
+        Assert.assertEquals(pushFilter2, collectionConfig5!!.pushFilter)
+        Assert.assertEquals(pullFilter2, collectionConfig5.pullFilter)
+        Assert.assertEquals(resolver2, collectionConfig5.conflictResolver)
     }
 
 
@@ -671,22 +680,22 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
         replConfig.addCollections(listOf(defaultCollection, collectionA), collConfig)
 
         collConfig = replConfig.getCollectionConfiguration(defaultCollection)!!
-        assertEquals(filter, collConfig.pullFilter)
-        assertEquals(null, collConfig.pushFilter)
+        Assert.assertEquals(filter, collConfig.pullFilter)
+        Assert.assertEquals(null, collConfig.pushFilter)
 
         collConfig = replConfig.getCollectionConfiguration(collectionA)!!
-        assertEquals(filter, collConfig.pullFilter)
-        assertEquals(null, collConfig.pushFilter)
+        Assert.assertEquals(filter, collConfig.pullFilter)
+        Assert.assertEquals(null, collConfig.pushFilter)
 
         replConfig.pushFilter = filter
 
         collConfig = replConfig.getCollectionConfiguration(defaultCollection)!!
-        assertEquals(filter, collConfig.pullFilter)
-        assertEquals(filter, collConfig.pushFilter)
+        Assert.assertEquals(filter, collConfig.pullFilter)
+        Assert.assertEquals(filter, collConfig.pushFilter)
 
         collConfig = replConfig.getCollectionConfiguration(collectionA)!!
-        assertEquals(filter, collConfig.pullFilter)
-        assertEquals(null, collConfig.pushFilter)
+        Assert.assertEquals(filter, collConfig.pullFilter)
+        Assert.assertEquals(null, collConfig.pushFilter)
     }
 
     // 8.13.11 Create Collection "colA" and "colB" in the scope "scopeA".
@@ -731,15 +740,15 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
         replConfig1.addCollection(collectionA, collectionConfig0)
         replConfig1.addCollection(collectionB, collectionConfig0)
 
-        assertTrue(replConfig1.collections.contains(collectionA))
-        assertTrue(replConfig1.collections.contains(collectionB))
+        Assert.assertTrue(replConfig1.collections.contains(collectionA))
+        Assert.assertTrue(replConfig1.collections.contains(collectionB))
 
         replConfig1.removeCollection(collectionB)
-        assertTrue(replConfig1.collections.contains(collectionA))
-        assertFalse(replConfig1.collections.contains(collectionB))
+        Assert.assertTrue(replConfig1.collections.contains(collectionA))
+        Assert.assertFalse(replConfig1.collections.contains(collectionB))
 
-        assertNotNull(replConfig1.getCollectionConfiguration(collectionA))
-        assertNull(replConfig1.getCollectionConfiguration(collectionB))
+        Assert.assertNotNull(replConfig1.getCollectionConfiguration(collectionA))
+        Assert.assertNull(replConfig1.getCollectionConfiguration(collectionB))
     }
 
     // 8.13.12a Create collection "colA" in the scope "scopeA" using database instance A.
@@ -762,7 +771,7 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
 
         val replConfig1 = ReplicatorConfiguration(mockURLEndpoint)
 
-        assertThrows(IllegalArgumentException::class.java) {
+        Assert.assertThrows(IllegalArgumentException::class.java) {
             replConfig1.addCollections(setOf(collectionA, collectionB), null)
         }
     }
@@ -789,7 +798,7 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
 
         replConfig1.addCollection(collectionA, null)
 
-        assertThrows(IllegalArgumentException::class.java) { replConfig1.addCollection(collectionB, null) }
+        Assert.assertThrows(IllegalArgumentException::class.java) { replConfig1.addCollection(collectionB, null) }
     }
 
     // 8.13.13a Create collection "colA" in the scope "scopeA" using database instance A.
@@ -812,7 +821,7 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
 
         testDatabase.deleteCollection("colB", "scopeA")
 
-        assertThrows(IllegalArgumentException::class.java) {
+        Assert.assertThrows(IllegalArgumentException::class.java) {
             ReplicatorConfiguration(mockURLEndpoint).addCollections(setOf(collectionA, collectionB), null)
         }
     }
@@ -843,8 +852,8 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
         replConfig1.addCollection(collectionA, null)
 
         val collections = replConfig1.collections
-        assertEquals(1, collections.size)
-        assertTrue(collections.contains(collectionA))
+        Assert.assertEquals(1, collections.size)
+        Assert.assertTrue(collections.contains(collectionA))
     }
 
 
@@ -868,7 +877,7 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
 
         targetDatabase.deleteCollection("colB", "scopeA")
 
-        assertThrows(IllegalArgumentException::class.java) {
+        Assert.assertThrows(IllegalArgumentException::class.java) {
             ReplicatorConfiguration(mockURLEndpoint).addCollection(collectionB, null)
         }
     }
@@ -878,7 +887,7 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
     // should throw an illegal argument exception.
     @Test
     fun testCreateReplicatorWithNoCollections() {
-        assertThrows(IllegalArgumentException::class.java) { Replicator(ReplicatorConfiguration(mockURLEndpoint)) }
+        Assert.assertThrows(IllegalArgumentException::class.java) { Replicator(ReplicatorConfiguration(mockURLEndpoint)) }
     }
 
     // CBL-3736
@@ -886,11 +895,11 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
     // an attempt to get the scope should return null
     @Test
     fun testUseScopeAfterScopeDeleted() {
-        assertNotNull(testDatabase.createCollection("colA", "scopeA"))
+        Assert.assertNotNull(testDatabase.createCollection("colA", "scopeA"))
 
         testDatabase.deleteCollection("colA", "scopeA")
 
-        assertNull(testDatabase.getScope("scopeA"))
+        Assert.assertNull(testDatabase.getScope("scopeA"))
     }
 
     // CBL-3736
@@ -898,7 +907,7 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
     // should throw a CouchbaseLiteException
     @Test
     fun testUseScopeAfterDBClosed() {
-        assertNotNull(testDatabase.createCollection("colA", "scopeA"))
+        Assert.assertNotNull(testDatabase.createCollection("colA", "scopeA"))
 
         testDatabase.close()
 

@@ -19,13 +19,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.utils.VerySlowTest;
-
-import static org.junit.Assert.assertEquals;
 
 
 public class C4CollatedQueryTest extends C4QueryBaseTest {
@@ -38,8 +37,8 @@ public class C4CollatedQueryTest extends C4QueryBaseTest {
   @VerySlowTest
   @Test
   public void testDBQueryCollated() throws LiteCoreException {
-    compileSelect(""
-      + "\"WHAT\": [ [ \".Name\" ] ],"
+    compileSelect(
+      "\"WHAT\": [ [ \".Name\" ] ],"
       + "\"WHERE\": [ \"COLLATE\", {"
       + "    \"unicode\": true,"
       + "    \"case\": false,"
@@ -60,15 +59,15 @@ public class C4CollatedQueryTest extends C4QueryBaseTest {
       + "]]");
 
     List<String> tracks = run();
-    assertEquals(2, tracks.size());
+    Assert.assertEquals(2, tracks.size());
   }
   // @formatter:on
 
     @VerySlowTest
     @Test
     public void testDBQueryAggregateCollated() throws LiteCoreException {
-        compileSelect(
-            "\"WHAT\": [ ["
+        compileSelect(""
+            + "\"WHAT\": [ ["
             + "    \"COLLATE\", {"
             + "      \"unicode\": true,"
             + "      \"case\": false,"
@@ -86,18 +85,18 @@ public class C4CollatedQueryTest extends C4QueryBaseTest {
             + "  [ \".Artist\" ]"
             + "] ]");
         List<String> artists = run();
-        assertEquals(2097, artists.size());
+        Assert.assertEquals(2097, artists.size());
 
         // Benoît Pioulard appears twice in the database, once mis-capitalized as BenoÎt Pioulard.
         // Check that these got coalesced by the DISTINCT operator:
-        assertEquals("Benny Goodman", artists.get(214));
-        assertEquals("Benoît Pioulard", artists.get(215));
-        assertEquals("Bernhard Weiss", artists.get(216));
+        Assert.assertEquals("Benny Goodman", artists.get(214));
+        Assert.assertEquals("Benoît Pioulard", artists.get(215));
+        Assert.assertEquals("Bernhard Weiss", artists.get(216));
 
         // Make sure "Zoë Keating" sorts correctly:
-        assertEquals("ZENИTH (feat. saåad)", artists.get(2082));
-        assertEquals("Zoë Keating", artists.get(2083));
-        assertEquals("Zola Jesus", artists.get(2084));
+        Assert.assertEquals("ZENИTH (feat. saåad)", artists.get(2082));
+        Assert.assertEquals("Zoë Keating", artists.get(2083));
+        Assert.assertEquals("Zola Jesus", artists.get(2084));
     }
 
     protected List<String> run() throws LiteCoreException {

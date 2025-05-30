@@ -10,9 +10,8 @@
 //
 package com.couchbase.lite;
 
+import org.junit.Assert;
 import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
 
 
 @SuppressWarnings("ConstantConditions")
@@ -22,27 +21,27 @@ public class AuthenticatorTest extends BaseTest {
         String username = "someUsername";
         String password = "somePassword";
         BasicAuthenticator auth = new BasicAuthenticator(username, password.toCharArray());
-        assertEquals(username, auth.getUsername());
-        assertEquals(password, new String(auth.getPasswordChars()));
+        Assert.assertEquals(username, auth.getUsername());
+        Assert.assertEquals(password, new String(auth.getPasswordChars()));
     }
 
     @Test
     public void testBasicAuthenticatorWithEmptyUsername() {
-        assertThrows(IllegalArgumentException.class, () -> new BasicAuthenticator(null, "somePassword".toCharArray()));
+        Assert.assertThrows(IllegalArgumentException.class, () -> new BasicAuthenticator(null, "somePassword".toCharArray()));
     }
 
 
     @Test
     public void testBasicAuthenticatorWithEmptyPassword() {
-        assertThrows(IllegalArgumentException.class, () -> new BasicAuthenticator("someUsername", null));
+        Assert.assertThrows(IllegalArgumentException.class, () -> new BasicAuthenticator("someUsername", null));
     }
 
     @Test
     public void testSessionAuthenticatorWithSessionID() {
         String sessionID = "someSessionID";
         SessionAuthenticator auth = new SessionAuthenticator(sessionID);
-        assertEquals(sessionID, auth.getSessionID());
-        assertEquals("SyncGatewaySession", auth.getCookieName());
+        Assert.assertEquals(sessionID, auth.getSessionID());
+        Assert.assertEquals("SyncGatewaySession", auth.getCookieName());
     }
 
     @Test
@@ -50,20 +49,20 @@ public class AuthenticatorTest extends BaseTest {
         String sessionID = "someSessionID";
         String cookie = "someCookie";
         SessionAuthenticator auth = new SessionAuthenticator(sessionID, cookie);
-        assertEquals(sessionID, auth.getSessionID());
-        assertEquals(cookie, auth.getCookieName());
+        Assert.assertEquals(sessionID, auth.getSessionID());
+        Assert.assertEquals(cookie, auth.getCookieName());
     }
 
     @Test
     public void testSessionAuthenticatorEmptySessionID() {
-        assertThrows(IllegalArgumentException.class, () -> new SessionAuthenticator(null, null));
+        Assert.assertThrows(IllegalArgumentException.class, () -> new SessionAuthenticator(null, null));
     }
 
     @Test
     public void testSessionAuthenticatorEmptyCookie() {
         String sessionID = "someSessionID";
         SessionAuthenticator auth = new SessionAuthenticator(sessionID, null);
-        assertEquals(sessionID, auth.getSessionID());
-        assertEquals("SyncGatewaySession", auth.getCookieName());
+        Assert.assertEquals(sessionID, auth.getSessionID());
+        Assert.assertEquals("SyncGatewaySession", auth.getCookieName());
     }
 }

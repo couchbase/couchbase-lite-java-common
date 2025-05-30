@@ -17,12 +17,7 @@
 package com.couchbase.lite
 
 import com.couchbase.lite.internal.utils.SlowTest
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNotSame
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
+import org.junit.Assert
 import org.junit.Test
 
 class CollectionTest : BaseDbTest() {
@@ -33,7 +28,7 @@ class CollectionTest : BaseDbTest() {
 
     @Test
     fun testGetNonExistingDocWithID() {
-        assertNull(testCollection.getDocument("doesnt-exist"))
+        Assert.assertNull(testCollection.getDocument("doesnt-exist"))
     }
 
     // get doc in the collection
@@ -50,7 +45,11 @@ class CollectionTest : BaseDbTest() {
     @Test
     fun testGetExistingDocWithIdFromDifferentDBInstance() {
         val doc = createDocInCollection()
-        duplicateDb(testDatabase).use { assertNotNull(it.getSimilarCollection(testCollection).getDocument(doc.id)) }
+        duplicateDb(testDatabase).use {
+            Assert.assertNotNull(
+                it.getSimilarCollection(testCollection).getDocument(doc.id)
+            )
+        }
     }
 
     // getting doc from deleted collection causes CBL exception
@@ -102,23 +101,23 @@ class CollectionTest : BaseDbTest() {
     fun testGetDocCountFromDeletedCollection() {
         // store doc
         createDocsInCollection(10)
-        assertEquals(10, testCollection.count)
+        Assert.assertEquals(10, testCollection.count)
 
         // delete col
         testCollection.delete()
 
-        assertEquals(0, testCollection.count)
+        Assert.assertEquals(0, testCollection.count)
     }
 
     // getting doc count from a collection in a deleted database returns 0
     @Test
     fun testGetDocCountFromCollectionInDeletedDatabase() {
         createDocsInCollection(10)
-        assertEquals(10, testCollection.count)
+        Assert.assertEquals(10, testCollection.count)
 
         deleteDb(testDatabase)
 
-        assertEquals(0, testCollection.count)
+        Assert.assertEquals(0, testCollection.count)
     }
 
     // getting doc count from a collection deleted in a different database instance returns 0
@@ -126,12 +125,12 @@ class CollectionTest : BaseDbTest() {
     fun testGetDocCountFromCollectionDeletedInADifferentDBInstance() {
         // store docs
         createDocsInCollection(10)
-        assertEquals(10, testCollection.count)
+        Assert.assertEquals(10, testCollection.count)
 
         // delete col in dup db
         duplicateDb(testDatabase).use { it.getSimilarCollection(testCollection).delete() }
 
-        assertEquals(0, testCollection.count)
+        Assert.assertEquals(0, testCollection.count)
     }
 
     // Test getting doc count from a collection in a closed database returns 0
@@ -139,11 +138,11 @@ class CollectionTest : BaseDbTest() {
     fun testGetDocCountFromCollectionInClosedDatabase() {
         // store doc
         createDocsInCollection(10)
-        assertEquals(10, testCollection.count)
+        Assert.assertEquals(10, testCollection.count)
 
         closeDb(testDatabase)
 
-        assertEquals(0, testCollection.count)
+        Assert.assertEquals(0, testCollection.count)
     }
 
     //---------------------------------------------
@@ -157,7 +156,7 @@ class CollectionTest : BaseDbTest() {
         val mDoc = MutableDocument(id)
         testCollection.save(mDoc)
 
-        assertEquals(1, testCollection.count)
+        Assert.assertEquals(1, testCollection.count)
         assertSameContent(mDoc, testCollection.getDocument(id))
     }
 
@@ -167,7 +166,7 @@ class CollectionTest : BaseDbTest() {
         val mDoc = MutableDocument(id)
         testCollection.save(mDoc)
 
-        assertEquals(1, testCollection.count)
+        Assert.assertEquals(1, testCollection.count)
 
         assertSameContent(mDoc, testCollection.getDocument(id))
     }
@@ -176,7 +175,7 @@ class CollectionTest : BaseDbTest() {
     fun testSaveAndGetMultipleDocsInCollection() {
         val docs = createDocsInCollection(10)
 
-        assertEquals(docs.size, testCollection.count.toInt())
+        Assert.assertEquals(docs.size, testCollection.count.toInt())
 
         docs.forEach {
             assertSameContent(it, testCollection.getDocument(it.id))
@@ -190,9 +189,9 @@ class CollectionTest : BaseDbTest() {
 
         duplicateDb(testDatabase).use {
             val dupCollection = it.getSimilarCollection(testCollection)
-            assertNotSame(dupCollection, testCollection)
-            assertNotNull(dupCollection)
-            assertEquals(1, dupCollection.count)
+            Assert.assertNotSame(dupCollection, testCollection)
+            Assert.assertNotNull(dupCollection)
+            Assert.assertEquals(1, dupCollection.count)
 
             assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) {
                 dupCollection.save(doc.toMutable())
@@ -204,12 +203,12 @@ class CollectionTest : BaseDbTest() {
     fun testSaveDocAndUpdateInCollection() {
         // store doc
         val mDoc = createDocInCollection().toMutable()
-        assertEquals(1, testCollection.count)
+        Assert.assertEquals(1, testCollection.count)
 
         // update doc
         mDoc.setValue(TEST_DOC_TAG_KEY, "whuddaboutdit")
         saveDocInCollection(mDoc)
-        assertEquals(1, testCollection.count)
+        Assert.assertEquals(1, testCollection.count)
 
         // validate doc
         assertSameContent(mDoc, testCollection.getDocument(mDoc.id))
@@ -219,10 +218,10 @@ class CollectionTest : BaseDbTest() {
     @Test
     fun testSaveSameDocTwice() {
         val doc = createDocInCollection()
-        assertEquals(1, testCollection.count)
+        Assert.assertEquals(1, testCollection.count)
 
         testCollection.save(doc.toMutable())
-        assertEquals(1, testCollection.count)
+        Assert.assertEquals(1, testCollection.count)
     }
 
     @Test
@@ -269,25 +268,25 @@ class CollectionTest : BaseDbTest() {
         mDoc.setString("firstName", "Robert")
         mDoc.setString("lastName", "Bly")
         testCollection.save(mDoc)
-        assertEquals(1, mDoc.sequence)
+        Assert.assertEquals(1, mDoc.sequence)
 
         mDoc.setString("firstName", "Daniel")
         testCollection.save(mDoc)
-        assertEquals(2, mDoc.sequence)
+        Assert.assertEquals(2, mDoc.sequence)
 
         // Update
         mDoc.setString("lastName", "Tiger")
         testCollection.save(mDoc)
-        assertEquals(3, mDoc.sequence)
+        Assert.assertEquals(3, mDoc.sequence)
 
         // Update again
         mDoc.setLong("age", 20L)
         testCollection.save(mDoc)
-        assertEquals(4, mDoc.sequence)
+        Assert.assertEquals(4, mDoc.sequence)
 
         val expected = mapOf("firstName" to "Daniel", "lastName" to "Tiger", "age" to 20L)
-        assertEquals(expected, mDoc.toMap())
-        assertEquals(expected, testCollection.getDocument(mDoc.id)!!.content.toMap())
+        Assert.assertEquals(expected, mDoc.toMap())
+        Assert.assertEquals(expected, testCollection.getDocument(mDoc.id)!!.content.toMap())
     }
 
     @Test
@@ -303,10 +302,10 @@ class CollectionTest : BaseDbTest() {
             col4.save(MutableDocument())
         }
 
-        assertEquals(1, col1.count)
-        assertEquals(0, col2.count)
-        assertEquals(1, col3.count)
-        assertEquals(1, col4.count)
+        Assert.assertEquals(1, col1.count)
+        Assert.assertEquals(0, col2.count)
+        Assert.assertEquals(1, col3.count)
+        Assert.assertEquals(1, col4.count)
     }
 
     //---------------------------------------------
@@ -318,22 +317,22 @@ class CollectionTest : BaseDbTest() {
         val doc = createDocInCollection()
         val docContent = doc.content.toMap()
 
-        assertEquals(1, testCollection.count)
-        assertNotNull(testCollection.getDocument(doc.id))
+        Assert.assertEquals(1, testCollection.count)
+        Assert.assertNotNull(testCollection.getDocument(doc.id))
 
         // Delete:
         testCollection.delete(doc)
 
-        assertEquals(0, testCollection.count)
-        assertNull(testCollection.getDocument(doc.id))
+        Assert.assertEquals(0, testCollection.count)
+        Assert.assertNull(testCollection.getDocument(doc.id))
 
         // The local copy should be unaffected.
-        assertEquals(docContent, doc.content.toMap())
+        Assert.assertEquals(docContent, doc.content.toMap())
     }
 
     @Test
     fun testDeleteDocBeforeSave() {
-        assertEquals(0, testCollection.count)
+        Assert.assertEquals(0, testCollection.count)
         assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND) {
             testCollection.delete(MutableDocument())
         }
@@ -347,8 +346,8 @@ class CollectionTest : BaseDbTest() {
         var n = 10L
         for (doc in docs) {
             testCollection.delete(doc)
-            assertEquals(--n, testCollection.count)
-            assertNull(testCollection.getDocument(doc.id))
+            Assert.assertEquals(--n, testCollection.count)
+            Assert.assertNull(testCollection.getDocument(doc.id))
         }
     }
 
@@ -361,9 +360,9 @@ class CollectionTest : BaseDbTest() {
         // Create db with default
         duplicateDb(testDatabase).use {
             val dupColl = it.getSimilarCollection(testCollection)
-            assertNotNull(dupColl)
-            assertNotSame(dupColl, testCollection)
-            assertEquals(1, dupColl.count)
+            Assert.assertNotNull(dupColl)
+            Assert.assertNotSame(dupColl, testCollection)
+            Assert.assertEquals(1, dupColl.count)
 
             // Try to delete the doc from the duplicate db instance:
             assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { dupColl.delete(doc) }
@@ -388,10 +387,10 @@ class CollectionTest : BaseDbTest() {
             collection4.delete(doc4)
         }
 
-        assertEquals(0, collection1.count)
-        assertEquals(1, collection2.count)
-        assertEquals(0, collection3.count)
-        assertEquals(0, collection4.count)
+        Assert.assertEquals(0, collection1.count)
+        Assert.assertEquals(1, collection2.count)
+        Assert.assertEquals(0, collection3.count)
+        Assert.assertEquals(0, collection4.count)
     }
 
     // Test deleting doc from a deleted collection causes CBL exception
@@ -436,25 +435,25 @@ class CollectionTest : BaseDbTest() {
 
         // Delete doc1a:
         testCollection.delete(doc1a)
-        assertEquals(2, doc1a.sequence)
-        assertNull(testCollection.getDocument(doc.id))
+        Assert.assertEquals(2, doc1a.sequence)
+        Assert.assertNull(testCollection.getDocument(doc.id))
 
         // Delete doc1b:
         testCollection.delete(doc1b)
-        assertEquals(2, doc1b.sequence)
-        assertNull(testCollection.getDocument(doc.id))
+        Assert.assertEquals(2, doc1b.sequence)
+        Assert.assertNull(testCollection.getDocument(doc.id))
     }
 
     @Test
     fun testDeletePurgedDoc() {
         val doc1a = createDocInCollection()
         val doc1b = testCollection.getDocument(doc1a.id)!!
-        assertEquals(1, testCollection.count)
+        Assert.assertEquals(1, testCollection.count)
 
         // purge doc
         testCollection.purge(doc1a)
-        assertEquals(0, testCollection.count)
-        assertNull(testCollection.getDocument(doc1a.id))
+        Assert.assertEquals(0, testCollection.count)
+        Assert.assertNull(testCollection.getDocument(doc1a.id))
 
         assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND) { testCollection.delete(doc1a) }
         assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND) { testCollection.delete(doc1b) }
@@ -466,7 +465,7 @@ class CollectionTest : BaseDbTest() {
 
     @Test
     fun testPurgeDocBeforeSaveDoc() {
-        assertEquals(0, testCollection.count)
+        Assert.assertEquals(0, testCollection.count)
 
         assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND) {
             testCollection.purge(MutableDocument())
@@ -480,8 +479,8 @@ class CollectionTest : BaseDbTest() {
         // Purge Doc
         testCollection.purge(doc)
 
-        assertEquals(0, testCollection.count)
-        assertNull(testCollection.getDocument(doc.id))
+        Assert.assertEquals(0, testCollection.count)
+        Assert.assertNull(testCollection.getDocument(doc.id))
     }
 
     @Test
@@ -494,13 +493,13 @@ class CollectionTest : BaseDbTest() {
 
         // Purge the document first time:
         testCollection.purge(doc1)
-        assertNull(testCollection.getDocument(doc1.id))
-        assertEquals(0, testCollection.count)
+        Assert.assertNull(testCollection.getDocument(doc1.id))
+        Assert.assertEquals(0, testCollection.count)
 
         // Purge the document second time:
         testCollection.purge(doc2)
-        assertNull(testCollection.getDocument(doc1.id))
-        assertEquals(0, testCollection.count)
+        Assert.assertNull(testCollection.getDocument(doc1.id))
+        Assert.assertEquals(0, testCollection.count)
     }
 
     // Purge document from a deleted collection
@@ -564,10 +563,10 @@ class CollectionTest : BaseDbTest() {
             collection4.purge(doc4)
         }
 
-        assertEquals(0, collection1.count)
-        assertEquals(1, collection2.count)
-        assertEquals(0, collection3.count)
-        assertEquals(0, collection4.count)
+        Assert.assertEquals(0, collection1.count)
+        Assert.assertEquals(1, collection2.count)
+        Assert.assertEquals(0, collection3.count)
+        Assert.assertEquals(0, collection4.count)
     }
 
     // Test purging doc on a deleted collection causes CBL exception
@@ -604,21 +603,21 @@ class CollectionTest : BaseDbTest() {
 
     @Test
     fun testCreateIndexInCollection() {
-        assertEquals(0, testCollection.indexes.size)
+        Assert.assertEquals(0, testCollection.indexes.size)
 
         testCollection.createIndex("index1", ValueIndexConfiguration("firstName", "lastName"))
-        assertEquals(1, testCollection.indexes.size)
+        Assert.assertEquals(1, testCollection.indexes.size)
 
         testCollection.createIndex("index2", FullTextIndexConfiguration("detail").ignoreAccents(true).setLanguage("es"))
-        assertEquals(2, testCollection.indexes.size)
+        Assert.assertEquals(2, testCollection.indexes.size)
 
         assertContents(testCollection.indexes.toList(), "index1", "index2")
-        assertTrue(testCollection.indexes.contains("index2"))
+        Assert.assertTrue(testCollection.indexes.contains("index2"))
     }
 
     @Test
     fun testCreateIndexInCollectionWithBuilder() {
-        assertEquals(0, testCollection.indexes.size.toLong())
+        Assert.assertEquals(0, testCollection.indexes.size.toLong())
         testCollection.createIndex(
             "index1",
             IndexBuilder.valueIndex(
@@ -626,16 +625,16 @@ class CollectionTest : BaseDbTest() {
                 ValueIndexItem.property("lastName")
             )
         )
-        assertEquals(1, testCollection.indexes.size.toLong())
+        Assert.assertEquals(1, testCollection.indexes.size.toLong())
 
         // Create FTS index:
         testCollection.createIndex("index2", IndexBuilder.fullTextIndex(FullTextIndexItem.property("detail")))
-        assertEquals(2, testCollection.indexes.size.toLong())
+        Assert.assertEquals(2, testCollection.indexes.size.toLong())
         testCollection.createIndex(
             "index3",
             IndexBuilder.fullTextIndex(FullTextIndexItem.property("es-detail")).ignoreAccents(true).setLanguage("es")
         )
-        assertEquals(3, testCollection.indexes.size.toLong())
+        Assert.assertEquals(3, testCollection.indexes.size.toLong())
 
         // Create value index with expression() instead of property()
         testCollection.createIndex(
@@ -645,14 +644,14 @@ class CollectionTest : BaseDbTest() {
                 ValueIndexItem.expression(Expression.property("lastName"))
             )
         )
-        assertEquals(4, testCollection.indexes.size.toLong())
+        Assert.assertEquals(4, testCollection.indexes.size.toLong())
         assertContents(testCollection.indexes.toList(), "index1", "index2", "index3", "index4")
     }
 
     @Test
     fun testCreateSameIndexTwice() {
         testCollection.createIndex("myindex", ValueIndexConfiguration("firstName", "lastName"))
-        assertEquals(1, testCollection.indexes.size)
+        Assert.assertEquals(1, testCollection.indexes.size)
 
         // Call create index again:
         testCollection.createIndex("myindex", ValueIndexConfiguration("firstName", "lastName"))
@@ -772,11 +771,11 @@ class CollectionTest : BaseDbTest() {
 
         // Delete indexes:
         testCollection.deleteIndex("index2")
-        assertEquals(1, testCollection.indexes.size)
+        Assert.assertEquals(1, testCollection.indexes.size)
         assertContents(testCollection.indexes.toList(), "index1")
 
         testCollection.deleteIndex("index1")
-        assertTrue(testCollection.indexes.isEmpty())
+        Assert.assertTrue(testCollection.indexes.isEmpty())
     }
 
     // Test deleting an index twice
@@ -788,13 +787,13 @@ class CollectionTest : BaseDbTest() {
 
         // Delete index2:
         testCollection.deleteIndex("index2")
-        assertEquals(1, testCollection.indexes.size)
-        assertTrue(testCollection.indexes.contains("index1"))
+        Assert.assertEquals(1, testCollection.indexes.size)
+        Assert.assertTrue(testCollection.indexes.contains("index1"))
 
         // Do it again
         testCollection.deleteIndex("index2")
-        assertEquals(1, testCollection.indexes.size)
-        assertTrue(testCollection.indexes.contains("index1"))
+        Assert.assertEquals(1, testCollection.indexes.size)
+        Assert.assertTrue(testCollection.indexes.contains("index1"))
     }
 
     // Test getting index from a deleted collection causes CBL exception
@@ -881,15 +880,15 @@ class CollectionTest : BaseDbTest() {
         doc1a.setString("firstName", "Scott")
         testCollection.save(doc1a)
 
-        assertEquals(2, doc1a.sequence)
+        Assert.assertEquals(2, doc1a.sequence)
 
         // Modify doc1b, result to conflict when save:
         doc1b.setString("lastName", "Ernest")
-        assertTrue(testCollection.save(doc1b, ConcurrencyControl.LAST_WRITE_WINS))
+        Assert.assertTrue(testCollection.save(doc1b, ConcurrencyControl.LAST_WRITE_WINS))
 
         val doc = testCollection.getDocument(mDoc.id)
         assertSameContent(doc1b, doc)
-        assertEquals(3, doc!!.sequence)
+        Assert.assertEquals(3, doc!!.sequence)
     }
 
     @Test
@@ -904,15 +903,15 @@ class CollectionTest : BaseDbTest() {
         doc1a.setString("firstName", "Scott")
         testCollection.save(doc1a)
 
-        assertEquals(2, doc1a.sequence)
+        Assert.assertEquals(2, doc1a.sequence)
 
         // Modify doc1b, result to conflict when save:
         doc1b.setString("lastName", "Ernest")
-        assertFalse(testCollection.save(doc1b, ConcurrencyControl.FAIL_ON_CONFLICT))
+        Assert.assertFalse(testCollection.save(doc1b, ConcurrencyControl.FAIL_ON_CONFLICT))
 
         val doc = testCollection.getDocument(mDoc.id)
         assertSameContent(doc1a, doc)
-        assertEquals(2, doc!!.sequence)
+        Assert.assertEquals(2, doc!!.sequence)
     }
 
     @Test
@@ -927,14 +926,14 @@ class CollectionTest : BaseDbTest() {
         doc1a.setString("firstName", "Scott")
         testCollection.save(doc1a)
 
-        assertEquals(2, doc1a.sequence)
+        Assert.assertEquals(2, doc1a.sequence)
 
         // Modify doc1b, result to cause conflict when deleted:
         doc1b.setString("lastName", "Ernest")
-        assertTrue(testCollection.delete(doc1b, ConcurrencyControl.LAST_WRITE_WINS))
+        Assert.assertTrue(testCollection.delete(doc1b, ConcurrencyControl.LAST_WRITE_WINS))
 
-        assertNull(testCollection.getDocument(mDoc.id))
-        assertEquals(3, doc1b.sequence)
+        Assert.assertNull(testCollection.getDocument(mDoc.id))
+        Assert.assertEquals(3, doc1b.sequence)
     }
 
     @Test
@@ -948,26 +947,26 @@ class CollectionTest : BaseDbTest() {
         // Modify doc1a:
         doc1a.setString("firstName", "Scott")
         testCollection.save(doc1a)
-        assertEquals(2, doc1a.sequence)
+        Assert.assertEquals(2, doc1a.sequence)
 
         // Modify doc1b, this will cause a conflict when it is deleted:
         doc1b.setString("lastName", "Ernest")
-        assertFalse(testCollection.delete(doc1b, ConcurrencyControl.FAIL_ON_CONFLICT))
+        Assert.assertFalse(testCollection.delete(doc1b, ConcurrencyControl.FAIL_ON_CONFLICT))
 
         val doc = testCollection.getDocument(mDoc.id)
         assertSameContent(doc1a, doc)
-        assertEquals(2, doc!!.sequence)
+        Assert.assertEquals(2, doc!!.sequence)
     }
 
     @Test
     fun testSaveDocWithNoParentConflictLastWriteWins() {
         val mDoc = MutableDocument()
         mDoc.setString("firstName", "Scott")
-        assertTrue(testCollection.save(mDoc, ConcurrencyControl.LAST_WRITE_WINS))
+        Assert.assertTrue(testCollection.save(mDoc, ConcurrencyControl.LAST_WRITE_WINS))
 
         val doc = testCollection.getDocument(mDoc.id)
         assertSameContent(mDoc, doc)
-        assertEquals(1, doc!!.sequence)
+        Assert.assertEquals(1, doc!!.sequence)
     }
 
     @Test
@@ -975,11 +974,11 @@ class CollectionTest : BaseDbTest() {
         val mDoc = MutableDocument()
         mDoc.setString("firstName", "Scott")
 
-        assertTrue(testCollection.save(mDoc, ConcurrencyControl.FAIL_ON_CONFLICT))
+        Assert.assertTrue(testCollection.save(mDoc, ConcurrencyControl.FAIL_ON_CONFLICT))
 
         val doc = testCollection.getDocument(mDoc.id)
         assertSameContent(mDoc, doc)
-        assertEquals(1, doc!!.sequence)
+        Assert.assertEquals(1, doc!!.sequence)
     }
 
     @Test
@@ -992,16 +991,16 @@ class CollectionTest : BaseDbTest() {
 
         // Delete doc1a:
         testCollection.delete(doc1a)
-        assertEquals(2, doc1a.sequence)
-        assertNull(testCollection.getDocument(mDoc.id))
+        Assert.assertEquals(2, doc1a.sequence)
+        Assert.assertNull(testCollection.getDocument(mDoc.id))
 
         // Modify doc1b, result to cause conflict when saved:
         doc1b.setString("lastName", "Ernest")
-        assertTrue(testCollection.save(doc1b, ConcurrencyControl.LAST_WRITE_WINS))
+        Assert.assertTrue(testCollection.save(doc1b, ConcurrencyControl.LAST_WRITE_WINS))
 
         val doc = testCollection.getDocument(mDoc.id)
         assertSameContent(doc1b, doc)
-        assertEquals(3, doc!!.sequence)
+        Assert.assertEquals(3, doc!!.sequence)
     }
 
     @Test
@@ -1014,15 +1013,15 @@ class CollectionTest : BaseDbTest() {
 
         // Delete doc1a:
         testCollection.delete(doc1a)
-        assertEquals(2, doc1a.sequence)
-        assertNull(testCollection.getDocument(mDoc.id))
+        Assert.assertEquals(2, doc1a.sequence)
+        Assert.assertNull(testCollection.getDocument(mDoc.id))
 
         // Modify doc1b, result to cause conflict when saved:
         doc1b.setString("lastName", "Ernest")
-        assertFalse(testCollection.save(doc1b, ConcurrencyControl.FAIL_ON_CONFLICT))
+        Assert.assertFalse(testCollection.save(doc1b, ConcurrencyControl.FAIL_ON_CONFLICT))
 
-        assertNull(testCollection.getDocument(mDoc.id))
-        assertEquals(2, doc1a.sequence)
+        Assert.assertNull(testCollection.getDocument(mDoc.id))
+        Assert.assertEquals(2, doc1a.sequence)
     }
 
     // 3.1 TestGetFullNameFromDefaultCollection
@@ -1031,7 +1030,7 @@ class CollectionTest : BaseDbTest() {
     //    Check that the full-name is “_default._default”.
     @Test
     fun testGetFullNameFromDefaultCollection() {
-        assertEquals("_default._default", testDatabase.defaultCollection.fullName)
+        Assert.assertEquals("_default._default", testDatabase.defaultCollection.fullName)
     }
 
     // 3.2 TestGetFullNameFromNewCollectionInDefaultScope
@@ -1042,7 +1041,7 @@ class CollectionTest : BaseDbTest() {
     fun testGetFullNameFromNewCollectionInDefaultScope() {
         val collectionName = getUniqueName("dry_flies")
         val collection = testDatabase.createCollection(collectionName)
-        assertEquals("_default.${collectionName}", collection.fullName)
+        Assert.assertEquals("_default.${collectionName}", collection.fullName)
     }
 
     // 3.3 TestGetFullNameFromNewCollectionInCustomScope
@@ -1054,7 +1053,7 @@ class CollectionTest : BaseDbTest() {
         val scopeName = getUniqueName("oscilli")
         val collectionName = getUniqueName("dry_flies")
         val collection = testDatabase.createCollection(collectionName, scopeName)
-        assertEquals("${scopeName}.${collectionName}", collection.fullName)
+        Assert.assertEquals("${scopeName}.${collectionName}", collection.fullName)
     }
 
     // 3.4 TestGetFullNameFromExistingCollectionInDefaultScope
@@ -1066,7 +1065,7 @@ class CollectionTest : BaseDbTest() {
     fun testGetFullNameFromExistingCollectionInDefaultScope() {
         val collectionName = getUniqueName("dry_flies")
         testDatabase.createCollection(collectionName)
-        assertEquals("_default.${collectionName}", testDatabase.getCollection(collectionName)?.fullName)
+        Assert.assertEquals("_default.${collectionName}", testDatabase.getCollection(collectionName)?.fullName)
     }
 
     // 3.5 TestGetFullNameFromExistingCollectionInCustomScope
@@ -1079,7 +1078,10 @@ class CollectionTest : BaseDbTest() {
         val scopeName = getUniqueName("oscilli")
         val collectionName = getUniqueName("dry_flies")
         testDatabase.createCollection(collectionName, scopeName)
-        assertEquals("${scopeName}.${collectionName}", testDatabase.getCollection(collectionName, scopeName)?.fullName)
+        Assert.assertEquals(
+            "${scopeName}.${collectionName}",
+            testDatabase.getCollection(collectionName, scopeName)?.fullName
+        )
     }
 
     // 3.1 TestGetDatabaseFromNewCollection
@@ -1090,7 +1092,7 @@ class CollectionTest : BaseDbTest() {
     fun testGetDatabaseFromNewCollection() {
         val collectionName = getUniqueName("dry_flies")
         testDatabase.createCollection(collectionName)
-        assertEquals(testDatabase, testDatabase.getCollection(collectionName)?.database)
+        Assert.assertEquals(testDatabase, testDatabase.getCollection(collectionName)?.database)
     }
 
     // 3.2 TestGetDatabaseFromExistingCollection
@@ -1101,7 +1103,7 @@ class CollectionTest : BaseDbTest() {
     fun testGetDatabaseFromExistingCollection() {
         val collectionName = getUniqueName("marbles")
         testDatabase.createCollection(collectionName)
-        assertEquals(testDatabase, testDatabase.getCollection(collectionName)?.database)
+        Assert.assertEquals(testDatabase, testDatabase.getCollection(collectionName)?.database)
     }
 
     // 3.3 TestGetDatabaseFromScopeObtainedFromCollection
@@ -1113,7 +1115,7 @@ class CollectionTest : BaseDbTest() {
     fun testGetDatabaseFromScopeObtainedFromCollection() {
         val collectionName = getUniqueName("dry_flies")
         val collection = testDatabase.createCollection(collectionName)
-        assertEquals(testDatabase, collection.scope.database)
+        Assert.assertEquals(testDatabase, collection.scope.database)
     }
 
     // 3.4 TestGetDatabaseFromScopeObtainedFromDatabase
@@ -1125,7 +1127,7 @@ class CollectionTest : BaseDbTest() {
     fun testGetDatabaseFromScopeObtainedFromDatabase() {
         val collectionName = getUniqueName("marbles")
         testDatabase.createCollection(collectionName)
-        assertEquals(testDatabase, testDatabase.getCollection(collectionName)?.database)
+        Assert.assertEquals(testDatabase, testDatabase.getCollection(collectionName)?.database)
     }
 
     //---------------------------------------------
@@ -1142,7 +1144,7 @@ class CollectionTest : BaseDbTest() {
         testCollection.delete()
 
         // Content should be accessible and modifiable without error
-        assertEquals(docContent, doc.content.toMap())
+        Assert.assertEquals(docContent, doc.content.toMap())
         doc.toMutable().setValue("lastName", "Ernest")
     }
 
@@ -1150,7 +1152,7 @@ class CollectionTest : BaseDbTest() {
     fun testDeleteThenGetCollectionName() {
         val collectionName = testCollection.name
         testCollection.delete()
-        assertEquals(collectionName, testCollection.name)
+        Assert.assertEquals(collectionName, testCollection.name)
     }
 
     //---------------------------------------------
@@ -1160,25 +1162,25 @@ class CollectionTest : BaseDbTest() {
     @Test
     fun testDefaultCollectionExists() {
         val collection = testDatabase.defaultCollection
-        assertEquals(Collection.DEFAULT_NAME, collection.name)
+        Assert.assertEquals(Collection.DEFAULT_NAME, collection.name)
 
-        assertTrue(testDatabase.collections.contains(collection))
+        Assert.assertTrue(testDatabase.collections.contains(collection))
 
         val scope = collection.scope
-        assertNotNull(scope)
-        assertEquals(Scope.DEFAULT_NAME, scope.name)
+        Assert.assertNotNull(scope)
+        Assert.assertEquals(Scope.DEFAULT_NAME, scope.name)
 
-        assertEquals(collection, testDatabase.getCollection(Collection.DEFAULT_NAME))
+        Assert.assertEquals(collection, testDatabase.getCollection(Collection.DEFAULT_NAME))
     }
 
     @Test
     fun testDefaultScopeExists() {
         val scope = testDatabase.defaultScope
-        assertEquals(Scope.DEFAULT_NAME, scope.name)
+        Assert.assertEquals(Scope.DEFAULT_NAME, scope.name)
 
-        assertTrue(testDatabase.scopes.contains(scope))
+        Assert.assertTrue(testDatabase.scopes.contains(scope))
 
-        assertEquals(scope, testDatabase.getScope(Scope.DEFAULT_NAME))
+        Assert.assertEquals(scope, testDatabase.getScope(Scope.DEFAULT_NAME))
     }
 
     @Test
@@ -1188,14 +1190,14 @@ class CollectionTest : BaseDbTest() {
         }
 
         var collection = testDatabase.defaultCollection
-        assertNotNull(collection)
-        assertEquals(Collection.DEFAULT_NAME, collection.name)
-        assertEquals(Scope.DEFAULT_NAME, collection.scope.name)
+        Assert.assertNotNull(collection)
+        Assert.assertEquals(Collection.DEFAULT_NAME, collection.name)
+        Assert.assertEquals(Scope.DEFAULT_NAME, collection.scope.name)
 
         collection = testDatabase.createCollection(Collection.DEFAULT_NAME)
-        assertNotNull(collection)
-        assertEquals(Collection.DEFAULT_NAME, collection.name)
-        assertEquals(Scope.DEFAULT_NAME, collection.scope.name)
+        Assert.assertNotNull(collection)
+        Assert.assertEquals(Collection.DEFAULT_NAME, collection.name)
+        Assert.assertEquals(Scope.DEFAULT_NAME, collection.scope.name)
     }
 
     @Test
@@ -1205,10 +1207,10 @@ class CollectionTest : BaseDbTest() {
         }
 
         val scope = testDatabase.defaultScope
-        assertEquals(Scope.DEFAULT_NAME, scope.name)
+        Assert.assertEquals(Scope.DEFAULT_NAME, scope.name)
 
-        assertTrue(testDatabase.scopes.contains(scope))
+        Assert.assertTrue(testDatabase.scopes.contains(scope))
 
-        assertEquals(scope, testDatabase.getScope(Scope.DEFAULT_NAME))
+        Assert.assertEquals(scope, testDatabase.getScope(Scope.DEFAULT_NAME))
     }
 }

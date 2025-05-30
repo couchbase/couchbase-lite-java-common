@@ -17,10 +17,7 @@ package com.couchbase.lite
 
 import com.couchbase.lite.internal.utils.VerySlowTest
 import org.junit.After
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNotSame
-import org.junit.Assert.assertNull
+import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 
@@ -52,8 +49,8 @@ class CollectionCrossDbTest : BaseTest() {
     fun testCreateThenGetCollectionFromDifferentDatabaseInstance() {
         dbA.createCollection("autographs", "polari")
 
-        assertNotNull(dbA.getCollection("autographs", "polari"))
-        assertNotNull(dbB.getCollection("autographs", "polari"))
+        Assert.assertNotNull(dbA.getCollection("autographs", "polari"))
+        Assert.assertNotNull(dbB.getCollection("autographs", "polari"))
     }
 
     // 8.3.2 Test that deleting a collection from a database instance is visible to the other database instance.
@@ -78,18 +75,18 @@ class CollectionCrossDbTest : BaseTest() {
             collectionA.save(MutableDocument("doc_$i"))
         }
 
-        assertNotNull(dbB.getCollections("sigmoido").firstOrNull { c ->
+        Assert.assertNotNull(dbB.getCollections("sigmoido").firstOrNull { c ->
             (c.name == "poster") && (c.scope.name == "sigmoido")
         })
         val collectionB = dbB.getCollection("poster", "sigmoido")
-        assertNotNull(collectionB)
-        assertEquals(10, collectionB!!.count)
+        Assert.assertNotNull(collectionB)
+        Assert.assertEquals(10, collectionB!!.count)
 
         dbA.deleteCollection("poster", "sigmoido")
 
-        assertEquals(0, collectionB.count)
-        assertNull(dbB.getCollection("poster", "sigmoido"))
-        assertNull(dbB.getCollections("sigmoido").firstOrNull { c -> c.name == "poster" })
+        Assert.assertEquals(0, collectionB.count)
+        Assert.assertNull(dbB.getCollection("poster", "sigmoido"))
+        Assert.assertNull(dbB.getCollections("sigmoido").firstOrNull { c -> c.name == "poster" })
     }
 
     // 8.3.3 Test that deleting a collection then recreating the collection from a database instance
@@ -117,17 +114,17 @@ class CollectionCrossDbTest : BaseTest() {
         }
 
         val collectionB1 = dbB.getCollection("45s", "laryngo")
-        assertEquals(10, collectionB1?.count ?: 0)
+        Assert.assertEquals(10, collectionB1?.count ?: 0)
 
         dbA.deleteCollection("45s", "laryngo")
         val collectionA2 = dbA.createCollection("45s", "laryngo")
-        assertNotSame(collectionA1, collectionA2)
+        Assert.assertNotSame(collectionA1, collectionA2)
 
-        assertEquals(0, collectionB1?.count ?: -1)
+        Assert.assertEquals(0, collectionB1?.count ?: -1)
         val collectionB2 = dbB.getCollection("45s", "laryngo")
-        assertNotNull(collectionB2)
-        assertNotSame(collectionB1, collectionB2)
-        assertNotNull(dbB.getCollections("laryngo").firstOrNull { c ->
+        Assert.assertNotNull(collectionB2)
+        Assert.assertNotSame(collectionB1, collectionB2)
+        Assert.assertNotNull(dbB.getCollections("laryngo").firstOrNull { c ->
             (c.name == "45s") && (c.scope.name == "laryngo")
         })
     }

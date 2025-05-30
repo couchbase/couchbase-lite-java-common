@@ -17,6 +17,7 @@ package com.couchbase.lite
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal
 import com.couchbase.lite.logging.LogSinks
+import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import java.net.URI
@@ -29,29 +30,28 @@ class PreInitTest : BaseTest() {
 
     @Test
     fun testGetConsoleLoggerBeforeInit() {
-        assertThrows(CouchbaseLiteError::class.java) { LogSinks.get().console }
+        Assert.assertThrows(CouchbaseLiteError::class.java) { LogSinks.get().console }
     }
 
     @Test
     fun testGetFileLoggerBeforeInit() {
-        assertThrows(CouchbaseLiteError::class.java) { LogSinks.get().file }
+        Assert.assertThrows(CouchbaseLiteError::class.java) { LogSinks.get().file }
     }
 
     @Test
     fun testCreateDBConfigBeforeInit() {
-        assertThrows(CouchbaseLiteError::class.java) { DatabaseConfiguration() }
+        Assert.assertThrows(CouchbaseLiteError::class.java) { DatabaseConfiguration() }
     }
 
     @Test
     fun testCreateDatabaseBeforeInit() {
-        assertThrows(CouchbaseLiteError::class.java) { Database("fail") }
+        Assert.assertThrows(CouchbaseLiteError::class.java) { Database("fail") }
     }
 
     @Test
     fun testCreateReplConfigBeforeInit() {
-        assertThrows(CouchbaseLiteError::class.java) {
+        Assert.assertThrows(CouchbaseLiteError::class.java) {
             ReplicatorConfiguration(URLEndpoint(URI("wss://foo.bar")))
         }
     }
 }
-

@@ -17,11 +17,10 @@ package com.couchbase.lite;
 
 import java.util.Date;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 import com.couchbase.lite.internal.utils.JSONUtils;
-
-import static org.junit.Assert.assertEquals;
 
 
 @SuppressWarnings("ConstantConditions")
@@ -33,7 +32,7 @@ public class JSONTest extends BaseTest {
         final Date now = new Date();
         String dateStr = JSONUtils.toJSONString(now);
         Date date = JSONUtils.toDate(dateStr);
-        assertEquals(now.getTime(), date.getTime());
-        assertEquals(dateStr, JSONUtils.toJSONString(date));
+        Assert.assertEquals(now.getTime(), date.getTime());
+        Assert.assertEquals(dateStr, JSONUtils.toJSONString(date));
     }
 }

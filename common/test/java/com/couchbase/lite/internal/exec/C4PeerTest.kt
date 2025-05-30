@@ -20,9 +20,7 @@ import com.couchbase.lite.CouchbaseLiteError
 import com.couchbase.lite.internal.core.C4Peer
 import com.couchbase.lite.internal.core.C4Peer.PeerCleaner
 import com.couchbase.lite.internal.exec.Cleaner.Cleanable
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
+import org.junit.Assert
 import org.junit.Test
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -37,9 +35,9 @@ class C4PeerTest : BaseTest() {
     @Test
     fun testCleanerRefs() {
         val cleaner = Cleaner("refsTest", 1000)
-        assertEquals(1, cleaner.stats.alive.size)
+        Assert.assertEquals(1, cleaner.stats.alive.size)
         cleaner.register(Object()) { _ -> }
-        assertEquals(2, cleaner.stats.alive.size)
+        Assert.assertEquals(2, cleaner.stats.alive.size)
         // ??? Difficult to verify the removal of the ref, because it happens only after a GC.
     }
 
@@ -51,7 +49,7 @@ class C4PeerTest : BaseTest() {
     fun testClosedCleaner() {
         val cleaner = Cleaner("refsTest", 1000)
         cleaner.stop()
-        assertThrows(CouchbaseLiteError::class.java) { cleaner.register(Object()) { _ -> } }
+        Assert.assertThrows(CouchbaseLiteError::class.java) { cleaner.register(Object()) { _ -> } }
     }
 
     // Verify that closing a peer ref explicitly gets its dispose method called.
@@ -62,7 +60,7 @@ class C4PeerTest : BaseTest() {
 
         peered.close()
 
-        assertTrue(visited.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
+        Assert.assertTrue(visited.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
     }
 
     // Verify that closing a peer ref explicitly, multiple time, gets its dispose method called exactly once.
@@ -74,7 +72,7 @@ class C4PeerTest : BaseTest() {
         for (i in 0 until 100) {
             peered.close()
         }
-        assertEquals(1, closes.get())
+        Assert.assertEquals(1, closes.get())
     }
 
     // Verify that closing a C4Peer before it is cleaned does not cause multiple
@@ -103,11 +101,11 @@ class C4PeerTest : BaseTest() {
     fun testStopCleaner() {
         val peerCleaner = Cleaner("stopTest", 200)
         Thread.sleep(300)
-        assertFalse(peerCleaner.isStopped)
+        Assert.assertFalse(peerCleaner.isStopped)
 
         peerCleaner.stop()
         Thread.sleep(300)
-        assertTrue(peerCleaner.isStopped)
+        Assert.assertTrue(peerCleaner.isStopped)
     }
 
     // Verify that an exception in a cleanable does not reduce the number of running threads
@@ -137,8 +135,8 @@ class C4PeerTest : BaseTest() {
         // start the cleaner and verify that it has a thread
         peerCleaner.startCleaner()
         try {
-            assertTrue(latch.await(STD_TIMEOUT_MS, TimeUnit.MILLISECONDS))
-            assertTrue(ok.get())
+            Assert.assertTrue(latch.await(STD_TIMEOUT_MS, TimeUnit.MILLISECONDS))
+            Assert.assertTrue(ok.get())
         } finally {
             peerCleaner.stopCleaner()
         }
@@ -171,8 +169,8 @@ class C4PeerTest : BaseTest() {
         // start the cleaner and verify that it has a thread
         peerCleaner.startCleaner()
         try {
-            assertTrue(latch.await(STD_TIMEOUT_MS, TimeUnit.MILLISECONDS))
-            assertTrue(ok.get())
+            Assert.assertTrue(latch.await(STD_TIMEOUT_MS, TimeUnit.MILLISECONDS))
+            Assert.assertTrue(ok.get())
         } finally {
             peerCleaner.stopCleaner()
         }
