@@ -23,11 +23,7 @@ import com.couchbase.lite.internal.exec.ClientTask
 import com.couchbase.lite.internal.exec.ExecutionService
 import com.couchbase.lite.internal.exec.InstrumentedTask
 import com.couchbase.lite.internal.logging.Log
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
-import org.junit.Assert.fail
+import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import java.util.Stack
@@ -81,8 +77,8 @@ class ExecutionServiceTest : BaseTest() {
         finishLatch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS)
 
         synchronized(stack) {
-            assertEquals("TWO", stack.pop())
-            assertEquals("ONE", stack.pop())
+            Assert.assertEquals("TWO", stack.pop())
+            Assert.assertEquals("ONE", stack.pop())
         }
     }
 
@@ -90,8 +86,8 @@ class ExecutionServiceTest : BaseTest() {
     @Test
     fun testStoppedSerialExecutorRejects() {
         val executor = cblService.serialExecutor
-        assertTrue(executor.stop(0, TimeUnit.SECONDS)) // no tasks
-        assertThrows(ExecutionService.CloseableExecutor.ExecutorClosedException::class.java) {
+        Assert.assertTrue(executor.stop(0, TimeUnit.SECONDS)) // no tasks
+        Assert.assertThrows(ExecutionService.CloseableExecutor.ExecutorClosedException::class.java) {
             executor.execute { Log.d(LogDomain.DATABASE, "This test is about to fail!") }
         }
     }
@@ -114,19 +110,19 @@ class ExecutionServiceTest : BaseTest() {
             finishLatch.countDown()
         }
 
-        assertFalse(executor.stop(0, TimeUnit.SECONDS))
+        Assert.assertFalse(executor.stop(0, TimeUnit.SECONDS))
 
         try {
             executor.execute { Log.d(LogDomain.DATABASE, "This test is about to fail!") }
-            fail("Stopped executor should not accept new tasks")
+            Assert.fail("Stopped executor should not accept new tasks")
         } catch (ignore: RejectedExecutionException) {
         }
 
         // allow the tasks to proceed.
         startLatch.countDown()
 
-        assertTrue(finishLatch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
-        assertTrue(executor.stop(5, TimeUnit.SECONDS)) // everything should be done shortly
+        Assert.assertTrue(finishLatch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
+        Assert.assertTrue(executor.stop(5, TimeUnit.SECONDS)) // everything should be done shortly
     }
 
     // Concurrent Executor tests
@@ -162,8 +158,8 @@ class ExecutionServiceTest : BaseTest() {
 
         // tasks should finish in reverse start order
         synchronized(stack) {
-            assertEquals("ONE", stack.pop())
-            assertEquals("TWO", stack.pop())
+            Assert.assertEquals("ONE", stack.pop())
+            Assert.assertEquals("TWO", stack.pop())
         }
     }
 
@@ -171,8 +167,8 @@ class ExecutionServiceTest : BaseTest() {
     @Test
     fun testStoppedConcurrentExecutorRejects() {
         val executor = cblService.concurrentExecutor
-        assertTrue(executor.stop(0, TimeUnit.SECONDS)) // no tasks
-        assertThrows(ExecutionService.CloseableExecutor.ExecutorClosedException::class.java) {
+        Assert.assertTrue(executor.stop(0, TimeUnit.SECONDS)) // no tasks
+        Assert.assertThrows(ExecutionService.CloseableExecutor.ExecutorClosedException::class.java) {
             executor.execute { Log.d(LogDomain.DATABASE, "This test is about to fail!") }
         }
     }
@@ -198,20 +194,20 @@ class ExecutionServiceTest : BaseTest() {
             finishLatch.countDown()
         }
 
-        assertFalse(executor.stop(0, TimeUnit.SECONDS))
+        Assert.assertFalse(executor.stop(0, TimeUnit.SECONDS))
 
         try {
             executor.execute { Log.d(LogDomain.DATABASE, "This test is about to fail!") }
-            fail("Stopped executor should not accept new tasks")
+            Assert.fail("Stopped executor should not accept new tasks")
         } catch (ignore: RejectedExecutionException) {
         }
 
         // allow the tasks to proceed.
         startLatch.countDown()
 
-        assertTrue(finishLatch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
+        Assert.assertTrue(finishLatch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
 
-        assertTrue(executor.stop(5, TimeUnit.SECONDS)) // everything should be done shortly
+        Assert.assertTrue(executor.stop(5, TimeUnit.SECONDS)) // everything should be done shortly
     }
 
     // The Concurrent Executor throws on fail
@@ -226,7 +222,7 @@ class ExecutionServiceTest : BaseTest() {
             exec.execute { }                                                // this one stays on the queue
             exec.execute { }                                                // two on the queue
             exec.execute { }                                                // this one fills the queue
-            assertThrows(RejectedExecutionException::class.java) {
+            Assert.assertThrows(RejectedExecutionException::class.java) {
                 exec.execute { }
             }                                                               // this one should fail
         } finally {
@@ -242,7 +238,7 @@ class ExecutionServiceTest : BaseTest() {
 
         task.execute(1, TimeUnit.SECONDS)
         Thread.sleep(5)
-        assertEquals(42, task.result)
+        Assert.assertEquals(42, task.result)
     }
 
     @Test
@@ -252,7 +248,7 @@ class ExecutionServiceTest : BaseTest() {
 
         task.execute(1, TimeUnit.SECONDS)
         Thread.sleep(5)
-        assertEquals(err, task.failure)
+        Assert.assertEquals(err, task.failure)
     }
 
     @Test
@@ -265,7 +261,7 @@ class ExecutionServiceTest : BaseTest() {
 
         val startTime = System.currentTimeMillis()
         task.execute(1, TimeUnit.SECONDS)
-        assertTrue(System.currentTimeMillis() - startTime < 2000)
+        Assert.assertTrue(System.currentTimeMillis() - startTime < 2000)
 
         latch.countDown()
     }
@@ -287,7 +283,9 @@ class ExecutionServiceTest : BaseTest() {
         }
         latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS)
 
-        for (i in 1 until n) { assertEquals(threads[0].get(), threads[i].get()) }
+        for (i in 1 until n) {
+            Assert.assertEquals(threads[0].get(), threads[i].get())
+        }
     }
 
     // The scheduler schedules on the passed queue, with the proper delay.
@@ -304,10 +302,10 @@ class ExecutionServiceTest : BaseTest() {
             finishLatch.countDown()
         }
 
-        assertTrue(finishLatch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
+        Assert.assertTrue(finishLatch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
 
         // within 10% is good enough
-        assertEquals(0L, (elapsedTime.get() - delay) / (delay / 10))
+        Assert.assertEquals(0L, (elapsedTime.get() - delay) / (delay / 10))
     }
 
     // A delayed task can be cancelled
@@ -325,7 +323,7 @@ class ExecutionServiceTest : BaseTest() {
 
         Thread.sleep(200)
 
-        assertFalse(completed[0])
+        Assert.assertFalse(completed[0])
     }
 
     @Test
@@ -345,12 +343,12 @@ class ExecutionServiceTest : BaseTest() {
         }
         exec.execute(runnable)
         barrier.await()
-        assertNull(fail)
+        Assert.assertNull(fail)
 
         barrier.reset()
         exec.execute(runnable)
         barrier.await()
-        assertTrue(fail is CouchbaseLiteError)
+        Assert.assertTrue(fail is CouchbaseLiteError)
     }
 
     // If this test fails, it may bring down the entire test process
@@ -365,11 +363,11 @@ class ExecutionServiceTest : BaseTest() {
                 latch1.countDown()
             }
         }
-        assertTrue(latch1.await(2, TimeUnit.SECONDS))
+        Assert.assertTrue(latch1.await(2, TimeUnit.SECONDS))
 
         val latch2 = CountDownLatch(1)
         executor.execute { latch2.countDown() }
-        assertTrue(latch2.await(2, TimeUnit.SECONDS))
+        Assert.assertTrue(latch2.await(2, TimeUnit.SECONDS))
     }
 
     // If this test fails, it may bring down the entire test process
@@ -384,10 +382,10 @@ class ExecutionServiceTest : BaseTest() {
                 latch1.countDown()
             }
         }
-        assertTrue(latch1.await(2, TimeUnit.SECONDS))
+        Assert.assertTrue(latch1.await(2, TimeUnit.SECONDS))
 
         val latch2 = CountDownLatch(1)
         executor.execute { latch2.countDown() }
-        assertTrue(latch2.await(2, TimeUnit.SECONDS))
+        Assert.assertTrue(latch2.await(2, TimeUnit.SECONDS))
     }
 }

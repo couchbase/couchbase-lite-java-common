@@ -6,9 +6,7 @@
 
 package com.couchbase.lite
 
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotSame
-import org.junit.Assert.assertTrue
+import org.junit.Assert
 import org.junit.Test
 import java.net.URI
 
@@ -23,13 +21,13 @@ class DeprecatedConfigFactoryTest : BaseDbTest() {
 
     @Test
     fun testReplicatorConfigNoArgs() {
-        assertThrows(IllegalArgumentException::class.java) { ReplicatorConfigurationFactory.create() }
+        Assert.assertThrows(IllegalArgumentException::class.java) { ReplicatorConfigurationFactory.create() }
     }
 
     // Create on factory with no db should fail
     @Test
     fun testReplicatorConfigNoDb() {
-        assertThrows(IllegalArgumentException::class.java) {
+        Assert.assertThrows(IllegalArgumentException::class.java) {
             ReplicatorConfigurationFactory.create(target = testEndpoint, type = ReplicatorType.PULL)
         }
     }
@@ -37,7 +35,7 @@ class DeprecatedConfigFactoryTest : BaseDbTest() {
     // Create on factory with no target should fail
     @Test
     fun testReplicatorConfigNoProtocol() {
-        assertThrows(IllegalArgumentException::class.java) {
+        Assert.assertThrows(IllegalArgumentException::class.java) {
             ReplicatorConfigurationFactory.create(testDatabase, type = ReplicatorType.PULL)
         }
     }
@@ -46,8 +44,8 @@ class DeprecatedConfigFactoryTest : BaseDbTest() {
     @Test
     fun testReplicatorConfigWithGoodArgs() {
         val config = ReplicatorConfigurationFactory.create(testDatabase, testEndpoint)
-        assertEquals(testDatabase, config.database)
-        assertEquals(testEndpoint, config.target)
+        Assert.assertEquals(testDatabase, config.database)
+        Assert.assertEquals(testEndpoint, config.target)
     }
 
     // Create should copy source
@@ -55,10 +53,10 @@ class DeprecatedConfigFactoryTest : BaseDbTest() {
     fun testReplicatorConfigCopy() {
         val config1 = ReplicatorConfigurationFactory.create(testDatabase, testEndpoint, type = ReplicatorType.PULL)
         val config2 = config1.create()
-        assertNotSame(config1, config2)
-        assertEquals(config1.database, config2.database)
-        assertEquals(config1.target, config2.target)
-        assertEquals(config1.type, config2.type)
+        Assert.assertNotSame(config1, config2)
+        Assert.assertEquals(config1.database, config2.database)
+        Assert.assertEquals(config1.target, config2.target)
+        Assert.assertEquals(config1.type, config2.type)
     }
 
     // Create should replace source
@@ -66,10 +64,10 @@ class DeprecatedConfigFactoryTest : BaseDbTest() {
     fun testReplicatorConfigReplace() {
         val config1 = ReplicatorConfigurationFactory.create(testDatabase, testEndpoint, type = ReplicatorType.PULL)
         val config2 = config1.create(type = ReplicatorType.PUSH)
-        assertNotSame(config1, config2)
-        assertEquals(config1.database, config2.database)
-        assertEquals(config1.target, config2.target)
-        assertEquals(ReplicatorType.PUSH, config2.type)
+        Assert.assertNotSame(config1, config2)
+        Assert.assertEquals(config1.database, config2.database)
+        Assert.assertEquals(config1.target, config2.target)
+        Assert.assertEquals(ReplicatorType.PUSH, config2.type)
     }
 
     // Create from a source explicitly specifying a default collection
@@ -78,9 +76,9 @@ class DeprecatedConfigFactoryTest : BaseDbTest() {
         val config1 = ReplicatorConfigurationFactory
             .newConfig(testEndpoint, mapOf(listOf(testDatabase.defaultCollection) to CollectionConfiguration()))
         val config2 = config1.create()
-        assertNotSame(config1, config2)
-        assertEquals(config1.database, config2.database)
-        assertEquals(setOf(testCollection.database.defaultCollection), config2.collections)
+        Assert.assertNotSame(config1, config2)
+        Assert.assertEquals(config1.database, config2.database)
+        Assert.assertEquals(setOf(testCollection.database.defaultCollection), config2.collections)
     }
 
     // Create from a source with default collection, explicitly specifying a non-default collection
@@ -93,23 +91,26 @@ class DeprecatedConfigFactoryTest : BaseDbTest() {
         // Information gets lost here (the configuration of testCollection): should be a log message
         val config2 = config1.create(pushFilter = filter)
 
-        assertNotSame(config1, config2)
-        assertEquals(config1.database, config2.database)
+        Assert.assertNotSame(config1, config2)
+        Assert.assertEquals(config1.database, config2.database)
 
         val db = config1.database
         val defaultCollection = db.defaultCollection
 
-        assertEquals(setOf(defaultCollection), config2.collections)
-        assertEquals(filter, config2.getCollectionConfiguration(defaultCollection)?.pushFilter)
+        Assert.assertEquals(setOf(defaultCollection), config2.collections)
+        Assert.assertEquals(filter, config2.getCollectionConfiguration(defaultCollection)?.pushFilter)
     }
 
     // Create with one of the parameters that has migrated to the collection configuration
     @Test
     fun testReplicatorFromCollectionWithLegacyParameter() {
         val config = ReplicatorConfigurationFactory.create(testDatabase, testEndpoint, channels = listOf("boop"))
-        assertEquals(testDatabase, config.database)
-        assertEquals(testEndpoint, config.target)
-        assertEquals(listOf("boop"), config.getCollectionConfiguration(testDatabase.defaultCollection)!!.channels)
+        Assert.assertEquals(testDatabase, config.database)
+        Assert.assertEquals(testEndpoint, config.target)
+        Assert.assertEquals(
+            listOf("boop"),
+            config.getCollectionConfiguration(testDatabase.defaultCollection)!!.channels
+        )
     }
 
     // Create a collection style config from one built with the legacy call
@@ -117,12 +118,12 @@ class DeprecatedConfigFactoryTest : BaseDbTest() {
     fun testReplicatorConfigFromLegacy() {
         val config1 = ReplicatorConfigurationFactory.create(testDatabase, testEndpoint, channels = listOf("boop"))
         val config2 = config1.newConfig(continuous = true)
-        assertEquals(testDatabase, config2.database)
-        assertEquals(testEndpoint, config2.target)
+        Assert.assertEquals(testDatabase, config2.database)
+        Assert.assertEquals(testEndpoint, config2.target)
         val colls = config2.collections
-        assertEquals(1, colls.size)
+        Assert.assertEquals(1, colls.size)
         val defaultCollection = testDatabase.defaultCollection
-        assertTrue(colls.contains(defaultCollection))
-        assertEquals(listOf("boop"), config2.getCollectionConfiguration(defaultCollection)!!.channels)
+        Assert.assertTrue(colls.contains(defaultCollection))
+        Assert.assertEquals(listOf("boop"), config2.getCollectionConfiguration(defaultCollection)!!.channels)
     }
 }

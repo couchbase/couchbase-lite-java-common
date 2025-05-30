@@ -22,12 +22,11 @@ import java.util.List;
 import java.util.Map;
 
 import org.junit.After;
+import org.junit.Assert;
 
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
-
-import static org.junit.Assert.assertNotNull;
 
 
 public class C4QueryBaseTest extends C4BaseTest {
@@ -48,7 +47,7 @@ public class C4QueryBaseTest extends C4BaseTest {
             + json + "}";
 
         query = c4Database.createJsonQuery(json5(json));
-        assertNotNull(query);
+        Assert.assertNotNull(query);
     }
 
     protected final void compile(String whereExpr) throws LiteCoreException { compile(whereExpr, null); }
@@ -64,7 +63,7 @@ public class C4QueryBaseTest extends C4BaseTest {
         json.append(c4Collection.getName()).append("'}],");
         json.append("\"WHERE\": ");
         json.append(whereExpr);
-        if (sortExpr != null && sortExpr.length() > 0) {
+        if (sortExpr != null && !sortExpr.isEmpty()) {
             json.append(", \"ORDER_BY\": ");
             json.append(sortExpr);
         }
@@ -76,7 +75,7 @@ public class C4QueryBaseTest extends C4BaseTest {
             query = null;
         }
         query = c4Database.createJsonQuery(json5(json.toString()));
-        assertNotNull(query);
+        Assert.assertNotNull(query);
     }
 
     protected List<String> run() throws LiteCoreException { return run(null); }
@@ -87,7 +86,7 @@ public class C4QueryBaseTest extends C4BaseTest {
         final C4QueryEnumerator e;
         FLSliceResult encodedParams = encodeParameters(params);
         e = query.run(encodedParams);
-        assertNotNull(e);
+        Assert.assertNotNull(e);
 
         try {
             while (e.next()) { docIDs.add(e.getColumns().getValueAt(0).asString()); }
@@ -107,7 +106,7 @@ public class C4QueryBaseTest extends C4BaseTest {
         final C4QueryEnumerator e;
         FLSliceResult encodedParams = encodeParameters(null);
         e = query.run(encodedParams);
-        assertNotNull(e);
+        Assert.assertNotNull(e);
 
         try {
             while (e.next()) {

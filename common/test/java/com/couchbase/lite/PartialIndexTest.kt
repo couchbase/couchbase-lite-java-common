@@ -15,10 +15,7 @@
 //
 package com.couchbase.lite
 
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertTrue
+import org.junit.Assert
 import org.junit.Test
 
 class PartialIndexTest : BaseDbTest() {
@@ -42,16 +39,16 @@ class PartialIndexTest : BaseDbTest() {
     @Test
     fun testCreatePartialValueIndex() {
         testCollection.createIndex("numIndex", ValueIndexConfiguration("num").setWhere("type = 'number'"))
-        assertNotNull(testCollection.getIndex("numIndex"))
+        Assert.assertNotNull(testCollection.getIndex("numIndex"))
 
-        assertTrue(
+        Assert.assertTrue(
             testDatabase
                 .createQuery("SELECT * FROM ${testCollection.fullName} WHERE type = 'number' AND num > 1000")
                 .explain()
                 .contains("USING INDEX numIndex")
         )
 
-        assertFalse(
+        Assert.assertFalse(
             testDatabase
                 .createQuery("SELECT * FROM ${testCollection.fullName} WHERE type = 'foo' AND num > 1000")
                 .explain()
@@ -87,13 +84,13 @@ class PartialIndexTest : BaseDbTest() {
             "contentIndex",
             FullTextIndexConfiguration("content").setWhere("length(content) > 30")
         )
-        assertNotNull(testCollection.getIndex("contentIndex"))
+        Assert.assertNotNull(testCollection.getIndex("contentIndex"))
 
         val results = testDatabase
             .createQuery("SELECT content FROM ${testCollection.fullName} WHERE match(contentIndex, 'database')")
             .execute()
             .allResults()
-        assertEquals(1, results.size)
-        assertEquals("Couchbase Lite is a NoSQL syncable database.", results[0].getString("content"))
+        Assert.assertEquals(1, results.size)
+        Assert.assertEquals("Couchbase Lite is a NoSQL syncable database.", results[0].getString("content"))
     }
 }

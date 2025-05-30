@@ -28,13 +28,7 @@ import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLValue;
 
-import static com.couchbase.lite.internal.fleece.FLConstants.ValueType.ARRAY;
-import static com.couchbase.lite.internal.fleece.FLConstants.ValueType.DATA;
-import static com.couchbase.lite.internal.fleece.FLConstants.ValueType.DICT;
-import static com.couchbase.lite.internal.fleece.FLConstants.ValueType.STRING;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import com.couchbase.lite.internal.fleece.FLConstants.ValueType;
 
 
 public class C4FleeceTest extends C4BaseTest {
@@ -46,14 +40,14 @@ public class C4FleeceTest extends C4BaseTest {
         try (FLEncoder enc = FLEncoder.getManagedEncoder()) {
             enc.writeString(str.toCharArray());
             byte[] encoded = enc.finish();
-            assertNotNull(encoded);
+            Assert.assertNotNull(encoded);
 
             FLValue value = FLValue.fromData(encoded);
-            assertNotNull(value);
-            assertEquals(STRING, value.getType());
+            Assert.assertNotNull(value);
+            Assert.assertEquals(ValueType.STRING, value.getType());
 
             String decoded = value.asString();
-            assertNotNull(decoded);
+            Assert.assertNotNull(decoded);
             Assert.assertEquals(str, decoded);
         }
     }
@@ -65,14 +59,14 @@ public class C4FleeceTest extends C4BaseTest {
         try (FLEncoder enc = FLEncoder.getManagedEncoder()) {
             enc.writeData(data);
             byte[] encoded = enc.finish();
-            assertNotNull(encoded);
+            Assert.assertNotNull(encoded);
 
             FLValue value = FLValue.fromData(encoded);
-            assertNotNull(value);
-            assertEquals(DATA, value.getType());
+            Assert.assertNotNull(value);
+            Assert.assertEquals(ValueType.DATA, value.getType());
 
             byte[] decoded = value.asData();
-            assertNotNull(decoded);
+            Assert.assertNotNull(decoded);
             Assert.assertArrayEquals(data, decoded);
         }
     }
@@ -86,18 +80,18 @@ public class C4FleeceTest extends C4BaseTest {
         try (FLEncoder enc = FLEncoder.getManagedEncoder()) {
             enc.write(array);
             byte[] encoded = enc.finish();
-            assertNotNull(encoded);
+            Assert.assertNotNull(encoded);
 
             FLValue value = FLValue.fromData(encoded);
-            assertNotNull(value);
-            assertEquals(ARRAY, value.getType());
+            Assert.assertNotNull(value);
+            Assert.assertEquals(ValueType.ARRAY, value.getType());
 
             List<Object> decoded = value.asArray();
-            assertNotNull(decoded);
-            assertEquals(1, decoded.size());
+            Assert.assertNotNull(decoded);
+            Assert.assertEquals(1, decoded.size());
 
             byte[] decodedData = (byte[]) decoded.get(0);
-            assertNotNull(decodedData);
+            Assert.assertNotNull(decodedData);
             Assert.assertArrayEquals(data, decodedData);
         }
     }
@@ -111,18 +105,18 @@ public class C4FleeceTest extends C4BaseTest {
         try (FLEncoder enc = FLEncoder.getManagedEncoder()) {
             enc.write(map);
             byte[] encoded = enc.finish();
-            assertNotNull(encoded);
+            Assert.assertNotNull(encoded);
 
             FLValue value = FLValue.fromData(encoded);
-            assertNotNull(value);
-            assertEquals(DICT, value.getType());
+            Assert.assertNotNull(value);
+            Assert.assertEquals(ValueType.DICT, value.getType());
 
             Map<String, Object> decoded = value.asDict();
-            assertNotNull(decoded);
-            assertTrue(decoded.containsKey("bytes"));
+            Assert.assertNotNull(decoded);
+            Assert.assertTrue(decoded.containsKey("bytes"));
 
             byte[] decodedData = (byte[]) decoded.get("bytes");
-            assertNotNull(decodedData);
+            Assert.assertNotNull(decodedData);
             Assert.assertArrayEquals(data, decodedData);
         }
     }

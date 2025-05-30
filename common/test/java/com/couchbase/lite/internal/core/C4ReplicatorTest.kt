@@ -29,7 +29,7 @@ import com.couchbase.lite.internal.sockets.MessageFraming
 import com.couchbase.lite.mock.MockNativeReplicator
 import com.couchbase.lite.mock.MockNativeSocket
 import org.junit.After
-import org.junit.Assert.assertEquals
+import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import java.net.URI
@@ -53,8 +53,8 @@ class C4ReplicatorTest : BaseReplicatorTest() {
     fun testCreateRemoteReplicator() {
         var calls = 0
 
-        assertEquals(0, C4Replicator.BOUND_REPLICATORS.size())
-        assertEquals(0, boundCollectionCount())
+        Assert.assertEquals(0, C4Replicator.BOUND_REPLICATORS.size())
+        Assert.assertEquals(0, boundCollectionCount())
 
         val config = ReplicatorConfiguration(URLEndpoint(URI("wss://foo")))
         config.addCollection(testCollection, CollectionConfiguration())
@@ -92,25 +92,25 @@ class C4ReplicatorTest : BaseReplicatorTest() {
             { }
         )
 
-        assertEquals(1, C4Replicator.BOUND_REPLICATORS.size())
-        assertEquals(c4Repl, C4Replicator.BOUND_REPLICATORS.getBinding(c4Repl.token))
+        Assert.assertEquals(1, C4Replicator.BOUND_REPLICATORS.size())
+        Assert.assertEquals(c4Repl, C4Replicator.BOUND_REPLICATORS.getBinding(c4Repl.token))
 
-        assertEquals(1, c4Repl.colls.size)
-        assertEquals(1, boundCollectionCount())
+        Assert.assertEquals(1, c4Repl.colls.size)
+        Assert.assertEquals(1, boundCollectionCount())
 
         c4Repl.close()
-        assertEquals(2, calls)
+        Assert.assertEquals(2, calls)
 
-        assertEquals(0, C4Replicator.BOUND_REPLICATORS.size())
-        assertEquals(0, boundCollectionCount())
+        Assert.assertEquals(0, C4Replicator.BOUND_REPLICATORS.size())
+        Assert.assertEquals(0, boundCollectionCount())
     }
 
     @Test
     fun testCreateLocalReplicator() {
         var calls = 0
 
-        assertEquals(0, C4Replicator.BOUND_REPLICATORS.size())
-        assertEquals(0, boundCollectionCount())
+        Assert.assertEquals(0, C4Replicator.BOUND_REPLICATORS.size())
+        Assert.assertEquals(0, boundCollectionCount())
 
         val config = ReplicatorConfiguration(URLEndpoint(URI("wss://foo")))
         config.addCollection(testCollection, CollectionConfiguration())
@@ -136,24 +136,24 @@ class C4ReplicatorTest : BaseReplicatorTest() {
             config.testReplicator()
         )
 
-        assertEquals(1, C4Replicator.BOUND_REPLICATORS.size())
-        assertEquals(c4Repl, C4Replicator.BOUND_REPLICATORS.getBinding(c4Repl.token))
+        Assert.assertEquals(1, C4Replicator.BOUND_REPLICATORS.size())
+        Assert.assertEquals(c4Repl, C4Replicator.BOUND_REPLICATORS.getBinding(c4Repl.token))
 
-        assertEquals(1, c4Repl.colls.size)
-        assertEquals(1, boundCollectionCount())
+        Assert.assertEquals(1, c4Repl.colls.size)
+        Assert.assertEquals(1, boundCollectionCount())
 
         c4Repl.close()
-        assertEquals(2, calls)
+        Assert.assertEquals(2, calls)
 
-        assertEquals(0, C4Replicator.BOUND_REPLICATORS.size())
-        assertEquals(0, boundCollectionCount())
+        Assert.assertEquals(0, C4Replicator.BOUND_REPLICATORS.size())
+        Assert.assertEquals(0, boundCollectionCount())
     }
 
     @Test
     fun testCreateMessageEndpointReplicator() {
         var calls = 0
 
-        assertEquals(0, C4Replicator.BOUND_REPLICATORS.size())
+        Assert.assertEquals(0, C4Replicator.BOUND_REPLICATORS.size())
         val c4Repl = C4Replicator.createMessageEndpointReplicator(
             object : MockNativeReplicator() {
                 override fun nStop(peer: Long) {
@@ -171,24 +171,24 @@ class C4ReplicatorTest : BaseReplicatorTest() {
         )
         { _, _ -> }
 
-        assertEquals(1, C4Replicator.BOUND_REPLICATORS.size())
-        assertEquals(c4Repl, C4Replicator.BOUND_REPLICATORS.getBinding(c4Repl.token))
+        Assert.assertEquals(1, C4Replicator.BOUND_REPLICATORS.size())
+        Assert.assertEquals(c4Repl, C4Replicator.BOUND_REPLICATORS.getBinding(c4Repl.token))
 
-        assertEquals(1, c4Repl.colls.size)
-        assertEquals(1, boundCollectionCount())
+        Assert.assertEquals(1, c4Repl.colls.size)
+        Assert.assertEquals(1, boundCollectionCount())
 
         c4Repl.close()
-        assertEquals(2, calls)
+        Assert.assertEquals(2, calls)
 
-        assertEquals(0, C4Replicator.BOUND_REPLICATORS.size())
-        assertEquals(0, boundCollectionCount())
+        Assert.assertEquals(0, C4Replicator.BOUND_REPLICATORS.size())
+        Assert.assertEquals(0, boundCollectionCount())
     }
 
     @Test
     fun testStatusChangedCallback() {
         var calls = 0
 
-        assertEquals(0, C4Replicator.BOUND_REPLICATORS.size())
+        Assert.assertEquals(0, C4Replicator.BOUND_REPLICATORS.size())
 
         val c4Repl = C4Replicator.createMessageEndpointReplicator(
             MockNativeReplicator(),
@@ -203,7 +203,7 @@ class C4ReplicatorTest : BaseReplicatorTest() {
             c4Repl.token,
             C4ReplicatorStatus(C4ReplicatorStatus.ActivityLevel.BUSY, 0, 0)
         )
-        assertEquals(1, calls)
+        Assert.assertEquals(1, calls)
 
         c4Repl.close()
 
@@ -211,7 +211,7 @@ class C4ReplicatorTest : BaseReplicatorTest() {
             c4Repl.token,
             C4ReplicatorStatus(C4ReplicatorStatus.ActivityLevel.BUSY, 0, 0)
         )
-        assertEquals(1, calls)
+        Assert.assertEquals(1, calls)
     }
 
     @Test
@@ -237,12 +237,12 @@ class C4ReplicatorTest : BaseReplicatorTest() {
         val docEnd = C4DocumentEnded(C4BaseTest.MOCK_TOKEN, "micro", "WWI sabres", "doc-1", "#57", 0, 0L, 0, 0, 0, true)
 
         C4Replicator.documentEndedCallback(c4Repl.token, true, docEnd)
-        assertEquals(1, calls)
+        Assert.assertEquals(1, calls)
 
         c4Repl.close()
 
         C4Replicator.documentEndedCallback(c4Repl.token, true, docEnd)
 
-        assertEquals(1, calls)
+        Assert.assertEquals(1, calls)
     }
 }

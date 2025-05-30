@@ -16,11 +16,7 @@
 package com.couchbase.lite
 
 import com.couchbase.lite.internal.utils.VerySlowTest
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotEquals
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
+import org.junit.Assert
 import org.junit.Test
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executor
@@ -88,7 +84,7 @@ class CollectionListenerTest : BaseDbTest() {
         val token = testCollection.addChangeListener { }
         try {
             testDatabase.deleteCollection(testCollection.name, testCollection.scope.name)
-            assertNull(testDatabase.getCollection(testCollection.name, testCollection.scope.name))
+            Assert.assertNull(testDatabase.getCollection(testCollection.name, testCollection.scope.name))
         } finally {
             token.remove()
         }
@@ -103,7 +99,7 @@ class CollectionListenerTest : BaseDbTest() {
 
         try {
             otherDb.deleteCollection(testCollection.name, testCollection.scope.name)
-            assertNull(testDatabase.getCollection(testCollection.name, testCollection.scope.name))
+            Assert.assertNull(testDatabase.getCollection(testCollection.name, testCollection.scope.name))
         } finally {
             token.remove()
 
@@ -120,7 +116,7 @@ class CollectionListenerTest : BaseDbTest() {
         val token = testCollection.addDocumentChangeListener(docId) { }
         try {
             testDatabase.deleteCollection(testCollection.name, testCollection.scope.name)
-            assertNull(testDatabase.getCollection(testCollection.name, testCollection.scope.name))
+            Assert.assertNull(testDatabase.getCollection(testCollection.name, testCollection.scope.name))
 
         } finally {
             token.remove()
@@ -136,7 +132,7 @@ class CollectionListenerTest : BaseDbTest() {
 
         try {
             otherDb.deleteCollection(testCollection.name, testCollection.scope.name)
-            assertNull(testDatabase.getCollection(testCollection.name, testCollection.scope.name))
+            Assert.assertNull(testDatabase.getCollection(testCollection.name, testCollection.scope.name))
         } finally {
             token.remove()
 
@@ -198,7 +194,7 @@ class CollectionListenerTest : BaseDbTest() {
         }
     }
 
-    // These tests tests are incredibly finicky.
+    // These tests are incredibly finicky.
 
     // Create two collections, A and B.
     // Add two change listeners to collection A.
@@ -245,18 +241,18 @@ class CollectionListenerTest : BaseDbTest() {
         collectionA.save(MutableDocument(doc2Id))
         collectionA.save(MutableDocument(doc1Id))
 
-        assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
+        Assert.assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
         t += System.currentTimeMillis()
 
-        assertEquals(2, changes1.size)
-        assertTrue(changes1.contains(doc1Id))
-        assertTrue(changes1.contains(doc2Id))
-        assertEquals(2, changes2.size)
-        assertTrue(changes1.contains(doc1Id))
-        assertTrue(changes1.contains(doc2Id))
+        Assert.assertEquals(2, changes1.size)
+        Assert.assertTrue(changes1.contains(doc1Id))
+        Assert.assertTrue(changes1.contains(doc2Id))
+        Assert.assertEquals(2, changes2.size)
+        Assert.assertTrue(changes1.contains(doc1Id))
+        Assert.assertTrue(changes1.contains(doc2Id))
         if (exec != null) {
-            assertNotEquals(Thread.currentThread(), thread1)
-            assertNotEquals(Thread.currentThread(), thread2)
+            Assert.assertNotEquals(Thread.currentThread(), thread1)
+            Assert.assertNotEquals(Thread.currentThread(), thread2)
         }
 
         // Update documents
@@ -272,18 +268,18 @@ class CollectionListenerTest : BaseDbTest() {
             collectionA.getDocument(doc1Id)!!.toMutable().setString("Baroud", "Cheb Khaled & Safy Boutella")
         )
 
-        assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
+        Assert.assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
         t += System.currentTimeMillis()
 
-        assertEquals(2, changes1.size)
-        assertTrue(changes1.contains(doc1Id))
-        assertTrue(changes1.contains(doc2Id))
-        assertEquals(2, changes2.size)
-        assertTrue(changes1.contains(doc1Id))
-        assertTrue(changes1.contains(doc2Id))
+        Assert.assertEquals(2, changes1.size)
+        Assert.assertTrue(changes1.contains(doc1Id))
+        Assert.assertTrue(changes1.contains(doc2Id))
+        Assert.assertEquals(2, changes2.size)
+        Assert.assertTrue(changes1.contains(doc1Id))
+        Assert.assertTrue(changes1.contains(doc2Id))
         if (exec != null) {
-            assertNotEquals(Thread.currentThread(), thread1)
-            assertNotEquals(Thread.currentThread(), thread2)
+            Assert.assertNotEquals(Thread.currentThread(), thread1)
+            Assert.assertNotEquals(Thread.currentThread(), thread2)
         }
 
         // Delete documents
@@ -296,18 +292,18 @@ class CollectionListenerTest : BaseDbTest() {
         collectionA.delete(collectionA.getDocument(doc1Id)!!)
         collectionA.delete(collectionA.getDocument(doc2Id)!!)
 
-        assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
+        Assert.assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
         t += System.currentTimeMillis()
 
-        assertEquals(2, changes1.size)
-        assertTrue(changes1.contains(doc1Id))
-        assertTrue(changes1.contains(doc2Id))
-        assertEquals(2, changes2.size)
-        assertTrue(changes1.contains(doc1Id))
-        assertTrue(changes1.contains(doc2Id))
+        Assert.assertEquals(2, changes1.size)
+        Assert.assertTrue(changes1.contains(doc1Id))
+        Assert.assertTrue(changes1.contains(doc2Id))
+        Assert.assertEquals(2, changes2.size)
+        Assert.assertTrue(changes1.contains(doc1Id))
+        Assert.assertTrue(changes1.contains(doc2Id))
         if (exec != null) {
-            assertNotEquals(Thread.currentThread(), thread1)
-            assertNotEquals(Thread.currentThread(), thread2)
+            Assert.assertNotEquals(Thread.currentThread(), thread1)
+            Assert.assertNotEquals(Thread.currentThread(), thread2)
         }
 
         latch = CountDownLatch(2)
@@ -323,9 +319,9 @@ class CollectionListenerTest : BaseDbTest() {
         collectionA.save(MutableDocument(doc1Id))
 
         // wait twice the average time to notify
-        assertFalse(latch.await((t * 2) / 3, TimeUnit.MILLISECONDS))
-        assertTrue(changes1.isEmpty())
-        assertTrue(changes2.isEmpty())
+        Assert.assertFalse(latch.await((t * 2) / 3, TimeUnit.MILLISECONDS))
+        Assert.assertTrue(changes1.isEmpty())
+        Assert.assertTrue(changes2.isEmpty())
     }
 
     // Create two collections, A and B.
@@ -374,16 +370,16 @@ class CollectionListenerTest : BaseDbTest() {
             collectionA.save(MutableDocument(doc2Id))
             collectionA.save(MutableDocument(doc1Id))
 
-            assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
+            Assert.assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
             t += System.currentTimeMillis()
 
-            assertEquals(1, changes1.size)
-            assertTrue(changes1.contains(doc1Id))
-            assertEquals(1, changes2.size)
-            assertTrue(changes2.contains(doc2Id))
+            Assert.assertEquals(1, changes1.size)
+            Assert.assertTrue(changes1.contains(doc1Id))
+            Assert.assertEquals(1, changes2.size)
+            Assert.assertTrue(changes2.contains(doc2Id))
             if (exec != null) {
-                assertNotEquals(Thread.currentThread(), thread1)
-                assertNotEquals(Thread.currentThread(), thread2)
+                Assert.assertNotEquals(Thread.currentThread(), thread1)
+                Assert.assertNotEquals(Thread.currentThread(), thread2)
             }
 
             // Update documents
@@ -402,16 +398,16 @@ class CollectionListenerTest : BaseDbTest() {
                 collectionA.getDocument(doc1Id)?.toMutable()?.setString("Baroud", "Cheb Khaled & Safy Boutella")!!
             )
 
-            assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
+            Assert.assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
             t += System.currentTimeMillis()
 
-            assertEquals(1, changes1.size)
-            assertTrue(changes1.contains(doc1Id))
-            assertEquals(1, changes2.size)
-            assertTrue(changes2.contains(doc2Id))
+            Assert.assertEquals(1, changes1.size)
+            Assert.assertTrue(changes1.contains(doc1Id))
+            Assert.assertEquals(1, changes2.size)
+            Assert.assertTrue(changes2.contains(doc2Id))
             if (exec != null) {
-                assertNotEquals(Thread.currentThread(), thread1)
-                assertNotEquals(Thread.currentThread(), thread2)
+                Assert.assertNotEquals(Thread.currentThread(), thread1)
+                Assert.assertNotEquals(Thread.currentThread(), thread2)
             }
 
             // Delete documents
@@ -424,16 +420,16 @@ class CollectionListenerTest : BaseDbTest() {
             collectionA.delete(collectionA.getDocument(doc2Id)!!)
             collectionA.delete(collectionA.getDocument(doc1Id)!!)
 
-            assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
+            Assert.assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
             t += System.currentTimeMillis()
 
-            assertEquals(1, changes1.size)
-            assertTrue(changes1.contains(doc1Id))
-            assertEquals(1, changes2.size)
-            assertTrue(changes2.contains(doc2Id))
+            Assert.assertEquals(1, changes1.size)
+            Assert.assertTrue(changes1.contains(doc1Id))
+            Assert.assertEquals(1, changes2.size)
+            Assert.assertTrue(changes2.contains(doc2Id))
             if (exec != null) {
-                assertNotEquals(Thread.currentThread(), thread1)
-                assertNotEquals(Thread.currentThread(), thread2)
+                Assert.assertNotEquals(Thread.currentThread(), thread1)
+                Assert.assertNotEquals(Thread.currentThread(), thread2)
             }
 
             // Remove the change listeners
@@ -451,8 +447,8 @@ class CollectionListenerTest : BaseDbTest() {
         collectionA.save(MutableDocument(doc1Id))
 
         // wait twice the average time to notify
-        assertFalse(latch?.await((t * 2) / 3, TimeUnit.MILLISECONDS) ?: false)
-        assertTrue(changes1?.isEmpty() ?: false)
-        assertTrue(changes2?.isEmpty() ?: false)
+        Assert.assertFalse(latch?.await((t * 2) / 3, TimeUnit.MILLISECONDS) ?: false)
+        Assert.assertTrue(changes1?.isEmpty() ?: false)
+        Assert.assertTrue(changes2?.isEmpty() ?: false)
     }
 }

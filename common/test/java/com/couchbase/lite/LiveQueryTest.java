@@ -23,11 +23,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicIntegerArray;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.junit.Assert;
 import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 
 @SuppressWarnings("ConstantConditions")
@@ -54,7 +51,7 @@ public class LiveQueryTest extends BaseDbTest {
 
         final CountDownLatch latch = new CountDownLatch(1);
         try (ListenerToken ignore = query.addChangeListener(testSerialExecutor, change -> latch.countDown())) {
-            assertTrue(latch.await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
+            Assert.assertTrue(latch.await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
         }
     }
 
@@ -83,21 +80,22 @@ public class LiveQueryTest extends BaseDbTest {
             change -> latch1[atmCount.getAndIncrement(0)].countDown())) {
 
             // listener 1 gets notified after observer subscribed
-            assertTrue(latch1[0].await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
+            Assert.assertTrue(latch1[0].await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
+
             try (ListenerToken ignore2 = query.addChangeListener(
                 testSerialExecutor,
                 change -> latch2[atmCount.getAndIncrement(1)].countDown())) {
                 // listener 2 should get notified
-                assertTrue(latch2[0].await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
+                Assert.assertTrue(latch2[0].await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
 
                 // creation of the second listener should not trigger first listener callback
-                assertFalse(latch1[1].await(APPROXIMATE_CORE_DELAY_MS, TimeUnit.MILLISECONDS));
+                Assert.assertFalse(latch1[1].await(APPROXIMATE_CORE_DELAY_MS, TimeUnit.MILLISECONDS));
 
                 createDocNumbered(11);
 
                 // introducing change in database should trigger both listener callbacks
-                assertTrue(latch1[1].await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
-                assertTrue(latch2[1].await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
+                Assert.assertTrue(latch1[1].await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
+                Assert.assertTrue(latch2[1].await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
             }
         }
     }
@@ -120,10 +118,10 @@ public class LiveQueryTest extends BaseDbTest {
                 latches[atmCount.getAndIncrement(0)].countDown();
             })) {
             createDocNumbered(10);
-            assertTrue(latches[0].await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
+            Assert.assertTrue(latches[0].await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
 
             createDocNumbered(11);
-            assertTrue(latches[1].await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
+            Assert.assertTrue(latches[1].await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
         }
     }
 
@@ -164,8 +162,8 @@ public class LiveQueryTest extends BaseDbTest {
 
             // both listeners get notified after doc-11 is created in database
             // rs iterates through the correct value
-            assertTrue(latch1.await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
-            assertTrue(latch2.await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
+            Assert.assertTrue(latch1.await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
+            Assert.assertTrue(latch2.await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
         }
     }
 
@@ -206,18 +204,18 @@ public class LiveQueryTest extends BaseDbTest {
                     }
                 }
             })) {
-            assertTrue(latch[0].await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
+            Assert.assertTrue(latch[0].await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
 
             params = new Parameters();
             params.setInt("VALUE", 1);
             query.setParameters(params);
 
             // VALUE changes to 1, query now gets a new rs for doc 1 and 2
-            assertTrue(latch[1].await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
+            Assert.assertTrue(latch[1].await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
 
             // This doc does not meet the condition of the query, thus query should not get notified
             createDocNumbered(0);
-            assertFalse(latch[2].await(APPROXIMATE_CORE_DELAY_MS, TimeUnit.MILLISECONDS));
+            Assert.assertFalse(latch[2].await(APPROXIMATE_CORE_DELAY_MS, TimeUnit.MILLISECONDS));
         }
     }
 
@@ -244,21 +242,21 @@ public class LiveQueryTest extends BaseDbTest {
             }
         )) {
             // this update should happen nearly instantaneously
-            assertTrue(latchHolder.get().await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
-            assertEquals(1, resultsHolder.get().size());
+            Assert.assertTrue(latchHolder.get().await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
+            Assert.assertEquals(1, resultsHolder.get().size());
 
             // adding this document will trigger the query but since it does not meet the query
             // criteria, it will not produce a new result. The listener should not be called.
             // Wait for 2 full update intervals and a little bit more.
             latchHolder.set(new CountDownLatch(1));
             createDocNumbered(0);
-            assertFalse(latchHolder.get().await((APPROXIMATE_CORE_DELAY_MS), TimeUnit.MILLISECONDS));
+            Assert.assertFalse(latchHolder.get().await((APPROXIMATE_CORE_DELAY_MS), TimeUnit.MILLISECONDS));
 
             // adding this document should cause a call to the listener in not much more than an update interval
             latchHolder.set(new CountDownLatch(1));
             createDocNumbered(11);
-            assertTrue(latchHolder.get().await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
-            assertEquals(2, resultsHolder.get().size());
+            Assert.assertTrue(latchHolder.get().await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
+            Assert.assertEquals(2, resultsHolder.get().size());
         }
     }
 
@@ -278,12 +276,12 @@ public class LiveQueryTest extends BaseDbTest {
             tokens.add(query.addChangeListener(listener));
         }
 
-        assertEquals(listeners.size(), query.liveCount());
-        for (ListenerToken token: tokens) { assertTrue(query.isLive(token)); }
+        Assert.assertEquals(listeners.size(), query.liveCount());
+        for (ListenerToken token: tokens) { Assert.assertTrue(query.isLive(token)); }
 
         getTestDatabase().close();
 
-        assertEquals(0, query.liveCount());
+        Assert.assertEquals(0, query.liveCount());
     }
 
     // create test docs
