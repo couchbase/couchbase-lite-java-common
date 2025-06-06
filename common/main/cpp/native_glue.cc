@@ -27,9 +27,9 @@
 #define _CLANG_DISABLE_CRT_DEPRECATION_WARNINGS
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
+using namespace std;
 using namespace litecore;
 using namespace litecore::jni;
-using namespace std;
 
 // Global reference to the Java VM
 static JavaVM *gJVM;
@@ -159,6 +159,9 @@ JNI_OnLoad(JavaVM *jvm, void *ignore) {
         #ifdef COUCHBASE_ENTERPRISE
         && initC4Listener(env)
         && initC4Prediction(env)
+        #ifdef __ANDROID__
+        && initC4MultipeerReplicator(env)
+        #endif
         #endif
         && initC4Socket(env)) {
         assert(gJVM == nullptr);
@@ -395,7 +398,7 @@ namespace litecore::jni {
             env,
             delRef,
             jbytes,
-            (size_t)(!jbytes ? 0 : env->GetArrayLength(jbytes)),
+            (size_t) (!jbytes ? 0 : env->GetArrayLength(jbytes)),
             critical) {}
 
     jbyteArraySlice::jbyteArraySlice(JNIEnv *env, bool delRef, jbyteArray jbytes, size_t length, bool critical)
@@ -448,14 +451,18 @@ namespace litecore::jni {
         return toJString(env, (C4Slice) s);
     }
 
+    jbyteArray toJByteArray(JNIEnv *env, const uint8_t *bytes, const size_t len) {
+        if (bytes == nullptr)
+            return nullptr;
+        jbyteArray array = env->NewByteArray((jsize) len);
+        if (array != nullptr)
+            env->SetByteArrayRegion(array, 0, (jsize) len, (const jbyte *) bytes);
+        return array;
+    }
+
     // NOTE: this creates a *copy* of the passed slice
     jbyteArray toJByteArray(JNIEnv *env, C4Slice s) {
-        if (s.buf == nullptr)
-            return nullptr;
-        jbyteArray array = env->NewByteArray((jsize) s.size);
-        if (array != nullptr)
-            env->SetByteArrayRegion(array, 0, (jsize) s.size, (const jbyte *) s.buf);
-        return array;
+        return toJByteArray(env, (uint8_t *) s.buf, s.size);
     }
 
     jbyteArray toJByteArray(JNIEnv *env, C4SliceResult s) {
@@ -547,4 +554,46 @@ namespace litecore::jni {
 
         return true;
     }
+
+#ifdef COUCHBASE_ENTERPRISE
+
+    jbyteArray fromC4Cert(JNIEnv *env, C4Cert *cert) {
+        if (cert == nullptr)
+            return nullptr;
+
+        FLSliceResult certData = c4cert_copyData(cert, false);
+        jbyteArray jData = toJByteArray(env, certData);
+        FLSliceResult_Release(certData);
+
+        return jData;
+    }
+
+    C4Cert *toC4Cert(JNIEnv *env, jbyteArray cert, bool &didThrow) {
+        didThrow = false;
+
+        if (cert == nullptr)
+            return nullptr;
+
+        jsize certSize = env->GetArrayLength(cert);
+        if (certSize <= 0)
+            return nullptr;
+
+        jbyte *certData = env->GetByteArrayElements(cert, nullptr);
+        FLSlice certSlice = {certData, (size_t) certSize};
+
+        C4Error error{};
+        C4Cert *c4cert = c4cert_fromData(certSlice, &error);
+
+        env->ReleaseByteArrayElements(cert, certData, 0);
+
+        if (c4cert == nullptr) {
+            throwError(env, error);
+            didThrow = true;
+            return nullptr;
+        }
+
+        return c4cert;
+    }
+
+#endif // COUCHBASE_ENTERPRISE
 }

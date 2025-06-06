@@ -33,6 +33,7 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
@@ -653,7 +654,8 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
         final Object proxyUser = auth.get(C4Replicator.REPLICATOR_OPTION_PROXY_USER);
         final Object proxyPass = auth.get(C4Replicator.REPLICATOR_OPTION_PROXY_PASS);
         if (((proxyUser instanceof String) && (proxyPass instanceof String))) {
-            final String proxyCred = Credentials.basic((String) proxyUser, (String) proxyPass);
+            final String proxyCred
+                = Credentials.basic((String) proxyUser, (String) proxyPass, StandardCharsets.UTF_8);
             builder.proxyAuthenticator((route, resp) -> authenticate(resp, HEADER_PROXY_AUTH, proxyCred));
         }
 
@@ -661,7 +663,8 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
             final Object endptUser = auth.get(C4Replicator.REPLICATOR_AUTH_USER_NAME);
             final Object endptPass = auth.get(C4Replicator.REPLICATOR_AUTH_PASSWORD);
             if (((endptUser instanceof String) && (endptPass instanceof String))) {
-                final String endptCred = Credentials.basic((String) endptUser, (String) endptPass);
+                final String endptCred
+                    = Credentials.basic((String) endptUser, (String) endptPass, StandardCharsets.UTF_8);
                 builder.authenticator((route, resp) -> authenticate(resp, HEADER_AUTH, endptCred));
                 forcePreAuth(builder, endptCred);
             }

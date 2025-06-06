@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-#if defined(__ANDROID__)
+#ifdef __ANDROID__
 
 #include <android/log.h>
 

@@ -29,7 +29,7 @@ extern "C" {
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Database
  * Method:    open
- * Signature: (Ljava/lang/String;Ljava/lang/String;II[B)J
+ * Signature: (Ljava/lang/String;Ljava/lang/String;JI[B)J
  */
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Database_open(
