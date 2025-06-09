@@ -50,6 +50,10 @@ public abstract class C4Peer implements AutoCloseable {
         void dispose(long peer);
     }
 
+    /**
+     * Most PeerHolders are for ref-counted objects.  There may be several references
+     * to the same object, so <code></code>.equals<code></code> means the exact same PeerHolder (Java default).
+     */
     private static class PeerHolder implements Cleaner.Cleanable {
         @Nullable
         private final PeerCleaner cleaner;
@@ -138,7 +142,17 @@ public abstract class C4Peer implements AutoCloseable {
     }
 
     /**
-     * LiteCore objects that are not ref-counted must not have multiple references.
+     * LiteCore objects that are not ref-counted must not have multiple references:
+     * <code>.equals</code> means not the exact same PeerHolder but the same peer.
+     * At this moment, the following LiteCore objects not ref-counted:
+     *    C4BlobKey
+     *    C4BlobReadStream
+     *    C4BlobStore
+     *    C4BlobWriteStream
+     *    C4DocumentObserver
+     *    C4Listener
+     *    C4QueryObserver
+     *    C4Replicator
      */
     private static class UncountedPeerHolder extends PeerHolder {
         UncountedPeerHolder(@NonNull String name, long peer, @Nullable PeerCleaner cleaner, boolean quiet) {
@@ -171,22 +185,15 @@ public abstract class C4Peer implements AutoCloseable {
     @NonNull
     final Cleaner.Cleanable cleaner;
 
-    // Most object should bark if they are not explicitly freed
+    // Most objects should bark if they are not explicitly freed: (quiet == false).
     protected C4Peer(long peer, @Nullable PeerCleaner cleaner) { this(peer, cleaner, true, false); }
 
-    // Most LiteCore objects are ref-counted.  There may be several references to the same object.
+    // Most LiteCore objects are ref-counted.  There may be several references to the same object: (refCounted == true)
     protected C4Peer(long peer, @Nullable PeerCleaner cleaner, boolean quiet) { this(peer, cleaner, true, quiet); }
 
-    // At this moment, the following LiteCore objects not ref-counted:
-    //    C4BlobKey
-    //    C4BlobReadStream
-    //    C4BlobStore
-    //    C4BlobWriteStream
-    //    C4DocumentObserver
-    //    C4Listener
-    //    C4QueryObserver
-    //    C4Replicator
+    // For non-typical objects.
     protected C4Peer(long peer, @Nullable PeerCleaner cleaner, boolean refCounted, boolean quiet) {
+        // Could simply pass in the PeerHolder, were it not for this parameter.
         this.name = getClass().getSimpleName() + ClassUtils.objId(this);
 
         Preconditions.assertNotZero(peer, "peer");
