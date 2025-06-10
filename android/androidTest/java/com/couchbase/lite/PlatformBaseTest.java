@@ -43,20 +43,6 @@ public abstract class PlatformBaseTest implements PlatformTest {
 
     public static final String LEGAL_FILE_NAME_CHARS = "`~@#$%^&()_+{}][=-.,;'12345ABCDEabcde";
 
-    private static final Map<String, Exclusion> PLATFORM_DEPENDENT_TESTS;
-    static {
-        final Map<String, Exclusion> m = new HashMap<>();
-        m.put("NEXUS5", new Exclusion("Fails on Nexus 5", () -> "Nexus 5".equals(android.os.Build.MODEL)));
-        m.put("ANDROID<21", new Exclusion("Not supported on Android API < 21", () -> Build.VERSION.SDK_INT < 21));
-        m.put("WINDOWS", new Exclusion("Supported only on Windows", () -> false));
-        m.put(
-            "SWEDISH UNSUPPORTED",
-            new Exclusion(
-                "Swedish locale not supported",
-                () -> !Arrays.asList(Locale.getAvailableLocales()).contains(new Locale("sv"))));
-        PLATFORM_DEPENDENT_TESTS = Collections.unmodifiableMap(m);
-    }
-
     static {
         try { Runtime.getRuntime().exec("logcat --prune /" + android.os.Process.myPid()).waitFor(); }
         catch (Exception e) { android.util.Log.w("TEST", "Failed adding to chatty whitelist", e); }
@@ -71,6 +57,9 @@ public abstract class PlatformBaseTest implements PlatformTest {
     public final String getDevice() { return android.os.Build.PRODUCT; }
 
     @Override
+    public final int getVMVersion() { return Build.VERSION.SDK_INT; }
+
+    @Override
     public final File getTmpDir() {
         return FileUtils.verifyDir(new File(getAppContext().getFilesDir(), SCRATCH_DIR_NAME));
     }
@@ -79,7 +68,4 @@ public abstract class PlatformBaseTest implements PlatformTest {
     public final AbstractExecutionService getExecutionService(ThreadPoolExecutor executor) {
         return new AndroidExecutionService(executor);
     }
-
-    @Override
-    public final Exclusion getExclusions(@NonNull String tag) { return PLATFORM_DEPENDENT_TESTS.get(tag); }
 }

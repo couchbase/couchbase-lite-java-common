@@ -213,7 +213,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_endTransaction(
         jlong jdb,
         jboolean jcommit) {
     C4Error error{};
-    bool ok = c4db_endTransaction((C4Database *) jdb, jcommit, &error);
+    bool ok = c4db_endTransaction((C4Database *) jdb, jcommit != JNI_FALSE, &error);
     if (!ok && error.code != 0)
         throwError(env, error);
 }
@@ -264,7 +264,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_maintenance(
         return JNI_FALSE;
     }
 
-    return (jboolean) ok;
+    return ok ? JNI_TRUE : JNI_FALSE;
 }
 
 
@@ -299,7 +299,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_setCookie(
             cookie,
             address.hostname,
             address.path,
-            acceptParentDomain,
+            acceptParentDomain != JNI_FALSE,
             &error);
     if (!ok && error.code != 0)
         throwError(env, error);
@@ -380,7 +380,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_docContainsBlobs(
     const auto *const dict = (FLDict) FLDoc_GetRoot(doc);
     bool containsBlobs = c4doc_dictContainsBlobs(dict);
     FLDoc_Release(doc);
-    return containsBlobs;
+    return containsBlobs ? JNI_TRUE : JNI_FALSE;
 }
 
 // - Scopes and Collections
@@ -419,7 +419,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_hasScope(
         jlong db,
         jstring jscope) {
     jstringSlice scope(env, jscope);
-    return c4db_hasScope((C4Database *) db, scope);
+    return c4db_hasScope((C4Database *) db, scope) ? JNI_TRUE : JNI_FALSE;
 }
 
 /*

@@ -185,7 +185,7 @@ c4DocChangesToJavaArray(JNIEnv *env, C4CollectionChange changes[], uint32_t nCha
                 _docId,
                 _revId,
                 (jlong) changes[i].sequence,
-                (jboolean) external);
+                external ? JNI_TRUE : JNI_FALSE);
 
         if (_docId != nullptr) env->DeleteLocalRef(_docId);
         if (_revId != nullptr) env->DeleteLocalRef(_revId);

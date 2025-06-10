@@ -53,7 +53,7 @@ Java_com_couchbase_lite_internal_fleece_impl_NativeFLEncoder_free(JNIEnv *env, j
  */
 JNIEXPORT jboolean JNICALL
 Java_com_couchbase_lite_internal_fleece_impl_NativeFLEncoder_writeNull(JNIEnv *env, jclass ignore, jlong jenc) {
-    return (jboolean) FLEncoder_WriteNull((FLEncoder) jenc);
+    return FLEncoder_WriteNull((FLEncoder) jenc) ? JNI_TRUE : JNI_FALSE;
 }
 
 /*
@@ -67,7 +67,7 @@ Java_com_couchbase_lite_internal_fleece_impl_NativeFLEncoder_writeBool(
         jclass ignore,
         jlong jenc,
         jboolean jvalue) {
-    return (jboolean) FLEncoder_WriteBool((FLEncoder) jenc, (bool) jvalue);
+    return FLEncoder_WriteBool((FLEncoder) jenc, (bool) jvalue) ? JNI_TRUE : JNI_FALSE;
 }
 
 /*
@@ -81,7 +81,7 @@ Java_com_couchbase_lite_internal_fleece_impl_NativeFLEncoder_writeInt(
         jclass ignore,
         jlong jenc,
         jlong jvalue) {
-    return (jboolean) FLEncoder_WriteInt((FLEncoder) jenc, (int64_t) jvalue);
+    return FLEncoder_WriteInt((FLEncoder) jenc, (int64_t) jvalue) ? JNI_TRUE : JNI_FALSE;
 }
 
 /*
@@ -95,7 +95,7 @@ Java_com_couchbase_lite_internal_fleece_impl_NativeFLEncoder_writeFloat(
         jclass ignore,
         jlong jenc,
         jfloat jvalue) {
-    return (jboolean) FLEncoder_WriteFloat((FLEncoder) jenc, (float) jvalue);
+    return FLEncoder_WriteFloat((FLEncoder) jenc, (float) jvalue) ? JNI_TRUE : JNI_FALSE;
 }
 
 /*
@@ -109,7 +109,7 @@ Java_com_couchbase_lite_internal_fleece_impl_NativeFLEncoder_writeDouble(
         jclass ignore,
         jlong jenc,
         jdouble jvalue) {
-    return (jboolean) FLEncoder_WriteDouble((FLEncoder) jenc, (double) jvalue);
+    return FLEncoder_WriteDouble((FLEncoder) jenc, (double) jvalue) ? JNI_TRUE : JNI_FALSE;
 }
 
 /*
@@ -124,7 +124,7 @@ Java_com_couchbase_lite_internal_fleece_impl_NativeFLEncoder_writeString(
         jlong jenc,
         jstring jvalue) {
     jstringSlice value(env, jvalue);
-    return (jboolean) FLEncoder_WriteString((FLEncoder) jenc, value);
+    return FLEncoder_WriteString((FLEncoder) jenc, value) ? JNI_TRUE : JNI_FALSE;
 }
 
 /*
@@ -138,7 +138,7 @@ JNIEXPORT jboolean JNICALL Java_com_couchbase_lite_internal_fleece_impl_NativeFL
         jlong jenc,
         jcharArray jvalue) {
     jstringSlice value(env, jvalue);
-    return (jboolean) FLEncoder_WriteString((FLEncoder) jenc, value);
+    return FLEncoder_WriteString((FLEncoder) jenc, value) ? JNI_TRUE : JNI_FALSE;
 }
 
 /*
@@ -153,7 +153,7 @@ Java_com_couchbase_lite_internal_fleece_impl_NativeFLEncoder_writeData(
         jlong jenc,
         jbyteArray jvalue) {
     jbyteArraySlice value(env, jvalue);
-    return (jboolean) FLEncoder_WriteData((FLEncoder) jenc, value);
+    return FLEncoder_WriteData((FLEncoder) jenc, value) ? JNI_TRUE : JNI_FALSE;
 }
 
 /*
@@ -167,7 +167,7 @@ Java_com_couchbase_lite_internal_fleece_impl_NativeFLEncoder_writeValue(
         jclass ignore,
         jlong jenc,
         jlong jvalue) {
-    return (jboolean) FLEncoder_WriteValue((FLEncoder) jenc, (FLValue) jvalue);
+    return FLEncoder_WriteValue((FLEncoder) jenc, (FLValue) jvalue) ? JNI_TRUE : JNI_FALSE;
 }
 
 /*
@@ -181,7 +181,7 @@ Java_com_couchbase_lite_internal_fleece_impl_NativeFLEncoder_beginArray(
         jclass ignore,
         jlong jenc,
         jlong jreserve) {
-    return (jboolean) FLEncoder_BeginArray((FLEncoder) jenc, (size_t) jreserve);
+    return FLEncoder_BeginArray((FLEncoder) jenc, (size_t) jreserve) ? JNI_TRUE : JNI_FALSE;
 }
 
 /*
@@ -191,7 +191,7 @@ Java_com_couchbase_lite_internal_fleece_impl_NativeFLEncoder_beginArray(
  */
 JNIEXPORT jboolean JNICALL
 Java_com_couchbase_lite_internal_fleece_impl_NativeFLEncoder_endArray(JNIEnv *env, jclass ignore, jlong jenc) {
-    return (jboolean) FLEncoder_EndArray((FLEncoder) jenc);
+    return FLEncoder_EndArray((FLEncoder) jenc) ? JNI_TRUE : JNI_FALSE;
 }
 
 /*
@@ -205,7 +205,7 @@ Java_com_couchbase_lite_internal_fleece_impl_NativeFLEncoder_beginDict(
         jclass ignore,
         jlong jenc,
         jlong jreserve) {
-    return (jboolean) FLEncoder_BeginDict((FLEncoder) jenc, (size_t) jreserve);
+    return FLEncoder_BeginDict((FLEncoder) jenc, (size_t) jreserve) ? JNI_TRUE : JNI_FALSE;
 }
 
 /*
@@ -215,7 +215,7 @@ Java_com_couchbase_lite_internal_fleece_impl_NativeFLEncoder_beginDict(
  */
 JNIEXPORT jboolean JNICALL
 Java_com_couchbase_lite_internal_fleece_impl_NativeFLEncoder_endDict(JNIEnv *env, jclass ignore, jlong jenc) {
-    return (jboolean) FLEncoder_EndDict((FLEncoder) jenc);
+    return FLEncoder_EndDict((FLEncoder) jenc) ? JNI_TRUE : JNI_FALSE;
 }
 
 /*
@@ -232,7 +232,7 @@ Java_com_couchbase_lite_internal_fleece_impl_NativeFLEncoder_writeKey(
     if (jkey == nullptr)
         return JNI_FALSE;
     jstringSlice key(env, jkey);
-    return (jboolean) FLEncoder_WriteKey((FLEncoder) jenc, key);
+    return FLEncoder_WriteKey((FLEncoder) jenc, key) ? JNI_TRUE : JNI_FALSE;
 }
 
 /*

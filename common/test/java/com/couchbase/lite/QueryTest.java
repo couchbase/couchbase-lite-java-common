@@ -34,6 +34,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
 
 import com.couchbase.lite.internal.utils.FlakyTest;
@@ -1386,7 +1387,9 @@ public class QueryTest extends BaseQueryTest {
     // Early versions of Android do not support the Swedish Locale
     @Test
     public void testUnicodeCollationWithLocaleSwedish() {
-        skipTestWhen("SWEDISH UNSUPPORTED");
+        Assume.assumeTrue(
+            "Test requires the Swedish locale",
+            Arrays.asList(Locale.getAvailableLocales()).contains(new Locale("sv")));
 
         createAlphaDocs();
 

@@ -47,8 +47,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getFromCollection(
     C4Document *doc = c4coll_getDoc(
             (C4Collection *) coll,
             docId,
-            mustExist == JNI_TRUE,
-            (allRevs == JNI_TRUE) ? kDocGetAll : kDocGetCurrentRev,
+            mustExist != JNI_FALSE,
+            (allRevs != JNI_FALSE) ? kDocGetAll : kDocGetCurrentRev,
             &error);
 
     if ((doc == nullptr) && (error.code != 0)) {

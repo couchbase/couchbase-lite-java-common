@@ -16,37 +16,23 @@
 
 package com.couchbase.lite;
 
-import androidx.annotation.NonNull;
-
 import java.io.File;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import com.couchbase.lite.internal.exec.AbstractExecutionService;
-import com.couchbase.lite.internal.utils.Fn;
 
 
 /**
  * Contains methods required for the tests to run on both Android and Java platforms.
  */
 public interface PlatformTest {
-    class Exclusion {
-        final String msg;
-        final Fn.Provider<Boolean> test;
-
-        Exclusion(@NonNull String msg, Fn.Provider<Boolean> test) {
-            this.msg = msg;
-            this.test = test;
-        }
-    }
-
     /* Get the device name */
     String getDevice();
+
+    int getVMVersion();
 
     /* get a scratch directory */
     File getTmpDir();
 
     AbstractExecutionService getExecutionService(ThreadPoolExecutor executor);
-
-    /* Skip the test on some platforms */
-    Exclusion getExclusions(@NonNull String tag);
 }

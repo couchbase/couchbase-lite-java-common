@@ -71,6 +71,7 @@ class LegacyLogTest : BaseDbTest() {
     @Before
     fun setUpLogTest() {
         scratchDirPath = getScratchDirectoryPath(getUniqueName("log-dir"))
+        LogSinksImpl.initLogging()
     }
 
     @After

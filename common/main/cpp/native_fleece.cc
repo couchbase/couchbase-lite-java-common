@@ -94,7 +94,7 @@ Java_com_couchbase_lite_internal_fleece_impl_NativeFLArray_next(
         JNIEnv *env,
         jclass ignore,
         jlong jitr) {
-    return (jboolean) FLArrayIterator_Next((FLArrayIterator *) jitr);
+    return FLArrayIterator_Next((FLArrayIterator *) jitr) ? JNI_TRUE : JNI_FALSE;
 }
 
 /*
@@ -188,7 +188,7 @@ Java_com_couchbase_lite_internal_fleece_impl_NativeFLDict_getCount(JNIEnv *env, 
  */
 JNIEXPORT jboolean JNICALL
 Java_com_couchbase_lite_internal_fleece_impl_NativeFLDict_next(JNIEnv *env, jclass ignore, jlong jitr) {
-    return (jboolean) FLDictIterator_Next((FLDictIterator *) jitr);
+    return FLDictIterator_Next((FLDictIterator *) jitr) ? JNI_TRUE : JNI_FALSE;
 }
 
 /*
@@ -284,7 +284,7 @@ Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_asBool(
         JNIEnv *env,
         jclass ignore,
         jlong jvalue) {
-    return (jboolean) FLValue_AsBool((FLValue) jvalue);
+    return FLValue_AsBool((FLValue) jvalue) ? JNI_TRUE : JNI_FALSE;
 }
 
 /*
@@ -400,7 +400,7 @@ Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_isInteger(
         JNIEnv *env,
         jclass ignore,
         jlong jvalue) {
-    return (jboolean) FLValue_IsInteger((FLValue) jvalue);
+    return FLValue_IsInteger((FLValue) jvalue) ? JNI_TRUE : JNI_FALSE;
 }
 
 /*
@@ -413,7 +413,7 @@ Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_isDouble(
         JNIEnv *env,
         jclass ignore,
         jlong jvalue) {
-    return (jboolean) FLValue_IsDouble((FLValue) jvalue);
+    return FLValue_IsDouble((FLValue) jvalue) ? JNI_TRUE : JNI_FALSE;
 }
 /*
  * Class:     com_couchbase_lite_internal_fleece_impl_NativeFLValue
@@ -425,7 +425,7 @@ Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_isUnsigned(
         JNIEnv *env,
         jclass ignore,
         jlong jvalue) {
-    return (jboolean) FLValue_IsUnsigned((FLValue) jvalue);
+    return FLValue_IsUnsigned((FLValue) jvalue) ? JNI_TRUE : JNI_FALSE;
 }
 
 /*

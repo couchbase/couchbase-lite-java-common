@@ -51,7 +51,7 @@ public abstract class C4Peer implements AutoCloseable {
 
     /**
      * Most PeerHolders are for ref-counted objects.  There may be several references
-     * to the same object, so .equals means the exact same PeerHolder (Java default).
+     * to the same object, so <code>.equals</code> means the exact same PeerHolder (Java default).
      */
     private static class PeerHolder implements Cleaner.Cleanable {
         @Nullable
@@ -195,7 +195,7 @@ public abstract class C4Peer implements AutoCloseable {
     @NonNull
     final Cleaner.Cleanable cleaner;
 
-    // Most object should bark if they are not explicitly freed: (quiet == false).
+    // Most objects should bark if they are not explicitly freed: (quiet == false).
     protected C4Peer(long peer, @Nullable PeerCleaner cleaner) { this(peer, cleaner, true, false); }
 
     // Most LiteCore objects are ref-counted.  There may be several references to the same object: (refCounted == true)

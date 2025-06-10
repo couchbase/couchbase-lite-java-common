@@ -164,11 +164,11 @@ JNIEXPORT jboolean JNICALL
 Java_com_couchbase_lite_internal_core_C4TestUtils_next(JNIEnv *env, jclass ignore, jlong handle) {
     C4Error error{};
     bool ok = c4enum_next((C4DocEnumerator *) handle, &error);
-    if (!ok && error.code != 0) {
+    if (!ok && (error.code != 0)) {
         throwError(env, error);
         return false;
     }
-    return (jboolean) ok;
+    return ok ? JNI_TRUE : JNI_FALSE;
 }
 
 /*
@@ -275,8 +275,10 @@ Java_com_couchbase_lite_internal_core_C4TestUtils_getPrivateUUID(JNIEnv *env, jc
 
     C4Error error{};
     bool ok = c4db_getUUIDs((C4Database *) jdb, nullptr, &uuid, &error);
-    if (!ok && error.code != 0)
+    if (!ok && (error.code != 0)) {
         throwError(env, error);
+        return nullptr;
+    }
 
     C4Slice s = {&uuid, sizeof(uuid)};
     return toJByteArray(env, s);
@@ -544,7 +546,7 @@ Java_com_couchbase_lite_internal_core_C4TestUtils_isIndexTrained(
 
     C4Error error{};
     bool ok = c4coll_isIndexTrained((C4Collection *) coll, name, &error);
-    if (error.domain != 0 && error.code != 0) {
+    if ((error.domain != 0) && (error.code != 0)) {
         throwError(env, error);
         return JNI_FALSE;
     }

@@ -294,7 +294,7 @@ namespace litecore::jni {
                 cls_C4MultipeerReplicator,
                 m_C4MultipeerReplicator_onSyncStatusChanged,
                 (jlong) context,
-                (jboolean) started,
+                started ? JNI_TRUE : JNI_FALSE,
                 (jint) error.domain,
                 (jlong) error.code);
 
@@ -339,7 +339,7 @@ namespace litecore::jni {
                 m_C4MultipeerReplicator_onPeerDiscovered,
                 (jlong) context,
                 _peerId,
-                (jboolean) online);
+                online ? JNI_TRUE : JNI_FALSE);
 
         if (envState == JNI_EDETACHED) {
             detachJVM("p2pPeerDiscovered");
@@ -366,7 +366,7 @@ namespace litecore::jni {
                 m_C4MultipeerReplicator_onReplicatorStatusChanged,
                 (jlong) context,
                 _peerId,
-                (jboolean) outbound,
+                outbound ? JNI_TRUE : JNI_FALSE,
                 _status);
 
         if (envState == JNI_EDETACHED) {
@@ -399,7 +399,7 @@ namespace litecore::jni {
                 m_C4MultipeerReplicator_onDocumentEnded,
                 (jlong) context,
                 _peerId,
-                (jboolean) pushing,
+                pushing ? JNI_TRUE : JNI_FALSE,
                 _docs);
 
         if (envState == JNI_EDETACHED) {
@@ -424,7 +424,7 @@ namespace litecore::jni {
         };
     }
 
-    static jboolean replicationFilter(
+    static bool replicationFilter(
             void *token,
             C4PeerSync *sync,
             const C4PeerID *peerId,
@@ -479,7 +479,7 @@ namespace litecore::jni {
             C4RevisionFlags flags,
             FLDict body,
             void *token) {
-        return replicationFilter(token, sync, peerId, coll, docID, revID, flags, body, true) == JNI_TRUE;
+        return replicationFilter(token, sync, peerId, coll, docID, revID, flags, body, true);
     }
 
     static bool pullFilterCallback(
@@ -491,7 +491,7 @@ namespace litecore::jni {
             C4RevisionFlags flags,
             FLDict body,
             void *token) {
-        return replicationFilter(token, sync, peerId, coll, docID, revID, flags, body, false) == JNI_TRUE;
+        return replicationFilter(token, sync, peerId, coll, docID, revID, flags, body, false);
     }
 }
 
