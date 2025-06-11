@@ -19,17 +19,16 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
 
 
 @SuppressWarnings("ConstantConditions")
 public class ReplicatorOfflineTest extends BaseReplicatorTest {
 
+    // this test crashes the test suite on Android <21
     @Test
     public void testStopReplicatorAfterOffline() throws InterruptedException {
-        // this test crashes the test suite on Android <21
-        skipTestWhen("ANDROID<21");
-
         final CountDownLatch offline = new CountDownLatch(1);
         final CountDownLatch stopped = new CountDownLatch(1);
 
@@ -57,11 +56,9 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
         finally { token.remove(); }
     }
 
+    // this test crashes the test suite on Android <21
     @Test
     public void testStartSingleShotReplicatorInOffline() throws InterruptedException {
-        // this test crashes the test suite on Android <21
-        skipTestWhen("ANDROID<21");
-
         final CountDownLatch stopped = new CountDownLatch(1);
         Replicator repl = makeRepl(makeConfig().setContinuous(false));
         ListenerToken token = repl.addChangeListener(

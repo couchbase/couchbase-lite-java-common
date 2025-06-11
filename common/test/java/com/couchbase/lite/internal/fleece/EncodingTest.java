@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
 
 import com.couchbase.lite.BaseTest;
@@ -31,6 +32,8 @@ import com.couchbase.lite.internal.utils.Report;
 
 
 public class EncodingTest extends BaseTest {
+    private static final boolean IS_WINDOWS = System.getProperty("os.name").toLowerCase().contains("windows");
+
     // https://github.com/couchbase/couchbase-lite-android/issues/1453
     @Test
     public void testFLEncode() throws LiteCoreException {
@@ -59,14 +62,14 @@ public class EncodingTest extends BaseTest {
 
     @Test
     public void testFLEncodeBadUTF8() throws LiteCoreException {
-        skipTestWhen("WINDOWS");
+        Assume.assumeFalse("Test not applicable on windows", IS_WINDOWS);
         testRoundTrip("Goodbye cruel \uD83D\uDE3A\uDE3A world", ""); // a cat and a half
     }
 
     // Oddly windows seems to parse this differently...
     @Test
     public void testFLEncodeUTF8Win() throws LiteCoreException {
-        skipTestUnless("WINDOWS");
+        Assume.assumeTrue("Test only applicable on windows", IS_WINDOWS);
         testRoundTrip("Goodbye cruel \uD83D\uDE3A\uDE3A world"); // a cat and a half
     }
 

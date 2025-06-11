@@ -369,6 +369,8 @@ static C4Listener *startListener(
     config.allowPull = allowPull;
     config.enableDeltaSync = enableDeltaSync;
 
+    // !!! config.apis = kC4SyncAPI; // needed when using a 3.2 LiteCore
+
     if (requirePasswordAuth) {
         config.httpAuthCallback = &httpAuthCallback;
         config.callbackContext = (void *) context;
@@ -475,7 +477,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_startTls(
 
     // Client Cert Authentication:
     tlsConfig.requireClientCerts = requireClientCerts;
-    if (requireClientCerts == JNI_TRUE) {
+    if (requireClientCerts != JNI_FALSE) {
         if (rootClientCerts == nullptr) {
             tlsConfig.certAuthCallback = &certAuthCallback;
             tlsConfig.tlsCallbackContext = reinterpret_cast<void *>(context);
@@ -577,6 +579,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_getUrls(
     FLMutableArray urls = c4listener_getURLs(
             reinterpret_cast<C4Listener *>(c4Listener),
             reinterpret_cast<C4Database *>(c4Database),
+            // !!! kC4SyncAPI, // needed when using a 3.2 LiteCore
             &error);
 
     if (urls == nullptr) {

@@ -43,7 +43,7 @@ static void createIndex(
             &options,
             &error);
 
-    if (!ok && (error.code != 0))
+    if (!ok)
         throwError(env, error);
 }
 
@@ -139,7 +139,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_isValid(
         JNIEnv *env,
         jclass ignore,
         jlong coll) {
-    return (jboolean) c4coll_isValid((C4Collection *) coll);
+    return c4coll_isValid((C4Collection *) coll) ? JNI_TRUE : JNI_FALSE;
 }
 
 /*
@@ -318,7 +318,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createFullTextInde
     jstringSlice whereSlice(env, where);
 
     options.language = language.c_str();
-    options.ignoreDiacritics = ignoreDiacritics == JNI_TRUE;
+    options.ignoreDiacritics = ignoreDiacritics != JNI_FALSE;
     options.where = whereSlice.c_str();
 
     createIndex(env, coll, kC4FullTextIndex, jName, (C4QueryLanguage) qLanguage, jqueryExpressions, options);
@@ -373,7 +373,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createVectorIndex(
     options.vector.minTrainingSize = (unsigned) minTrainingSize;
     options.vector.maxTrainingSize = (unsigned) maxTrainingSize;
     options.vector.numProbes = (unsigned) numProbes;
-    options.vector.lazy = isLazy == JNI_TRUE;
+    options.vector.lazy = isLazy != JNI_FALSE;
 
     createIndex(env, coll, kC4VectorIndex, jName, kC4N1QLQuery, jqueryExpressions, options);
 #endif

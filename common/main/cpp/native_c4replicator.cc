@@ -244,7 +244,7 @@ namespace litecore::jni {
         }
     }
 
-    static jboolean replicationFilter(
+    static bool replicationFilter(
             void *token,
             C4CollectionSpec coll,
             C4String docID,
@@ -305,7 +305,7 @@ namespace litecore::jni {
             C4RevisionFlags flags,
             FLDict dict,
             void *token) {
-        return replicationFilter(token, coll, docID, revID, flags, dict, false) == JNI_TRUE;
+        return replicationFilter(token, coll, docID, revID, flags, dict, false);
     }
 
     /**
@@ -328,7 +328,7 @@ namespace litecore::jni {
             C4RevisionFlags flags,
             FLDict dict,
             void *token) {
-        return replicationFilter(token, coll, docID, revID, flags, dict, true) == JNI_TRUE;
+        return replicationFilter(token, coll, docID, revID, flags, dict, true);
     }
 }
 
@@ -394,8 +394,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_create(
             collectionDescs,
             collectionNames,
             collectionOptions,
-            (push == JNI_TRUE) ? mode : kC4Disabled,
-            (pull == JNI_TRUE) ? mode : kC4Disabled);
+            (push != JNI_FALSE) ? mode : kC4Disabled,
+            (pull != JNI_FALSE) ? mode : kC4Disabled);
     if (nColls < 0) {
         C4Error error = {LiteCoreDomain, kC4ErrorInvalidParameter};
         throwError(env, error);
@@ -457,8 +457,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_createLocal(
             collectionDescs,
             collectionNames,
             collectionOptions,
-            (push == JNI_TRUE) ? mode : kC4Disabled,
-            (pull == JNI_TRUE) ? mode : kC4Disabled);
+            (push != JNI_FALSE) ? mode : kC4Disabled,
+            (pull != JNI_FALSE) ? mode : kC4Disabled);
     if (nColls < 0) {
         C4Error error = {LiteCoreDomain, kC4ErrorInvalidParameter};
         throwError(env, error);
@@ -614,7 +614,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_getPendingDocIds(
 
     C4Error error{};
     C4SliceResult res = c4repl_getPendingDocIDs((C4Replicator *) repl, collSpec, &error);
-    if (!res) {
+    if (!res && (error.code != 0)) {
         throwError(env, error);
         return nullptr;
     }
@@ -640,14 +640,14 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_isDocumentPending(
     jstringSlice collection(env, jcollection);
     C4CollectionSpec collSpec = {collection, scope};
 
-    C4Error c4Error{};
-    bool pending = c4repl_isDocumentPending((C4Replicator *) repl, docId, collSpec, &c4Error);
-    if (!pending && c4Error.code != 0) {
-        throwError(env, c4Error);
+    C4Error error{};
+    bool pending = c4repl_isDocumentPending((C4Replicator *) repl, docId, collSpec, &error);
+    if ((error.domain != 0) && (error.code != 0)) {
+        throwError(env, error);
         return false;
     }
 
-    return (jboolean) pending;
+    return pending ? JNI_TRUE : JNI_FALSE;
 }
 
 /*
@@ -663,9 +663,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_setProgressLevel(
         jint level) {
     C4Error error{};
     bool ok = c4repl_setProgressLevel((C4Replicator *) repl, (C4ReplicatorProgressLevel) level, &error);
-    if (!ok && error.code != 0) {
+    if (!ok && error.code != 0)
         throwError(env, error);
-    }
 }
 
 /*

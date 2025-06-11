@@ -110,7 +110,7 @@ namespace litecore::jni {
                 (jint) document->error.domain,
                 (jint) document->error.code,
                 (jint) document->error.internal_info,
-                (jboolean) document->errorIsTransient);
+                document->errorIsTransient ? JNI_TRUE : JNI_FALSE);
 
         if (_scope != nullptr) env->DeleteLocalRef(_scope);
         if (_name != nullptr) env->DeleteLocalRef(_name);

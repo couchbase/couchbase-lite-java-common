@@ -119,7 +119,7 @@ static void logCallback(C4LogDomain domain, C4LogLevel level, const char *fmt, v
     if ((envState != JNI_OK) && (envState != JNI_EDETACHED))
         return;
 
-    if (env->ExceptionCheck() == JNI_TRUE) {
+    if (env->ExceptionCheck() != JNI_FALSE) {
         jniLog("logger: Exception outstanding");
         detach(envState);
         return;
@@ -342,7 +342,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Log_writeToBinaryFile(
 
     C4Error error{};
     bool ok = c4log_writeToBinaryFile(options, &error);
-    if (!ok && error.code != 0)
+    if (!ok && (error.code != 0))
         throwError(env, error);
 }
 

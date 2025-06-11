@@ -56,6 +56,7 @@ private class SingleLineLogSink(private val prefix: String? = null) : BaseLogSin
         this.level = level
         this.domain = domain
         this.message = message
+
         latch.countDown()
     }
 
@@ -559,7 +560,7 @@ class LogTest : BaseDbTest() {
     // attempts to re-acquire the same non-reentrant lock that the thread already holds,
     // it will deadlock
     //
-    // Since CBL-6800, this test must test only that the platfrom cannot generate recursive
+    // Since CBL-6800, this test must test only that the platform cannot generate recursive
     // log from the LiteCore callback thread.  A an attempt to log from some other thread
     // during the callback, will be blocked until the callback returns but cannot, directly,
     // deadlock.
@@ -626,7 +627,6 @@ class LogTest : BaseDbTest() {
     // This test verifies that the destructor will run to completion, even while a callback is taking place.
     // This is a stronger guarantee than the re-entrant case.  This guarantees that running the destructor
     // cannot cause a deadlock even if the thread calling it blocks the LiteCore logging callback thread.
-    @Ignore("CBL-6787")
     @Test
     fun testDeleteLiteCoreLoggerInCallback() {
         val query = C4Query.create(testDatabase.getC4Db, QueryLanguage.N1QL, "SELECT 1 FROM _")
@@ -681,7 +681,7 @@ class LogTest : BaseDbTest() {
         C4TestUtils.forceLog("DB", 3, "$prefix $hebrew")
 
         val msg = sink.awaitMessage()
-        Assert.assertTrue(msg!!.contains(hebrew))
+        Assert.assertTrue(msg?.contains(hebrew) ?: false)
     }
 
     private fun testWithConfiguration(level: LogLevel, builder: FileLogSink.Builder, task: Runnable) {

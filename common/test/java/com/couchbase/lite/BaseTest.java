@@ -26,7 +26,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.rules.TestWatcher;
@@ -181,16 +180,6 @@ public abstract class BaseTest extends PlatformBaseTest {
 
     @Rule
     public final TestTimer TIMEOUT = new TestTimer(2, TimeUnit.MINUTES);
-
-    protected final void skipTestWhen(@NonNull String tag) {
-        final Exclusion exclusion = getExclusions(tag);
-        if (exclusion != null) { Assume.assumeFalse(exclusion.msg, exclusion.test.get()); }
-    }
-
-    protected final void skipTestUnless(@NonNull String tag) {
-        final Exclusion exclusion = getExclusions(tag);
-        if (exclusion != null) { Assume.assumeTrue(exclusion.msg, exclusion.test.get()); }
-    }
 
     protected final String getScratchDirectoryPath(@NonNull String name) {
         try {

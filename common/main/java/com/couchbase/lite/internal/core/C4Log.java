@@ -103,6 +103,7 @@ public final class C4Log {
         m.put(LogLevel.INFO, C4Constants.LogLevel.INFO);
         m.put(LogLevel.WARNING, C4Constants.LogLevel.WARNING);
         m.put(LogLevel.ERROR, C4Constants.LogLevel.ERROR);
+        m.put(LogLevel.NONE, C4Constants.LogLevel.NONE);
         LOG_LEVEL_TO_C4 = Collections.unmodifiableMap(m);
     }
 

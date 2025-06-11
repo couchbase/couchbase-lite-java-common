@@ -43,7 +43,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Index_beginUpdate(
 #else
     C4Error error{};
     C4IndexUpdater *updater = c4index_beginUpdate((C4Index *) handle, (size_t) limit, &error);
-    if ((updater == nullptr) && error.code != 0) {
+    if ((updater == nullptr) && (error.code != 0)) {
         throwError(env, error);
         return 0;
     }
@@ -167,10 +167,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4IndexUpdater_finish(
 #ifdef COUCHBASE_ENTERPRISE
     C4Error error{};
     bool ok = c4indexupdater_finish((C4IndexUpdater *) handle, &error);
-    if (!ok && error.code != 0) {
+    if (!ok && (error.code != 0))
         throwError(env, error);
-        return;
-    }
 #endif
 }
 

@@ -15,14 +15,8 @@
 //
 package com.couchbase.lite;
 
-import androidx.annotation.NonNull;
-
 import java.io.File;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Locale;
-import java.util.Map;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import com.couchbase.lite.internal.JavaExecutionService;
@@ -40,22 +34,6 @@ public abstract class PlatformBaseTest implements PlatformTest {
 
     public static final String LEGAL_FILE_NAME_CHARS = "`~@#$%&'()_+{}][=-.,;'ABCDEabcde";
 
-    private static final Map<String, Exclusion> PLATFORM_DEPENDENT_TESTS;
-    static {
-        final Map<String, Exclusion> m = new HashMap<>();
-        m.put(
-            "WINDOWS",
-            new Exclusion(
-                "Not supported on Windows",
-                () -> System.getProperty("os.name").toLowerCase().contains("windows")));
-        m.put(
-            "SWEDISH UNSUPPORTED",
-            new Exclusion(
-                "Swedish locale not supported",
-                () -> !Arrays.asList(Locale.getAvailableLocales()).contains(new Locale("sv"))));
-        PLATFORM_DEPENDENT_TESTS = Collections.unmodifiableMap(m);
-    }
-
     protected static void initCouchbase() { CouchbaseLite.init(true); }
 
 
@@ -67,6 +45,19 @@ public abstract class PlatformBaseTest implements PlatformTest {
     }
 
     @Override
+    public final int getVMVersion() {
+        String version = System.getProperty("java.version");
+        if (version.startsWith("1.")) {
+            version = version.substring(2, 3);
+        }
+        else {
+            int dot = version.indexOf(".");
+            if (dot != -1) { version = version.substring(0, dot); }
+        }
+        return Integer.parseInt(version);
+    }
+
+    @Override
     public final File getTmpDir() {
         return FileUtils.verifyDir(new File(FileUtils.getCurrentDirectory(), SCRATCH_DIR_NAME));
     }
@@ -75,7 +66,4 @@ public abstract class PlatformBaseTest implements PlatformTest {
     public final AbstractExecutionService getExecutionService(ThreadPoolExecutor executor) {
         return new JavaExecutionService(executor);
     }
-
-    @Override
-    public final Exclusion getExclusions(@NonNull String tag) { return PLATFORM_DEPENDENT_TESTS.get(tag); }
 }
