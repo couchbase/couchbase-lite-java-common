@@ -321,8 +321,13 @@ static void documentEndedCallback(
         size_t numDocs,
         const C4DocumentEnded *documentEnded[],
         void *token) {
-    assert(numDocs < 16384);
     int nDocs = (int) numDocs;
+    if (nDocs <= 0) {
+        C4Warn("Ignoring documentEndedCallback for %d documents", nDocs);
+        return;
+    }
+    if (nDocs > 10000)
+        C4Warn("documentEndedCallback for a *LOT* of documents: %d", nDocs);
 
     JNIEnv *env = nullptr;
     jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
