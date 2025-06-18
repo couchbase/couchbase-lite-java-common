@@ -20,7 +20,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
-import java.io.ByteArrayInputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -39,7 +38,6 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateExpiredException;
-import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -83,6 +81,7 @@ import com.couchbase.lite.internal.sockets.SocketFromRemote;
 import com.couchbase.lite.internal.sockets.SocketState;
 import com.couchbase.lite.internal.sockets.SocketToCore;
 import com.couchbase.lite.internal.sockets.SocketToRemote;
+import com.couchbase.lite.internal.utils.CertUtils;
 import com.couchbase.lite.internal.utils.ClassUtils;
 import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.StateMachine;
@@ -710,11 +709,8 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
             // Pinned Certificate:
             Object opt = options.get(C4Replicator.REPLICATOR_OPTION_PINNED_SERVER_CERT);
             if (opt instanceof byte[]) {
-                try {
-                    pinnedServerCert = (X509Certificate) CertificateFactory.getInstance("X.509")
-                        .generateCertificate(new ByteArrayInputStream((byte[]) opt));
-                }
-                catch (CertificateException e) { Log.w(LOG_DOMAIN, "Can't parse pinned certificate.  Ignored", e); }
+                try { pinnedServerCert = CertUtils.createCertificate((byte[]) opt); }
+                catch (CertificateException e) { Log.w(LOG_DOMAIN, "Can't parse pinned certificate. Ignored", e); }
             }
 
             // Accept only self-signed server cert mode:

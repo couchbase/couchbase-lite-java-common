@@ -203,7 +203,7 @@ public abstract class C4Peer implements AutoCloseable {
 
     // For non-typical objects.
     protected C4Peer(long peer, @Nullable PeerCleaner cleaner, boolean refCounted, boolean quiet) {
-        // Could simply pass in the PeerHolder, were it not for this parameter.
+        // Could simply pass in the PeerHolder, were it not for the "this" parameter here.
         this.name = getClass().getSimpleName() + ClassUtils.objId(this);
 
         Preconditions.assertNotZero(peer, "peer");

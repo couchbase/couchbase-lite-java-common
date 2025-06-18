@@ -43,6 +43,40 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4MultipeerReplicator_s
 JNIEXPORT void
 JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4MultipeerReplicator_stop(JNIEnv *, jclass, jlong);
 
+/*
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4MultipeerReplicator
+ * Method:    getId
+ * Signature: (J)[B
+ */
+JNIEXPORT jbyteArray
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4MultipeerReplicator_getId(
+        JNIEnv *env,
+        jclass ignore,
+        jlong peer);
+
+/*
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4MultipeerReplicator
+ * Method:    stop
+ * Signature: (J)B[[
+ */
+JNIEXPORT jobjectArray
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4MultipeerReplicator_getNeighborPeers(
+        JNIEnv *env,
+        jclass ignore,
+        jlong peer);
+
+/*
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4MultipeerReplicator
+ * Method:    stop
+ * Signature: (J)V
+ */
+JNIEXPORT jobject
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4MultipeerReplicator_getPeerInfo(
+        JNIEnv *env,
+        jclass ignore,
+        jlong peer,
+        jbyteArray jpeerId);
+
 #ifdef __cplusplus
 }
 #endif

@@ -40,6 +40,7 @@ namespace litecore::jni {
 
     // C4MultipeerReplicator
     static jclass cls_C4MultipeerReplicator;               // global reference
+    static jmethodID m_C4MultipeerReplicator_createPeerInfo;
     static jmethodID m_C4MultipeerReplicator_onSyncStatusChanged;
     static jmethodID m_C4MultipeerReplicator_onAuthenticate;
     static jmethodID m_C4MultipeerReplicator_onPeerDiscovered;
@@ -92,6 +93,14 @@ namespace litecore::jni {
 
             cls_C4MultipeerReplicator = reinterpret_cast<jclass>(env->NewGlobalRef(localClass));
             if (cls_C4MultipeerReplicator == nullptr)
+                return false;
+
+            m_C4MultipeerReplicator_createPeerInfo = env->GetStaticMethodID(
+                    cls_C4MultipeerReplicator,
+                    "createPeerInfo",
+                    "([B[[BZ[[BLcom/couchbase/lite/ReplicatorStatus;)Lcom/couchbase/lite/PeerInfo;");
+
+            if (m_C4MultipeerReplicator_createPeerInfo == nullptr)
                 return false;
 
             m_C4MultipeerReplicator_onSyncStatusChanged = env->GetStaticMethodID(
@@ -189,6 +198,16 @@ namespace litecore::jni {
     //-------------------------------------------------------------------------
     // Utility methods
     //-------------------------------------------------------------------------
+    static jobjectArray fromC4PeerID(JNIEnv *env, C4PeerID *peerIds, size_t count) {
+        jobjectArray neighborIds = env->NewObjectArray((jsize) count, env->FindClass("[B"), nullptr);
+        for (size_t i = 0; i < count; i++) {
+            jbyteArray neighborId = toJByteArray(env, peerIds[i].bytes, 32);
+            env->SetObjectArrayElement(neighborIds, (jsize) i, neighborId);
+            env->DeleteLocalRef(neighborId);
+        }
+        return neighborIds;
+    }
+
 
     static int getC4CertChainSize(C4Cert *c4CertChain) {
         int size = 0;
@@ -592,7 +611,7 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4MultipeerReplicator_s
         JNIEnv *env,
         jclass ignore,
         jlong peer) {
-    c4peersync_start((C4PeerSync*) peer);
+    c4peersync_start((C4PeerSync *) peer);
 }
 
 /*
@@ -605,7 +624,77 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4MultipeerReplicator_s
         JNIEnv *env,
         jclass ignore,
         jlong peer) {
-    c4peersync_stop((C4PeerSync*) peer);
+    c4peersync_stop((C4PeerSync *) peer);
+}
+
+/*
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4MultipeerReplicator
+ * Method:    stop
+ * Signature: (J)B[
+ */
+JNIEXPORT jbyteArray
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4MultipeerReplicator_getId(
+        JNIEnv *env,
+        jclass ignore,
+        jlong peer) {
+    C4PeerID peerId = c4peersync_getMyID((C4PeerSync *) peer);
+    return toJByteArray(env, peerId.bytes, 32);
+}
+
+/*
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4MultipeerReplicator
+ * Method:    stop
+ * Signature: (J)B[[
+ */
+JNIEXPORT jobjectArray
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4MultipeerReplicator_getNeighborPeers(
+        JNIEnv *env,
+        jclass ignore,
+        jlong peer) {
+    size_t count = 0;
+    C4PeerID *peers = c4peersync_getOnlinePeers((C4PeerSync *) peer, &count);
+
+    jobjectArray neighborIds = fromC4PeerID(env, peers, count);
+
+    free(peers);
+
+    return neighborIds;
+}
+
+/*
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4MultipeerReplicator
+ * Method:    stop
+ * Signature: (J)Lcom/couchbase/lite/internal/core/C4PeerInfo;
+ */
+JNIEXPORT jobject
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4MultipeerReplicator_getPeerInfo(
+        JNIEnv *env,
+        jclass ignore,
+        jlong peer,
+        jbyteArray jpeerId) {
+    jbyteArraySlice peerIdArray(env, jpeerId);
+    FLSlice peerIdSlice = peerIdArray;
+    C4PeerID peerId;
+    memcpy(peerId.bytes, peerIdSlice.buf, sizeof(peerId.bytes));
+
+    C4PeerInfo *info = c4peersync_getPeerInfo((C4PeerSync *) peer, peerId);
+
+    jobject replStatus = toJavaReplStatus(env, info->replicatorStatus);
+    jobjectArray certChain = fromC4CertChain(env, info->certificate);
+    jobjectArray neighborIds = fromC4PeerID(env, info->neighbors, info->neighborCount);
+
+    jobject peerInfo = env->CallStaticObjectMethod(
+            cls_C4MultipeerReplicator,
+            m_C4MultipeerReplicator_createPeerInfo,
+            jpeerId,
+            certChain,
+            info->online ? JNI_TRUE : JNI_FALSE,
+            neighborIds,
+            replStatus);
+
+    c4peerinfo_free(info);
+
+    return peerInfo;
 }
 
 #ifdef __cplusplus
