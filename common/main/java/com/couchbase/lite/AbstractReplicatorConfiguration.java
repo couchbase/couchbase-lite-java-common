@@ -18,12 +18,8 @@ package com.couchbase.lite;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -39,6 +35,7 @@ import okhttp3.internal.Util;
 import com.couchbase.lite.internal.BaseReplicatorConfiguration;
 import com.couchbase.lite.internal.ImmutableReplicatorConfiguration;
 import com.couchbase.lite.internal.logging.Log;
+import com.couchbase.lite.internal.utils.CertUtils;
 import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.Preconditions;
 
@@ -474,11 +471,8 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     public final ReplicatorConfiguration setPinnedServerCertificate(@Nullable byte[] pinnedCert) {
         if (pinnedCert == null) { pinnedServerCertificate = null; }
         else {
-            try (InputStream is = new ByteArrayInputStream(pinnedCert)) {
-                pinnedServerCertificate
-                    = (X509Certificate) CertificateFactory.getInstance("X.509").generateCertificate(is);
-            }
-            catch (IOException | CertificateException e) {
+            try { pinnedServerCertificate = CertUtils.createCertificate(pinnedCert); }
+            catch (CertificateException e) {
                 throw new IllegalArgumentException("Argument could not be parsed as an X509 Certificate", e);
             }
         }

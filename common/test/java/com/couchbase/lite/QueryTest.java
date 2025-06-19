@@ -3299,7 +3299,7 @@ public class QueryTest extends BaseQueryTest {
         Assert.assertEquals(100, firstNames.size());
 
         List<String> sorted = new ArrayList<>(firstNames);
-        sorted.sort(cmp);
+        Collections.sort(sorted, cmp);
         Assert.assertArrayEquals(sorted.toArray(new String[0]), firstNames.toArray(new String[0]));
     }
 
