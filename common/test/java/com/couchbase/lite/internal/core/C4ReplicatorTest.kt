@@ -166,7 +166,7 @@ class C4ReplicatorTest : BaseReplicatorTest() {
             },
             setOf(testCollection),
             C4BaseTest.MOCK_PEER,
-            C4Socket(MockNativeSocket(), C4BaseTest.MOCK_PEER),
+            C4Socket.createSocket(MockNativeSocket(), C4BaseTest.MOCK_PEER),
             null
         )
         { _, _ -> }
@@ -194,7 +194,7 @@ class C4ReplicatorTest : BaseReplicatorTest() {
             MockNativeReplicator(),
             setOf(testCollection),
             C4BaseTest.MOCK_PEER,
-            C4Socket(MockNativeSocket(), C4BaseTest.MOCK_PEER),
+            C4Socket.createSocket(MockNativeSocket(), C4BaseTest.MOCK_PEER),
             null
         )
         { _, _ -> calls++ }

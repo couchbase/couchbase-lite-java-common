@@ -21,7 +21,7 @@ import androidx.annotation.Nullable;
 
 /**
  * WARNING!
- * This class and its members are referenced by name, from native code.
+ * This class and its members are used by reflection.  Don't change its signature.
  */
 public final class C4DocumentEnded {
     public final long token;
@@ -66,12 +66,6 @@ public final class C4DocumentEnded {
         this.errorInternalInfo = errorInternalInfo;
         this.errorIsTransient = errorIsTransient;
     }
-
-    public int getErrorDomain() { return errorDomain; }
-
-    public int getErrorCode() { return errorCode; }
-
-    public int getErrorInfo() { return errorInternalInfo; }
 
     @NonNull
     @Override

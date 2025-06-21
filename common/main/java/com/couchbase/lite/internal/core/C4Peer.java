@@ -45,6 +45,7 @@ public abstract class C4Peer implements AutoCloseable {
      * that the Cleaner is supposed to clean up, that object will be permanently visible
      * and never eligible for collection: a permanent memory leak
      */
+    @FunctionalInterface
     public interface PeerCleaner {
         void dispose(long peer);
     }

@@ -233,9 +233,30 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Socket_fromNative(
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Socket_opened(JNIEnv *env, jclass ignore, jlong jsocket) {
+Java_com_couchbase_lite_internal_core_impl_NativeC4Socket_opened(
+        JNIEnv *env,
+        jclass ignore,
+        jlong jsocket) {
     auto *socket = (C4Socket *) jsocket;
     c4socket_opened(socket);
+}
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4Socket
+ * Method:    gotPeerCertificate
+ * Signature: (J[BLjava.lang.String;)Z
+ */
+JNIEXPORT jboolean
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Socket_gotPeerCertificate(
+        JNIEnv *env,
+        jclass ignore,
+        jlong jsocket,
+        jbyteArray jcertData,
+        jstring jhostname) {
+    jbyteArraySlice certs(env, jcertData);
+    jstringSlice hostname(env, jhostname);
+    bool ok = c4socket_gotPeerCertificate((C4Socket *) jsocket, certs, hostname);
+    return ok ? JNI_TRUE : JNI_FALSE;
 }
 
 /*

@@ -31,7 +31,6 @@ import javax.net.ssl.X509TrustManager;
 
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.logging.Log;
-import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.StringUtils;
 
 
@@ -44,13 +43,19 @@ import com.couchbase.lite.internal.utils.StringUtils;
  * 4. Allows to listen for the server certificates.
  */
 public abstract class AbstractCBLTrustManager implements X509TrustManager {
+    public interface ServerCertsListener {
+        void certsPresented(@NonNull List<Certificate> certs);
+        void requestAuthentication(@NonNull List<Certificate> certs) throws CertificateException;
+    }
+
     @Nullable
     private final X509Certificate pinnedServerCertificate;
 
     private final boolean acceptOnlySelfSignedServerCertificate;
+    private final boolean acceptAllCertificates;
 
     @NonNull
-    private final Fn.Consumer<List<Certificate>> serverCertsListener;
+    private final ServerCertsListener serverCertsListener;
 
     @NonNull
     private final AtomicReference<X509TrustManager> defaultTrustManager = new AtomicReference<>();
@@ -58,9 +63,11 @@ public abstract class AbstractCBLTrustManager implements X509TrustManager {
     public AbstractCBLTrustManager(
         @Nullable X509Certificate pinnedServerCert,
         boolean acceptOnlySelfSignedServerCertificate,
-        @NonNull Fn.Consumer<List<Certificate>> serverCertsListener) {
+        boolean acceptAllCertificates,
+        @NonNull ServerCertsListener serverCertsListener) {
         this.pinnedServerCertificate = pinnedServerCert;
         this.acceptOnlySelfSignedServerCertificate = acceptOnlySelfSignedServerCertificate;
+        this.acceptAllCertificates = acceptAllCertificates;
         this.serverCertsListener = serverCertsListener;
     }
 
@@ -80,17 +87,20 @@ public abstract class AbstractCBLTrustManager implements X509TrustManager {
     public void checkServerTrusted(@Nullable X509Certificate[] chain, @Nullable String authType)
         throws CertificateException {
         final List<X509Certificate> serverCerts = asList(chain);
+        certsReceived(serverCerts);
 
-        notifyListener(serverCerts);
-
-        if (useCBLTrustManagement()) {
+        if (acceptAllCerts()) {
+            Log.d(LogDomain.NETWORK, "Accepting all certs: %d, %s, %s", serverCerts.size(), authType);
+        }
+        else if (useCBLTrustManagement()) {
             cBLServerTrustCheck(serverCerts, authType);
-            return;
+        }
+        else {
+            Log.d(LogDomain.NETWORK, "Default trust check: %d, %s", (chain == null) ? 0 : chain.length, authType);
+            getDefaultTrustManager().checkServerTrusted(chain, authType);
         }
 
-        Log.d(LogDomain.NETWORK, "Default trust check: %d, %s", (chain == null) ? 0 : chain.length, authType);
-
-        getDefaultTrustManager().checkServerTrusted(chain, authType);
+        requestAuth(serverCerts);
     }
 
 
@@ -126,9 +136,15 @@ public abstract class AbstractCBLTrustManager implements X509TrustManager {
         throw new CertificateException("The pinned certificate did not match any certificate in the server chain");
     }
 
-    protected final void notifyListener(@NonNull List<X509Certificate> certs) {
-        serverCertsListener.accept(Collections.unmodifiableList(certs));
+    protected final void certsReceived(@NonNull List<X509Certificate> certs) {
+        serverCertsListener.certsPresented(Collections.unmodifiableList(certs));
     }
+
+    protected final void requestAuth(@NonNull List<X509Certificate> certs) throws CertificateException {
+        serverCertsListener.requestAuthentication(Collections.unmodifiableList(certs));
+    }
+
+    protected final boolean acceptAllCerts() { return acceptAllCertificates; }
 
     /**
      * Check if the default trust manager should be used.

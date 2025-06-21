@@ -52,7 +52,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
  * Somewhere out there, an implementation of SocketToCore will hold
  * a reference to this object, and use it for sending events to core.
  */
-public final class C4Socket extends C4NativePeer implements SocketToCore {
+public final class C4Socket extends C4Peer implements SocketToCore {
     //-------------------------------------------------------------------------
     // Constants
     //-------------------------------------------------------------------------
@@ -65,6 +65,7 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
 
     public interface NativeImpl {
         long nFromNative(long token, String schema, String host, int port, String path, int framing);
+        boolean nGotPeerCertificate(long peer, byte[] cert, String hostname);
         void nOpened(long peer);
         void nGotHTTPResponse(long peer, int httpStatus, @Nullable byte[] responseHeadersFleece);
         void nCompletedWrite(long peer, long byteCount);
@@ -113,7 +114,7 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
     static final NativeRefPeerBinding<C4Socket> BOUND_SOCKETS = new NativeRefPeerBinding<>();
 
     //-------------------------------------------------------------------------
-    // Public static Methods
+    // Factory Methods
     //-------------------------------------------------------------------------
 
     @NonNull
@@ -127,6 +128,20 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
                 0,
                 "/" + Integer.toHexString(id),
                 MessageFraming.getC4Framing(framing)));
+    }
+
+    @VisibleForTesting
+    @NonNull
+    static C4Socket createSocket(@NonNull NativeImpl impl, long peer) {
+        final C4Socket socket = new C4Socket(
+            impl,
+            peer,
+            new AtomicReference<>(new CloseStatus(
+                C4Constants.ErrorDomain.NETWORK,
+                C4Constants.NetworkError.CONNECTION_ABORTED,
+                "GCed")));
+        BOUND_SOCKETS.bind(peer, socket);
+        return socket;
     }
 
     //-------------------------------------------------------------------------
@@ -196,14 +211,6 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
     // Internal static methods
     //-------------------------------------------------------------------------
 
-    @VisibleForTesting
-    @NonNull
-    static C4Socket createSocket(@NonNull NativeImpl impl, long peer) {
-        final C4Socket socket = new C4Socket(impl, peer);
-        BOUND_SOCKETS.bind(peer, socket);
-        return socket;
-    }
-
     // Methods in the call chain beneath this method should fail fast.
     // They should wrap any error in a CBLSocketException and throw it
     // without trying to return.
@@ -259,13 +266,15 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
         Log.w(LOG_DOMAIN, "C4Socket.%s@%x: No socket for peer", op, peer);
     }
 
-    private static void releaseSocket(
+    private static void closeSocket(
         @Nullable NativeImpl impl,
         long peer,
-        int domain,
-        int code,
-        @Nullable String msg) {
-        if (impl != null) { impl.nClosed(peer, domain, code, msg); }
+        @NonNull AtomicReference<CloseStatus> closeStatus) {
+        BOUND_SOCKETS.unbind(peer);
+        if (impl == null) { return; }
+
+        final CloseStatus status = closeStatus.get();
+        impl.nClosed(peer, status.domain, status.code, status.message);
     }
 
     //-------------------------------------------------------------------------
@@ -281,6 +290,9 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
     @NonNull
     private final NativeImpl impl;
 
+    @NonNull
+    private final AtomicReference<CloseStatus> closeStatus;
+
     //-------------------------------------------------------------------------
     // Constructors
     //-------------------------------------------------------------------------
@@ -288,9 +300,11 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
     // Don't bind the socket to the peer, in the constructor, because that would
     // publish an incompletely constructed object.
     @VisibleForTesting
-    C4Socket(@NonNull NativeImpl impl, long peer) {
-        super(peer);
+    private C4Socket(@NonNull NativeImpl impl, long peer, @NonNull AtomicReference<CloseStatus> closeStatus) {
+        super(peer, replPeer -> closeSocket(impl, replPeer, closeStatus));
+
         this.impl = impl;
+        this.closeStatus = closeStatus;
 
         // this is instrumentation used only in tests
         impl.nCreated(peer);
@@ -300,13 +314,11 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
     @NonNull
     public String toString() { return "vC4Socket" + super.toString(); }
 
-    //-------------------------------------------------------------------------
-    // Implementation of AutoCloseable
-    //-------------------------------------------------------------------------
-
+    // The super call is in release()
+    @SuppressWarnings("MissingSuperCall")
     @Override
     public void close() {
-        release(null, C4Constants.ErrorDomain.NETWORK, C4Constants.NetworkError.NETWORK_RESET, "Closed by client");
+        release(C4Constants.ErrorDomain.NETWORK, C4Constants.NetworkError.NETWORK_RESET, "Closed by client");
     }
 
     //-------------------------------------------------------------------------
@@ -327,9 +339,15 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
     }
 
     @Override
+    public boolean gotPeerCertificate(@NonNull byte[] certData, @NonNull String hostname) {
+        Log.d(LOG_DOMAIN, "%s.gotPeerCertificate: %d, %s", this, certData.length, hostname);
+        return withPeerOrDefault(false, peer -> impl.nGotPeerCertificate(peer, certData, hostname));
+    }
+
+    @Override
     public void ackOpenToCore(int httpStatus, @Nullable byte[] fleeceResponseHeaders) {
         Log.d(LOG_DOMAIN, "%s.ackOpenToCore", this);
-        withPeer(peer -> {
+        voidWithPeerOrThrow(peer -> {
             impl.nGotHTTPResponse(peer, httpStatus, fleeceResponseHeaders);
             impl.nOpened(peer);
         });
@@ -338,50 +356,30 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
     @Override
     public void ackWriteToCore(long byteCount) {
         Log.d(LOG_DOMAIN, "%s.ackWriteToCore(%d)", this, byteCount);
-        withPeer(peer -> impl.nCompletedWrite(peer, byteCount));
+        voidWithPeerOrThrow(peer -> impl.nCompletedWrite(peer, byteCount));
     }
 
     @Override
     public void writeToCore(@NonNull byte[] data) {
         Log.d(LOG_DOMAIN, "%s.sendToCore(%d)", this, data.length);
-        withPeer(peer -> impl.nReceived(peer, data));
+        voidWithPeerOrThrow(peer -> impl.nReceived(peer, data));
     }
 
     @Override
     public void requestCoreClose(@NonNull CloseStatus status) {
         Log.d(LOG_DOMAIN, "%s.requestCoreClose(%d): '%s'", this, status.code, status.message);
-        withPeer(peer -> impl.nCloseRequested(peer, status.code, status.message));
+        voidWithPeerOrThrow(peer -> impl.nCloseRequested(peer, status.code, status.message));
     }
 
     @Override
     public void closeCore(@NonNull CloseStatus status) {
         Log.d(LOG_DOMAIN, "%s.closeCore(%d, %d): '%s'", this, status.domain, status.code, status.message);
-        release(null, status.domain, status.code, status.message);
-    }
-
-    //-------------------------------------------------------------------------
-    // Protected methods
-    //-------------------------------------------------------------------------
-
-    @SuppressWarnings("NoFinalizer")
-    @Override
-    protected void finalize() throws Throwable {
-        try {
-            release(
-                LOG_DOMAIN,
-                C4Constants.ErrorDomain.NETWORK,
-                C4Constants.NetworkError.CONNECTION_ABORTED,
-                "Finalized");
-        }
-        finally { super.finalize(); }
+        release(status);
     }
 
     //-------------------------------------------------------------------------
     // Package protected methods
     //-------------------------------------------------------------------------
-
-    // ??? Is there any way to eliminate this?
-    long getPeerHandle() { return getPeer(); }
 
     @VisibleForTesting
     @Nullable
@@ -410,15 +408,13 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
             code = C4Constants.NetworkError.UNKNOWN;
         }
 
-        release(null, domain, code, err.getMessage());
+        release(domain, code, err.getMessage());
     }
 
-    private void release(LogDomain logDomain, int domain, int code, @Nullable String msg) {
-        releasePeer(
-            logDomain,
-            peer -> {
-                BOUND_SOCKETS.unbind(peer);
-                releaseSocket(impl, peer, domain, code, msg);
-            });
+    private void release(int domain, int code, @Nullable String msg) { release(new CloseStatus(domain, code, msg)); }
+
+    private void release(CloseStatus status) {
+        closeStatus.set(status);
+        super.close();
     }
 }

@@ -34,6 +34,11 @@ public final class NativeC4Socket implements C4Socket.NativeImpl {
     public void nOpened(long peer) { opened(peer); }
 
     @Override
+    public boolean nGotPeerCertificate(long peer, byte[] cert, String hostname) {
+        return gotPeerCertificate(peer, cert, hostname);
+    }
+
+    @Override
     public void nGotHTTPResponse(long peer, int httpStatus, @Nullable byte[] responseHeadersFleece) {
         gotHTTPResponse(peer, httpStatus, responseHeadersFleece);
     }
@@ -77,6 +82,9 @@ public final class NativeC4Socket implements C4Socket.NativeImpl {
 
     @GuardedBy("socLock")
     private static native void opened(long peer);
+
+    @GuardedBy("socLock")
+    private static native boolean gotPeerCertificate(long peer, byte[] cert, String hostname);
 
     @GuardedBy("socLock")
     private static native void gotHTTPResponse(long peer, int httpStatus, @Nullable byte[] responseHeadersFleece);

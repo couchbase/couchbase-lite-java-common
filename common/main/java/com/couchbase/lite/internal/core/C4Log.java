@@ -118,10 +118,10 @@ public final class C4Log {
         m.put(C4Constants.LogDomain.BLOB, LogDomain.DATABASE);
         m.put(C4Constants.LogDomain.CHANGES, LogDomain.DATABASE);
         m.put(C4Constants.LogDomain.DATABASE, LogDomain.DATABASE);
-        m.put(C4Constants.LogDomain.DISCOVERY, LogDomain.NETWORK);
+        m.put(C4Constants.LogDomain.DISCOVERY, LogDomain.PEER_DISCOVERY);
         m.put(C4Constants.LogDomain.ENUM, LogDomain.QUERY);
         m.put(C4Constants.LogDomain.LISTENER, LogDomain.LISTENER);
-        m.put(C4Constants.LogDomain.P2P, LogDomain.REPLICATOR);
+        m.put(C4Constants.LogDomain.P2P, LogDomain.MULTIPEER);
         m.put(C4Constants.LogDomain.QUERY, LogDomain.QUERY);
         m.put(C4Constants.LogDomain.SQL, LogDomain.DATABASE);
         m.put(C4Constants.LogDomain.SYNC, LogDomain.REPLICATOR);
@@ -167,6 +167,8 @@ public final class C4Log {
         m.put(LogDomain.REPLICATOR, C4Constants.LogDomain.SYNC);
         m.put(LogDomain.QUERY, C4Constants.LogDomain.QUERY);
         m.put(LogDomain.LISTENER, C4Constants.LogDomain.LISTENER);
+        m.put(LogDomain.MULTIPEER, C4Constants.LogDomain.P2P);
+        m.put(LogDomain.PEER_DISCOVERY, C4Constants.LogDomain.DISCOVERY);
         LOGGING_DOMAIN_TO_CANONICAL_C4 = Collections.unmodifiableMap(m);
     }
 

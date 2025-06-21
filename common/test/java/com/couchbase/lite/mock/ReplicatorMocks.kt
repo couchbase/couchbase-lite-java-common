@@ -33,6 +33,7 @@ open class MockNativeSocket : C4Socket.NativeImpl {
         framing: Int
     ) = C4BaseTest.MOCK_PEER
 
+    override fun nGotPeerCertificate(peer: Long, cert: ByteArray?, hostname: String?) = true
     override fun nOpened(peer: Long) = Unit
     override fun nGotHTTPResponse(peer: Long, httpStatus: Int, responseHeadersFleece: ByteArray?) = Unit
     override fun nCompletedWrite(peer: Long, byteCount: Long) = Unit

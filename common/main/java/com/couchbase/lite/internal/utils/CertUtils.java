@@ -20,12 +20,18 @@ import androidx.annotation.NonNull;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.util.List;
 
 
 public final class CertUtils {
+    // ??? IS PKCS7 the right encoding?
+    private static final String STD_ENCODING = "PKCS7";
+    private static final String CERT_TYPE = "X.509";
+
     private CertUtils() {
         // Prevent instantiation
     }
@@ -33,8 +39,24 @@ public final class CertUtils {
     @NonNull
     public static X509Certificate createCertificate(@NonNull byte[] certBytes) throws CertificateException {
         try (InputStream in = new ByteArrayInputStream(certBytes)) {
-            return (X509Certificate) CertificateFactory.getInstance("X.509").generateCertificate(in);
+            return (X509Certificate) CertificateFactory.getInstance(CERT_TYPE).generateCertificate(in);
         }
-        catch (IOException e) { throw new CertificateException("Failed streaming cert bytes", e); }
+        catch (IOException e) { throw new CertificateException("Failed streaming cert bytes on create", e); }
+    }
+
+    @NonNull
+    public static byte[] toBytes(@NonNull List<Certificate> certs) throws CertificateException {
+        return CertificateFactory.getInstance(CERT_TYPE).generateCertPath(certs).getEncoded(STD_ENCODING);
+    }
+
+    @SuppressWarnings("unchecked")
+    @NonNull
+    public static List<X509Certificate> fromBytes(@NonNull byte[] certs) throws CertificateException {
+        final CertificateFactory cf = CertificateFactory.getInstance(CERT_TYPE);
+        try (InputStream in = new ByteArrayInputStream(certs)) {
+            return (List<X509Certificate>) cf.generateCertPath(in, STD_ENCODING).getCertificates();
+        }
+        catch (IOException e) { throw new CertificateException("Failed streaming cert on fromBytes", e); }
     }
 }
+

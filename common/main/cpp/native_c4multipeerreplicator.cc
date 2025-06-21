@@ -98,7 +98,7 @@ namespace litecore::jni {
             m_C4MultipeerReplicator_createPeerInfo = env->GetStaticMethodID(
                     cls_C4MultipeerReplicator,
                     "createPeerInfo",
-                    "([B[[BZ[[BLcom/couchbase/lite/ReplicatorStatus;)Lcom/couchbase/lite/PeerInfo;");
+                    "([B[BZ[[BLcom/couchbase/lite/ReplicatorStatus;)Lcom/couchbase/lite/PeerInfo;");
 
             if (m_C4MultipeerReplicator_createPeerInfo == nullptr)
                 return false;
@@ -114,7 +114,7 @@ namespace litecore::jni {
             m_C4MultipeerReplicator_onAuthenticate = env->GetStaticMethodID(
                     cls_C4MultipeerReplicator,
                     "onAuthenticate",
-                    "(J[B[[B)Z");
+                    "(J[B[B)Z");
 
             if (m_C4MultipeerReplicator_onAuthenticate == nullptr)
                 return false;
@@ -208,40 +208,6 @@ namespace litecore::jni {
         return neighborIds;
     }
 
-
-    static int getC4CertChainSize(C4Cert *c4CertChain) {
-        int size = 0;
-        C4Cert *cert = c4CertChain;
-        while (cert != nullptr) {
-            size++;
-            cert = c4cert_nextInChain(cert);
-            c4cert_release(cert);
-        }
-        return size;
-    }
-
-    static jobjectArray fromC4CertChain(JNIEnv *env, C4Cert *c4CertChain) {
-        int chainSize = getC4CertChainSize(c4CertChain);
-        jobjectArray certs = env->NewObjectArray(chainSize, env->FindClass("[B"), nullptr);
-
-        int i = 0;
-        C4Cert *cert = c4CertChain;
-        while (cert != nullptr) {
-            jbyteArray certBytes = fromC4Cert(env, cert);
-
-            C4Cert *nextCert = c4cert_nextInChain(cert);
-            if (i > 0) { c4cert_release(cert); }
-            cert = nextCert;
-
-            if (certBytes != nullptr) {
-                env->SetObjectArrayElement(certs, i++, certBytes);
-                env->DeleteLocalRef(certBytes);
-            }
-        }
-
-        return certs;
-    }
-
     // The comment over in native_c4replicator.cc applies here as well.
     // I'm even sorrier that I have to duplicate this mess.
     static int fromJavaReplColls(
@@ -302,7 +268,6 @@ namespace litecore::jni {
     // Callbacks
     //-------------------------------------------------------------------------
 
-    // done
     static void statusChangedCallback(C4PeerSync *ignored, bool started, C4Error error, void *context) {
         JNIEnv *env = nullptr;
         jint envState = attachJVM(&env, "p2pStatusChanged");
@@ -321,14 +286,17 @@ namespace litecore::jni {
             detachJVM("p2pStatusChanged");
     }
 
-    static bool authenticateCallback(C4PeerSync *ignored, const C4PeerID *peerId, C4Cert *cert, void *context) {
+    static bool authenticateCallback(C4PeerSync *ignored, const C4PeerID *peerId, C4Cert *certChain, void *context) {
         JNIEnv *env = nullptr;
         jint envState = attachJVM(&env, "p2pAuthenticate");
         if ((envState != JNI_OK) && (envState != JNI_EDETACHED))
             return false;
 
+        C4SliceResult rawCertChain = c4cert_copyChainData(certChain);
+        jbyteArray _certs = toJByteArray(env, rawCertChain);
+        c4slice_free(rawCertChain);
+
         jbyteArray _peerId = toJByteArray(env, peerId->bytes, 32);
-        jobjectArray _certs = fromC4CertChain(env, cert);
         jboolean ok = env->CallStaticBooleanMethod(
                 cls_C4MultipeerReplicator,
                 m_C4MultipeerReplicator_onAuthenticate,
@@ -625,6 +593,8 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4MultipeerReplicator_s
         jclass ignore,
         jlong peer) {
     c4peersync_stop((C4PeerSync *) peer);
+    // !!! The linker can't find this, yet
+    // c4peersync_free((C4PeerSync *) peer);
 }
 
 /*
@@ -679,8 +649,11 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4MultipeerReplicator_g
 
     C4PeerInfo *info = c4peersync_getPeerInfo((C4PeerSync *) peer, peerId);
 
+    C4SliceResult rawCertChain = c4cert_copyChainData(info->certificate);
+    jbyteArray certChain = toJByteArray(env, rawCertChain);
+    c4slice_free(rawCertChain);
+
     jobject replStatus = toJavaReplStatus(env, info->replicatorStatus);
-    jobjectArray certChain = fromC4CertChain(env, info->certificate);
     jobjectArray neighborIds = fromC4PeerID(env, info->neighbors, info->neighborCount);
 
     jobject peerInfo = env->CallStaticObjectMethod(
