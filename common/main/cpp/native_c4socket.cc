@@ -84,6 +84,8 @@ static void socket_open(C4Socket *socket, const C4Address *addr, C4Slice options
     if ((envState != JNI_OK) && (envState != JNI_EDETACHED))
         return;
 
+    c4socket_retain(socket);
+
     jstring _scheme = toJString(env, addr->scheme);
     jstring _host = toJString(env, addr->hostname);
     jstring _path = toJString(env, addr->path);
@@ -220,19 +222,9 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Socket_fromNative(
     socketFactory.context = context;
 
     C4Socket *c4socket = c4socket_fromNative(socketFactory, context, &c4Address);
+    c4socket_retain(c4socket);
 
     return (jlong) c4socket;
-}
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4Socket
- * Method:    retain
- * Signature: (J)V
- */
-JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Socket_retain(JNIEnv *env, jclass ignore, jlong jSocket) {
-    auto socket = (C4Socket *) jSocket;
-    c4socket_retain(socket);
 }
 
 /*

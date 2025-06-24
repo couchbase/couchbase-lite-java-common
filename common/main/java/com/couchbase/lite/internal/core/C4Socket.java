@@ -64,7 +64,6 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
     //-------------------------------------------------------------------------
 
     public interface NativeImpl {
-        void nRetain(long peer);
         long nFromNative(long token, String schema, String host, int port, String path, int framing);
         void nOpened(long peer);
         void nGotHTTPResponse(long peer, int httpStatus, @Nullable byte[] responseHeadersFleece);
@@ -72,6 +71,10 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
         void nReceived(long peer, byte[] data);
         void nCloseRequested(long peer, int status, @Nullable String message);
         void nClosed(long peer, int errorDomain, int errorCode, String message);
+
+        // this is instrumentation used only in tests
+        @VisibleForTesting
+        void nCreated(long peer);
     }
 
     @FunctionalInterface
@@ -282,16 +285,15 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
     // Constructors
     //-------------------------------------------------------------------------
 
-    // Unlike most ref-counted objects, the C C4Socket is not
-    // retained when it is created.  We have to retain it immediately
-    // whether we created it or were handed it.
     // Don't bind the socket to the peer, in the constructor, because that would
     // publish an incompletely constructed object.
     @VisibleForTesting
     C4Socket(@NonNull NativeImpl impl, long peer) {
         super(peer);
         this.impl = impl;
-        impl.nRetain(peer);
+
+        // this is instrumentation used only in tests
+        impl.nCreated(peer);
     }
 
     @Override

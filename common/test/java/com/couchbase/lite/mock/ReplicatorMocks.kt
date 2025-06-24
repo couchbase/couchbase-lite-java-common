@@ -23,7 +23,7 @@ import com.couchbase.lite.internal.core.C4Socket
 import com.couchbase.lite.internal.fleece.FLSliceResult
 
 open class MockNativeSocket : C4Socket.NativeImpl {
-    override fun nRetain(peer: Long) = Unit
+    override fun nCreated(peer: Long) = Unit
     override fun nFromNative(
         token: Long,
         schema: String?,
