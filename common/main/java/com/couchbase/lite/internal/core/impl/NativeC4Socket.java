@@ -25,14 +25,10 @@ import com.couchbase.lite.internal.core.C4Socket;
  * The C4Listener companion object
  */
 public final class NativeC4Socket implements C4Socket.NativeImpl {
-
     @Override
     public long nFromNative(long token, String schema, String host, int port, String path, int framing) {
         return fromNative(token, schema, host, port, path, framing);
     }
-
-    @Override
-    public void nRetain(long peer) { retain(peer); }
 
     @Override
     public void nOpened(long peer) { opened(peer); }
@@ -58,6 +54,10 @@ public final class NativeC4Socket implements C4Socket.NativeImpl {
         closed(peer, errorDomain, errorCode, message);
     }
 
+    // This method is only used by mocks in testing
+    @Override
+    public void nCreated(long ignore) { }
+
 
     //-------------------------------------------------------------------------
     // Native methods
@@ -74,8 +74,6 @@ public final class NativeC4Socket implements C4Socket.NativeImpl {
         int port,
         String path,
         int framing);
-
-    private static native void retain(long peer);
 
     @GuardedBy("socLock")
     private static native void opened(long peer);

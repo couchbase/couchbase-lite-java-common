@@ -26,15 +26,6 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Socket_fromNative
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Socket
- * Method:    retain
- * Signature: (J)V
- */
-JNIEXPORT void
-JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Socket_retain
-        (JNIEnv *, jclass, jlong);
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4Socket
  * Method:    opened
  * Signature: (J)V
  */

@@ -57,7 +57,7 @@ open class MockImpl : C4Socket.NativeImpl {
         framing: Int
     ) = C4BaseTest.MOCK_PEER
 
-    override fun nRetain(peer: Long) {
+    override fun nCreated(peer: Long) {
         Assert.assertEquals(0L, this.peer)
         this.peer = peer
         verifyPeer(peer)
@@ -245,6 +245,7 @@ class C4SocketTest : BaseTest() {
     @Test
     fun testSocketAckOpenToCore() {
         val impl = object : MockImpl() {
+
             var peer: Long? = null
             var status: Int? = null
             var headers: ByteArray? = null

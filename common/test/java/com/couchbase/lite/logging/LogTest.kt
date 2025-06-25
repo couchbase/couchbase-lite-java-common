@@ -564,6 +564,7 @@ class LogTest : BaseDbTest() {
     // log from the LiteCore callback thread.  A an attempt to log from some other thread
     // during the callback, will be blocked until the callback returns but cannot, directly,
     // deadlock.
+    @Ignore("CBL-6787 still not fixed in LiteCore")
     @Test
     fun testRecursiveLogging() {
         val logSinks = assertNonNull(LogSinksImpl.getLogSinks())
