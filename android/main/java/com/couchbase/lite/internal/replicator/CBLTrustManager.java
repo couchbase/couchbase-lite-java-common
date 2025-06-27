@@ -20,14 +20,12 @@ import android.net.http.X509TrustManagerExtensions;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.List;
 
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.logging.Log;
-import com.couchbase.lite.internal.utils.Fn;
 
 
 /**
@@ -43,7 +41,7 @@ import com.couchbase.lite.internal.utils.Fn;
  * if it is a Socket, the third parameter to the call the the trust manager will be a socket, and so on.
  * It will attempt to call each of the three methods, in order, until one succeeds or throws an exception
  * other than NoSuchMethodException or IllegalAccessException.
- *
+ * <p>
  * Based on that the design here is as follows:
  * <ul>
  * <li>Don't worry about checkClientTrusted: we don't support it.
@@ -56,8 +54,9 @@ public final class CBLTrustManager extends AbstractCBLTrustManager {
     public CBLTrustManager(
         @Nullable X509Certificate pinnedServerCert,
         boolean acceptOnlySelfSignedServerCertificate,
-        @NonNull Fn.Consumer<List<Certificate>> serverCertsListener) {
-        super(pinnedServerCert, acceptOnlySelfSignedServerCertificate, serverCertsListener);
+        boolean acceptAllCertificates,
+        @NonNull ServerCertsListener serverCertsListener) {
+        super(pinnedServerCert, acceptOnlySelfSignedServerCertificate, acceptAllCertificates, serverCertsListener);
     }
 
     /**
@@ -72,15 +71,29 @@ public final class CBLTrustManager extends AbstractCBLTrustManager {
         @Nullable String host)
         throws CertificateException {
         final List<X509Certificate> serverCerts = asList(chain);
+        certsReceived(serverCerts);
 
-        notifyListener(serverCerts);
+        // There are a couple of things to worry about, here, here:
+        // - Need to test to verify that this stuff works with the Android extended network configuration feature.
+        //   Perhaps we should be passing the result of the TMExtensions to cblServerTrustCheck() and requestAuth.
+        // - This method return a list of certs.  If that list is then passed to
+        // AbstractCBLTrustManager.checkServerTrusted(X509Certificate[], String), the calls
 
-        if (!useCBLTrustManagement()) {
+        List<X509Certificate> certsToCheck = serverCerts;
+        if (acceptAllCerts()) {
+            Log.d(LogDomain.NETWORK, "Accepting all certs: %d, %s, %s", serverCerts.size(), authType, host);
+        }
+        else if (useCBLTrustManagement()) {
+            cBLServerTrustCheck(serverCerts, authType);
+        }
+        else {
             Log.d(LogDomain.NETWORK, "Extended trust check: %d, %s, %s", serverCerts.size(), authType, host);
-            return new X509TrustManagerExtensions(getDefaultTrustManager()).checkServerTrusted(chain, authType, host);
+            certsToCheck
+                = new X509TrustManagerExtensions(getDefaultTrustManager()).checkServerTrusted(chain, authType, host);
         }
 
-        cBLServerTrustCheck(serverCerts, authType);
-        return serverCerts;
+        requestAuth(certsToCheck);
+
+        return certsToCheck;
     }
 }

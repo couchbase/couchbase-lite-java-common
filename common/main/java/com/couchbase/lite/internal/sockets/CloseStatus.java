@@ -24,6 +24,7 @@ import com.couchbase.lite.internal.utils.ClassUtils;
 public class CloseStatus {
     public final int domain;
     public final int code;
+
     @Nullable
     public final String message;
 

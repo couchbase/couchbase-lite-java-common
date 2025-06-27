@@ -528,6 +528,14 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
         toCore.closeCore(getStatusForError(err));
     }
 
+    public void gotPeerCertificate(@NonNull List<Certificate> certs, @NonNull String hostname)
+        throws CertificateException {
+        Log.d(LOG_DOMAIN, "%s.gotPeerCertificate: %s", this, hostname);
+        if (!toCore.gotPeerCertificate(CertUtils.toBytes(certs), hostname)) {
+            throw new CertificateException("Server certificate authentication failed");
+        }
+    }
+
     //-------------------------------------------------------------------------
     // package methods
     //-------------------------------------------------------------------------
@@ -703,8 +711,12 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
     private void setupSSLSocketFactory(@NonNull OkHttpClient.Builder builder, @Nullable Map<?, ?> auth) {
         X509Certificate pinnedServerCert = null;
         boolean acceptOnlySelfSignedServerCert = false;
+        boolean acceptAllCerts = false;
+
         KeyManager[] keyManagers = null;
         InetAddress iFace = null;
+
+
         if (options != null) {
             // Pinned Certificate:
             Object opt = options.get(C4Replicator.REPLICATOR_OPTION_PINNED_SERVER_CERT);
@@ -717,18 +729,32 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
             opt = options.get(C4Replicator.REPLICATOR_OPTION_SELF_SIGNED_SERVER_CERT);
             if (opt instanceof Boolean) { acceptOnlySelfSignedServerCert = (boolean) opt; }
 
+            // Accept only self-signed server cert mode:
+            opt = options.get(C4Replicator.REPLICATOR_OPTION_ACCEPT_ALL_CERTS);
+            if (opt instanceof Boolean) { acceptAllCerts = (boolean) opt; }
+
             // KeyManager for client cert authentication:
             final KeyManager clientCertAuthKeyManager = getKeyManager(auth);
             if (clientCertAuthKeyManager != null) { keyManagers = new KeyManager[] {clientCertAuthKeyManager}; }
-
 
             opt = options.get(C4Replicator.SOCKET_OPTIONS_NETWORK_INTERFACE);
             if (opt instanceof String) { iFace = getSelectedInterface((String) opt); }
         }
 
         // TrustManager for server cert verification:
-        final CBLTrustManager trustManager
-            = new CBLTrustManager(pinnedServerCert, acceptOnlySelfSignedServerCert, serverCertsListener);
+        final CBLTrustManager trustManager = new CBLTrustManager(
+            pinnedServerCert,
+            acceptOnlySelfSignedServerCert,
+            acceptAllCerts,
+            new AbstractCBLTrustManager.ServerCertsListener() {
+                @Override
+                public void certsPresented(@NonNull List<Certificate> certs) { serverCertsListener.accept(certs); }
+
+                @Override
+                public void requestAuthentication(@NonNull List<Certificate> certs) throws CertificateException {
+                    gotPeerCertificate(certs, uri.getHost());
+                }
+            });
 
         final SSLContext sslContext;
         try {

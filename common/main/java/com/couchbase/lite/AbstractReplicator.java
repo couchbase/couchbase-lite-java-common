@@ -808,13 +808,13 @@ public abstract class AbstractReplicator extends BaseReplicator
                 continue;
             }
 
-            final int errCode = docEnd.getErrorCode();
+            final int errCode = docEnd.errorCode;
             final CouchbaseLiteException err = (errCode == 0)
                 ? null
                 : CouchbaseLiteException.toCouchbaseLiteException(
-                    docEnd.getErrorDomain(),
+                    docEnd.errorDomain,
                     errCode,
-                    docEnd.getErrorInfo());
+                    docEnd.errorInternalInfo);
 
             final ReplicatedDocument rDoc
                 = new ReplicatedDocument(coll.scope, coll.name, docEnd.docId, docEnd.flags, err);

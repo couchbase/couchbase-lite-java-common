@@ -64,6 +64,7 @@ open class MockImpl : C4Socket.NativeImpl {
     }
 
     override fun nOpened(peer: Long) = verifyPeer(peer)
+    override fun nGotPeerCertificate(peer: Long, cert: ByteArray?, hostname: String?) = true
     override fun nGotHTTPResponse(peer: Long, httpStatus: Int, responseHeaders: ByteArray?) =
         verifyPeer(peer)
 
@@ -103,14 +104,16 @@ class C4SocketTest : BaseTest() {
 
     @Test
     fun testOpen() {
-        Assert.assertEquals(0, C4Socket.BOUND_SOCKETS.keySet().size)
-
         val fromCore = object : MockSocketFromCore() {
             override fun coreRequestsOpen() = called()
         }
 
+        // this binds MOCK_PEER so that the call to C4Socket.open() will find it
         createSocket(fromCore)
 
+        // This depends on:
+        // 1: the peer is bound to a socket
+        // 2: openSocket (LiteCore) is not called if the socket is found.
         C4Socket.open(C4BaseTest.MOCK_PEER, 0L, null, null, 0, null, null)
         awaitCall(fromCore)
     }
@@ -344,7 +347,7 @@ class C4SocketTest : BaseTest() {
     ////////////////  U T I L I T I E S   ////////////////
 
     private fun createSocket(impl: MockImpl): C4Socket {
-        val socket = C4Socket(impl, C4BaseTest.MOCK_PEER)
+        val socket = C4Socket.createSocket(impl, C4BaseTest.MOCK_PEER)
         Assert.assertEquals(1, impl.totalCalls)
         return socket
     }

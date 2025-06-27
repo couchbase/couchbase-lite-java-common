@@ -35,6 +35,15 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Socket_opened
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Socket
+ * Method:    gotPeerCertificate
+ * Signature: (J[BLjava.lang.String;)Z
+ */
+JNIEXPORT jboolean
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Socket_gotPeerCertificate
+        (JNIEnv *, jclass, jlong, jbyteArray, jstring);
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4Socket
  * Method:    gotHTTPResponse
  * Signature: (JI[B)V
  */

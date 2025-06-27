@@ -15,22 +15,21 @@
 //
 package com.couchbase.lite.internal.replicator;
 
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
-import java.util.List;
 
-import com.couchbase.lite.internal.utils.Fn;
 
-/** Just delegate everything to the base class */
+/**
+ * Just delegate everything to the base class
+ */
 public class CBLTrustManager extends AbstractCBLTrustManager {
     public CBLTrustManager(
         @Nullable X509Certificate pinnedServerCert,
+        boolean acceptAllCertificates, // ignore this and hardwire "false"
         boolean acceptOnlySelfSignedServerCertificate,
-        @NonNull Fn.Consumer<List<Certificate>> serverCertsListener) {
-        super(pinnedServerCert, acceptOnlySelfSignedServerCertificate, serverCertsListener);
+        @NonNull ServerCertsListener serverCertsListener) {
+        super(pinnedServerCert, acceptOnlySelfSignedServerCertificate, false, serverCertsListener);
     }
 }

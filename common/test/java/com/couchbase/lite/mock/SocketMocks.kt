@@ -43,6 +43,7 @@ open class MockCore : SocketToCore {
     private val mutex = Object()
     override fun getLock() = mutex
     override fun init(listener: SocketFromCore): Unit = TODO("Not yet implemented")
+    override fun gotPeerCertificate(certData: ByteArray, hostname: String): Boolean = TODO("Not yet implemented")
     override fun close(): Unit = TODO("Not yet implemented")
     override fun ackWriteToCore(byteCount: Long): Unit = TODO("Not yet implemented")
     override fun writeToCore(data: ByteArray): Unit = TODO("Not yet implemented")

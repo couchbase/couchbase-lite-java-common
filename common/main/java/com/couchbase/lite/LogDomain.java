@@ -24,7 +24,7 @@ import java.util.Set;
  * Log domain
  */
 public enum LogDomain {
-    DATABASE, QUERY, REPLICATOR, NETWORK, LISTENER;
+    DATABASE, QUERY, REPLICATOR, NETWORK, LISTENER, PEER_DISCOVERY, MULTIPEER;
 
     /**
      * All domains.

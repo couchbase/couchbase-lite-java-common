@@ -32,6 +32,7 @@ public interface SocketToCore extends AutoCloseable {
     @NonNull
     Object getLock();
     void init(@NonNull SocketFromCore listener);
+    boolean gotPeerCertificate(@NonNull byte[] certData, @NonNull String hostname);
     void ackOpenToCore(int httpStatus, @Nullable byte[] responseHeadersFleece);
     void ackWriteToCore(long byteCount);
     void writeToCore(@NonNull byte[] data);

@@ -19,6 +19,7 @@ import com.couchbase.lite.BaseTest
 import org.junit.Assert
 import org.junit.Test
 import java.io.ByteArrayInputStream
+import java.security.cert.Certificate
 import java.security.cert.CertificateException
 import java.security.cert.CertificateFactory
 import java.security.cert.X509Certificate
@@ -69,9 +70,20 @@ class CBLTrustManagerTest : BaseTest() {
         tNCcBE9ZMr+BBxulQvWGhe1xcfy/Y64BvvUBN7gItFuT+S4/RjL6BWA=
         -----END CERTIFICATE-----""".trimIndent()
 
+    val nullListener = object: AbstractCBLTrustManager.ServerCertsListener {
+        override fun certsPresented(certs: MutableList<Certificate>) {
+            TODO("Not yet implemented")
+        }
+
+        override fun requestAuthentication(certs: MutableList<Certificate>) {
+            TODO("Not yet implemented")
+        }
+
+    }
+
     @Test
     fun testEmptyServerCerts() {
-        val trustMgr = object : AbstractCBLTrustManager(makeCert(testServerCert2), false, { }) {}
+        val trustMgr = object : AbstractCBLTrustManager(makeCert(testServerCert2), false, false, nullListener) {}
         Assert.assertThrows(IllegalArgumentException::class.java) {
             trustMgr.cBLServerTrustCheck(emptyList<X509Certificate>(), "ECDHE_RSA")
         }
@@ -79,7 +91,7 @@ class CBLTrustManagerTest : BaseTest() {
 
     @Test
     fun testWrongCert() {
-        val trustMgr = object : AbstractCBLTrustManager(makeCert(testServerCert2), false, { }) {}
+        val trustMgr = object : AbstractCBLTrustManager(makeCert(testServerCert2), false, false, nullListener) {}
         Assert.assertThrows(IllegalArgumentException::class.java) {
             trustMgr.cBLServerTrustCheck(listOf(makeCert(testServerCert1)), "")
         }
@@ -87,13 +99,13 @@ class CBLTrustManagerTest : BaseTest() {
 
     @Test
     fun testSelfSignedCert() {
-        object : AbstractCBLTrustManager(null, true, { }) {}
+        object : AbstractCBLTrustManager(null, true, false, nullListener) {}
             .cBLServerTrustCheck(listOf(makeCert(testServerCert1)), "ECDHE_RSA")
     }
 
     @Test
     fun testTooManySelfSignedCerts() {
-        val trustMgr = object : AbstractCBLTrustManager(null, true, { }) {}
+        val trustMgr = object : AbstractCBLTrustManager(null, true, false, nullListener) {}
         Assert.assertThrows(CertificateException::class.java) {
             trustMgr.cBLServerTrustCheck(listOf(makeCert(testServerCert1), makeCert(testServerCert2)), "ECDHE_RSA")
         }
@@ -103,7 +115,7 @@ class CBLTrustManagerTest : BaseTest() {
     @Test
     fun testPinnedCertDoesntMatch() {
         val certs = listOf(makeCert(testServerCert1))
-        val trustMgr = object : AbstractCBLTrustManager(makeCert(testServerCert2), false, { }) {}
+        val trustMgr = object : AbstractCBLTrustManager(makeCert(testServerCert2), false, false, nullListener) {}
         Assert.assertThrows(CertificateException::class.java) {
             trustMgr.cBLServerTrustCheck(certs, "ECDHE_RSA")
         }
@@ -112,23 +124,25 @@ class CBLTrustManagerTest : BaseTest() {
     @Test
     fun testPinnedCertMatches() {
         val certs = listOf(makeCert(testServerCert1))
-        object : AbstractCBLTrustManager(certs[0], false, { }) {}
+        object : AbstractCBLTrustManager(certs[0], false, false, nullListener) {}
             .cBLServerTrustCheck(certs, "ECDHE_ECDSA")
     }
 
     @Test
     fun testPinnedCertInChain() {
         val certs = listOf(makeCert(testServerCert1), makeCert(testServerCert2))
-        object : AbstractCBLTrustManager(certs[1], false, { }) {}
+        object : AbstractCBLTrustManager(certs[1], false, false, nullListener) {}
             .cBLServerTrustCheck(certs, "ECDHE_RSA")
     }
 
     @Test
     fun testPinnedCertTakesPrecedence() {
         val certs = listOf(makeCert(testServerCert1), makeCert(testServerCert2))
-        object : AbstractCBLTrustManager(certs[1], true, { }) {}
+        object : AbstractCBLTrustManager(certs[1], true, false, nullListener) {}
             .cBLServerTrustCheck(certs, "ECDHE_ECDSA")
     }
+
+    // Should probably add tests for `acceptAllCertificates`
 
     private fun makeCert(cert: String): X509Certificate = ByteArrayInputStream(cert.toByteArray()).use {
         CertificateFactory.getInstance("X.509").generateCertificate(it) as X509Certificate
