@@ -19,6 +19,7 @@
 
 #include <vector>
 #include "native_glue.hh"
+#include "c4Base.h"
 #include "com_couchbase_lite_internal_core_impl_NativeC4Listener.h"
 #include "com_couchbase_lite_internal_core_impl_NativeC4KeyPair.h"
 
@@ -642,10 +643,11 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4KeyPair_fromExternal(
 }
 
 JNIEXPORT jbyteArray JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4KeyPair_generateSelfSignedCertificate(
+Java_com_couchbase_lite_internal_core_impl_NativeC4KeyPair_generateCertificate(
         JNIEnv *env,
         jclass ignore,
         jlong c4KeyPair,
+        jlong c4keyPairCA,
         jbyte algorithm,
         jint keyBits,
         jobjectArray nameComponents,

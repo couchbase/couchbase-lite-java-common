@@ -67,7 +67,7 @@ public abstract class AbstractReplicator extends BaseReplicator
     implements Listenable<ReplicatorChange, ReplicatorChangeListener> {
     private static final LogDomain LOG_DOMAIN = LogDomain.REPLICATOR;
 
-    class ConflictResolutionTask implements Runnable {
+    class ConflictResolutionTask implements ConflictResolutionTaskInterface {
         @NonNull
         private final AtomicBoolean cancelled = new AtomicBoolean(false);
         @NonNull

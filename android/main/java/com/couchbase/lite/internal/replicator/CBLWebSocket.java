@@ -42,8 +42,8 @@ public final class CBLWebSocket extends AbstractCBLWebSocket {
         @NonNull SocketToCore toCore,
         @NonNull URI uri,
         @Nullable byte[] opts,
-        @NonNull CBLCookieStore cookieStore,
-        @NonNull Fn.Consumer<List<Certificate>> serverCertsListener) {
+        @Nullable CBLCookieStore cookieStore,
+        @Nullable Fn.Consumer<List<Certificate>> serverCertsListener) {
         super(toRemote, toCore, uri, opts, cookieStore, serverCertsListener);
     }
 

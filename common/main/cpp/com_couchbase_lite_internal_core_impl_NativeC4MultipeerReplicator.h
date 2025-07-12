@@ -44,6 +44,14 @@ JNIEXPORT void
 JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4MultipeerReplicator_stop(JNIEnv *, jclass, jlong);
 
 /*
+ * Class:     Java_com_couchbase_lite_internal_core_impl_NativeC4MultipeerReplicator
+ * Method:    free
+ * Signature: (J)V
+ */
+JNIEXPORT void
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4MultipeerReplicator_free(JNIEnv *, jclass, jlong);
+
+/*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4MultipeerReplicator
  * Method:    getId
  * Signature: (J)[B
@@ -68,7 +76,7 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4MultipeerReplicator_g
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4MultipeerReplicator
  * Method:    stop
- * Signature: (J)V
+ * Signature: (JI)V
  */
 JNIEXPORT jobject
 JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4MultipeerReplicator_getPeerInfo(
@@ -76,6 +84,18 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4MultipeerReplicator_g
         jclass ignore,
         jlong peer,
         jbyteArray jpeerId);
+
+/*
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4MultipeerReplicator
+ * Method:    stop
+ * Signature: (J)V
+ */
+JNIEXPORT void
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4MultipeerReplicator_setProgressLevel(
+        JNIEnv *env,
+        jclass ignore,
+        jlong peer,
+        jint progressLevel);
 
 #ifdef __cplusplus
 }
