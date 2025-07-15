@@ -10,10 +10,12 @@ extern "C" {
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4KeyPair
- * Method:    generateCertificate
- * Signature: (JJBI[[Ljava/lang/String;BJ)[B
+ * Method:    generateSelfSignedCertificate
+ * Signature: (JBI[[Ljava/lang/String;BJ)[B
  */
 JNIEXPORT jbyteArray
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4KeyPair_generateSelfSignedCertificate
+        (JNIEnv *, jclass, jlong, jbyte, jint, jobjectArray, jbyte, jlong);
 JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4KeyPair_generateCertificate
         (JNIEnv *, jclass, jlong, jlong, jbyte, jint, jobjectArray, jbyte, jlong);
 

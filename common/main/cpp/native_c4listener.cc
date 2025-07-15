@@ -643,11 +643,10 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4KeyPair_fromExternal(
 }
 
 JNIEXPORT jbyteArray JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4KeyPair_generateCertificate(
+Java_com_couchbase_lite_internal_core_impl_NativeC4KeyPair_generateSelfSignedCertificate(
         JNIEnv *env,
         jclass ignore,
         jlong c4KeyPair,
-        jlong c4keyPairCA,
         jbyte algorithm,
         jint keyBits,
         jobjectArray nameComponents,

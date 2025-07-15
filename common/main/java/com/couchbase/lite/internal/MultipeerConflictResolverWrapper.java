@@ -22,6 +22,7 @@ public class MultipeerConflictResolverWrapper implements ConflictResolver {
         this.resolver = resolver;
     }
 
+    @Override
     public Document resolve(@NonNull Conflict conflict) {
         return this.resolver.resolve(peerID, conflict);
     }

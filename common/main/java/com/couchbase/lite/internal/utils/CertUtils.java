@@ -25,14 +25,11 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.sql.Array;
 import java.util.ArrayList;
 import java.util.List;
 
 
 public final class CertUtils {
-    // ??? IS PKCS7 the right encoding?
-    private static final String STD_ENCODING = "PKCS7";
     private static final String CERT_TYPE = "X.509";
 
     private CertUtils() {
