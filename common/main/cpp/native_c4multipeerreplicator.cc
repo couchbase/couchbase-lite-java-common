@@ -197,7 +197,7 @@ namespace litecore::jni {
         auto factory = socket_factory();
 
         // DO NOT change this unless you change the corresponding entry in MultipeerSocketFactory.java
-        const size_t MP_SOCKET_FACTORY_TAG = 0x4D505250; // MPRP
+        constexpr size_t MP_SOCKET_FACTORY_TAG = 0x4D505250; // MPRP
         factory.context = (void *)MP_SOCKET_FACTORY_TAG;
         C4PeerDiscovery::setDefaultSocketFactory(factory);
 
