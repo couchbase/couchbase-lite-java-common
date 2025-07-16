@@ -16,8 +16,6 @@ extern "C" {
 JNIEXPORT jbyteArray
 JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4KeyPair_generateSelfSignedCertificate
         (JNIEnv *, jclass, jlong, jbyte, jint, jobjectArray, jbyte, jlong);
-JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4KeyPair_generateCertificate
-        (JNIEnv *, jclass, jlong, jlong, jbyte, jint, jobjectArray, jbyte, jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4KeyPair
