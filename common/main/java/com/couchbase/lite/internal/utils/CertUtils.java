@@ -18,18 +18,18 @@ package com.couchbase.lite.internal.utils;
 import androidx.annotation.NonNull;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.List;
 
 
 public final class CertUtils {
-    // ??? IS PKCS7 the right encoding?
-    private static final String STD_ENCODING = "PKCS7";
     private static final String CERT_TYPE = "X.509";
 
     private CertUtils() {
@@ -46,15 +46,30 @@ public final class CertUtils {
 
     @NonNull
     public static byte[] toBytes(@NonNull List<Certificate> certs) throws CertificateException {
-        return CertificateFactory.getInstance(CERT_TYPE).generateCertPath(certs).getEncoded(STD_ENCODING);
+        CertificateFactory factory = CertificateFactory.getInstance(CERT_TYPE);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        for(int i = 0; i < certs.size(); i++) {
+            try {
+                baos.write(certs.get(i).getEncoded());
+            } catch(IOException e) {
+                throw new CertificateException("Unable to write certificate", e);
+            }
+        }
+
+        return baos.toByteArray();
     }
 
-    @SuppressWarnings("unchecked")
     @NonNull
     public static List<X509Certificate> fromBytes(@NonNull byte[] certs) throws CertificateException {
         final CertificateFactory cf = CertificateFactory.getInstance(CERT_TYPE);
+        List<X509Certificate> retVal = new ArrayList<X509Certificate>();
         try (InputStream in = new ByteArrayInputStream(certs)) {
-            return (List<X509Certificate>) cf.generateCertPath(in, STD_ENCODING).getCertificates();
+            while(in.available() > 0) {
+                X509Certificate cert = (X509Certificate)cf.generateCertificate(in);
+                retVal.add(cert);
+            }
+
+            return retVal;
         }
         catch (IOException e) { throw new CertificateException("Failed streaming cert on fromBytes", e); }
     }

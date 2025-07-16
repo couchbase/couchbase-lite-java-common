@@ -19,6 +19,7 @@
 
 #include <vector>
 #include "native_glue.hh"
+#include "c4Base.h"
 #include "com_couchbase_lite_internal_core_impl_NativeC4Listener.h"
 #include "com_couchbase_lite_internal_core_impl_NativeC4KeyPair.h"
 

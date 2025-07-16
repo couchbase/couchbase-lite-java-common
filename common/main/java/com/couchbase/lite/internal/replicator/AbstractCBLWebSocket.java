@@ -225,6 +225,10 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
 
         @Override
         public void saveFromResponse(@NonNull HttpUrl httpUrl, @NonNull List<Cookie> cookies) {
+            if(cookieStore == null) {
+                return;
+            }
+
             cookieStore.setCookies(httpUrl.uri(), Fn.mapToList(cookies, Cookie::toString), acceptParentDomain);
         }
 
@@ -284,8 +288,12 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
             }
 
             // Set cookies from the CookieStore
-            final String setCookies = cookieStore.getCookies(url.uri());
-            if (setCookies != null) { cookies.addAll(OkHttpSocket.parseCookies(url, setCookies)); }
+            if(cookieStore != null) {
+                final String setCookies = cookieStore.getCookies(url.uri());
+                if (setCookies != null) {
+                    cookies.addAll(OkHttpSocket.parseCookies(url, setCookies));
+                }
+            }
 
             return cookies;
         }
@@ -323,11 +331,11 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
     // effectively final: (Collections.unmodifiable)
     @Nullable
     private final Map<String, Object> options;
-    @NonNull
+    @Nullable
     private final Fn.Consumer<List<Certificate>> serverCertsListener;
 
     @GuardedBy("getPeerLock()")
-    @NonNull
+    @Nullable
     private final CBLCookieStore cookieStore;
     @GuardedBy("getPeerLock()")
     @NonNull
@@ -342,8 +350,8 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
         @NonNull SocketToCore toCore,
         @NonNull URI uri,
         @Nullable byte[] opts,
-        @NonNull CBLCookieStore cookieStore,
-        @NonNull Fn.Consumer<List<Certificate>> serverCertsListener) {
+        @Nullable CBLCookieStore cookieStore,
+        @Nullable Fn.Consumer<List<Certificate>> serverCertsListener) {
         this.toCore = toCore;
         this.toRemote = toRemote;
         this.uri = uri;
@@ -748,7 +756,11 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
             acceptAllCerts,
             new AbstractCBLTrustManager.ServerCertsListener() {
                 @Override
-                public void certsPresented(@NonNull List<Certificate> certs) { serverCertsListener.accept(certs); }
+                public void certsPresented(@NonNull List<Certificate> certs) {
+                    if(serverCertsListener != null) {
+                        serverCertsListener.accept(certs);
+                    }
+                }
 
                 @Override
                 public void requestAuthentication(@NonNull List<Certificate> certs) throws CertificateException {
@@ -775,9 +787,11 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
             trustManager);
 
         // HostnameVerifier:
-        if (pinnedServerCert != null || acceptOnlySelfSignedServerCert) {
+        if (pinnedServerCert != null || acceptOnlySelfSignedServerCert || acceptAllCerts) {
             // As the certificate will need to be matched with the pinned certificate,
-            // accepts any host name specified in the certificate.
+            // accepts any host name specified in the certificate.  The same is true for
+            // self signed certificates and "all certs" (aka Multipeer) mode in which
+            // the certs are not as strictly verified
             builder.hostnameVerifier((s, sslSession) -> true);
         }
     }

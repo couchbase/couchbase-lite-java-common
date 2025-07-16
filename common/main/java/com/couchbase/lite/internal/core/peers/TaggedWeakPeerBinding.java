@@ -63,6 +63,12 @@ public class TaggedWeakPeerBinding<T> extends WeakPeerBinding<T> {
         return key;
     }
 
+    public synchronized void reserveKey(long key) {
+        if(!exists(key)) {
+            super.set(key, null);
+        }
+    }
+
     /**
      * Bind an object to a token.
      *

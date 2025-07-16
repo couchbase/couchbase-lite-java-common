@@ -19,12 +19,15 @@
 
 #include <vector>
 #include "c4PeerSync.h"
+#include "c4PeerDiscovery.hh"
 #include "native_glue.hh"
 #include "native_c4replutils.hh"
+#include "socket_factory.h"
 #include "com_couchbase_lite_internal_core_impl_NativeC4MultipeerReplicator.h"
 
 using namespace litecore;
 using namespace litecore::jni;
+using namespace std;
 
 namespace litecore::jni {
     //-------------------------------------------------------------------------
@@ -190,6 +193,13 @@ namespace litecore::jni {
             if (m_MultipeerReplColl_filterCallback == nullptr)
                 return false;
         }
+
+        auto factory = socket_factory();
+
+        // DO NOT change this unless you change the corresponding entry in MultipeerSocketFactory.java
+        constexpr size_t MP_SOCKET_FACTORY_TAG = 0x4D505250; // MPRP
+        factory.context = (void *)MP_SOCKET_FACTORY_TAG;
+        C4PeerDiscovery::setDefaultSocketFactory(factory);
 
         jniLog("multipeer replicator initialized");
         return true;
@@ -593,8 +603,19 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4MultipeerReplicator_s
         jclass ignore,
         jlong peer) {
     c4peersync_stop((C4PeerSync *) peer);
-    // !!! The linker can't find this, yet
-    // c4peersync_free((C4PeerSync *) peer);
+}
+
+/*
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4MultipeerReplicator
+ * Method:    free
+ * Signature: (J)V
+ */
+JNIEXPORT void
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4MultipeerReplicator_free(
+        JNIEnv *env,
+        jclass ignore,
+        jlong peer) {
+    c4peersync_free((C4PeerSync *) peer);
 }
 
 /*
@@ -668,6 +689,15 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4MultipeerReplicator_g
     c4peerinfo_free(info);
 
     return peerInfo;
+}
+
+JNIEXPORT void
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4MultipeerReplicator_setProgressLevel(
+        JNIEnv* env,
+        jclass ignore,
+        jlong peer,
+        jint progressLevel) {
+    c4peersync_setProgressLevel((C4PeerSync *)peer, (C4ReplicatorProgressLevel)progressLevel);
 }
 
 #ifdef __cplusplus

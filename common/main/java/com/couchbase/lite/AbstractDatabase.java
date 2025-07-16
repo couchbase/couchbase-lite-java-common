@@ -1165,7 +1165,7 @@ abstract class AbstractDatabase extends BaseDatabase
     void resolveReplicationConflict(
         @Nullable ConflictResolver resolver,
         @NonNull ReplicatedDocument rDoc,
-        @NonNull AbstractReplicator.ConflictResolutionTask task) {
+        @NonNull ConflictResolutionTaskInterface task) {
         int n = 0;
         CouchbaseLiteException err = null;
         try {
