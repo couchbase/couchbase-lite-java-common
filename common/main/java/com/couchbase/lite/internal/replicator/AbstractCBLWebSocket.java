@@ -225,7 +225,7 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
 
         @Override
         public void saveFromResponse(@NonNull HttpUrl httpUrl, @NonNull List<Cookie> cookies) {
-            if(cookieStore == null) {
+            if (cookieStore == null) {
                 return;
             }
 
@@ -288,7 +288,7 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
             }
 
             // Set cookies from the CookieStore
-            if(cookieStore != null) {
+            if (cookieStore != null) {
                 final String setCookies = cookieStore.getCookies(url.uri());
                 if (setCookies != null) {
                     cookies.addAll(OkHttpSocket.parseCookies(url, setCookies));
@@ -757,7 +757,7 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
             new AbstractCBLTrustManager.ServerCertsListener() {
                 @Override
                 public void certsPresented(@NonNull List<Certificate> certs) {
-                    if(serverCertsListener != null) {
+                    if (serverCertsListener != null) {
                         serverCertsListener.accept(certs);
                     }
                 }

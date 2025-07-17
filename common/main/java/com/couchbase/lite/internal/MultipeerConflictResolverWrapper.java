@@ -1,6 +1,7 @@
 package com.couchbase.lite.internal;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import com.couchbase.lite.Conflict;
 import com.couchbase.lite.ConflictResolver;
@@ -23,6 +24,7 @@ public class MultipeerConflictResolverWrapper implements ConflictResolver {
     }
 
     @Override
+    @Nullable
     public Document resolve(@NonNull Conflict conflict) {
         return this.resolver.resolve(peerID, conflict);
     }
