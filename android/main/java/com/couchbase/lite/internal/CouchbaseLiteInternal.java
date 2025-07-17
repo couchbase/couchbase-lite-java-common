@@ -37,7 +37,6 @@ import org.json.JSONObject;
 import com.couchbase.lite.CouchbaseLiteError;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
-import com.couchbase.lite.MultipeerSocketFactory;
 import com.couchbase.lite.R;
 import com.couchbase.lite.internal.connectivity.AndroidConnectivityManager;
 import com.couchbase.lite.internal.core.C4;
@@ -107,8 +106,6 @@ public final class CouchbaseLiteInternal {
         LogSinksImpl.initLogging();
 
         setC4TmpDirPath(FileUtils.verifyDir(scratchDir));
-
-        MultipeerSocketFactory.register();
     }
 
     // DO NOT HOLD A REFERENCE TO THE CONTEXT!
