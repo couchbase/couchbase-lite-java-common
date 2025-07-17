@@ -715,7 +715,7 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
         });
     }
 
-    @SuppressWarnings("PMD.NPathComplexity")
+    @SuppressWarnings({"PMD.NPathComplexity", "PMD.CognitiveComplexity"})
     private void setupSSLSocketFactory(@NonNull OkHttpClient.Builder builder, @Nullable Map<?, ?> auth) {
         X509Certificate pinnedServerCert = null;
         boolean acceptOnlySelfSignedServerCert = false;

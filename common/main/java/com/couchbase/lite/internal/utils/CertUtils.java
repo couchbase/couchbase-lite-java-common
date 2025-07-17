@@ -47,9 +47,9 @@ public final class CertUtils {
     @NonNull
     public static byte[] toBytes(@NonNull List<Certificate> certs) throws CertificateException {
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        for (int i = 0; i < certs.size(); i++) {
+        for (Certificate cert : certs) {
             try {
-                baos.write(certs.get(i).getEncoded());
+                baos.write(cert.getEncoded());
             } catch (IOException e) {
                 throw new CertificateException("Unable to write certificate", e);
             }
