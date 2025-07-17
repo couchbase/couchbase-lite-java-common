@@ -46,12 +46,11 @@ public final class CertUtils {
 
     @NonNull
     public static byte[] toBytes(@NonNull List<Certificate> certs) throws CertificateException {
-        CertificateFactory factory = CertificateFactory.getInstance(CERT_TYPE);
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        for(int i = 0; i < certs.size(); i++) {
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        for (int i = 0; i < certs.size(); i++) {
             try {
                 baos.write(certs.get(i).getEncoded());
-            } catch(IOException e) {
+            } catch (IOException e) {
                 throw new CertificateException("Unable to write certificate", e);
             }
         }
@@ -62,10 +61,10 @@ public final class CertUtils {
     @NonNull
     public static List<X509Certificate> fromBytes(@NonNull byte[] certs) throws CertificateException {
         final CertificateFactory cf = CertificateFactory.getInstance(CERT_TYPE);
-        List<X509Certificate> retVal = new ArrayList<X509Certificate>();
+        final List<X509Certificate> retVal = new ArrayList<>();
         try (InputStream in = new ByteArrayInputStream(certs)) {
-            while(in.available() > 0) {
-                X509Certificate cert = (X509Certificate)cf.generateCertificate(in);
+            while (in.available() > 0) {
+                final X509Certificate cert = (X509Certificate) cf.generateCertificate(in);
                 retVal.add(cert);
             }
 

@@ -42,7 +42,7 @@ public class TaggedWeakPeerBinding<T> extends WeakPeerBinding<T> {
      * Reserve a token.
      * Sometimes the object to be put into the map needs to know
      * its own token.  Pre-reserving it makes it possible to make it final.
-     *
+     * <p>
      * Don't leak keys.  If code throws an exception between this call
      * and when you actually bind the key, it will be lost.
      *
@@ -64,7 +64,7 @@ public class TaggedWeakPeerBinding<T> extends WeakPeerBinding<T> {
     }
 
     public synchronized void reserveKey(long key) {
-        if(!exists(key)) {
+        if (!exists(key)) {
             super.set(key, null);
         }
     }

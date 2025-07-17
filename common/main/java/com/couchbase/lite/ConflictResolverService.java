@@ -19,12 +19,12 @@ import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.couchbase.lite.internal.CouchbaseLiteInternal;
-import com.couchbase.lite.internal.exec.ExecutionService;
-
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import com.couchbase.lite.internal.CouchbaseLiteInternal;
+import com.couchbase.lite.internal.exec.ExecutionService;
 
 enum ConflictResolverState {
     RUNNING,
@@ -98,14 +98,14 @@ class ConflictResolverService {
     @GuardedBy("lock")
     private ConflictResolverState state = ConflictResolverState.RUNNING;
 
-    public Boolean shutdown(Boolean wait, Runnable onFinished) {
+    public boolean shutdown(boolean wait, @NonNull Runnable onFinished) {
         Set<ConflictResolutionTask> tasksToCancel = new HashSet<>();
         synchronized (lock) {
-            if(state != ConflictResolverState.RUNNING) {
+            if (state != ConflictResolverState.RUNNING) {
                 return false;
             }
 
-            if(pendingResolutions.isEmpty()) {
+            if (pendingResolutions.isEmpty()) {
                 state = ConflictResolverState.STOPPED;
                 concurrentExecutor.execute(onFinished);
                 return true;
@@ -113,18 +113,19 @@ class ConflictResolverService {
 
             state = ConflictResolverState.STOPPING;
             pendingShutdownCompletion = onFinished;
-            if(!wait) {
+            if (!wait) {
                 tasksToCancel = new HashSet<>(pendingResolutions);
             }
         }
 
-        for(ConflictResolutionTask task : tasksToCancel) {
+        for (ConflictResolutionTask task : tasksToCancel) {
             task.cancel();
         }
 
         return true;
     }
 
+    @SuppressWarnings("checkstyle:CheckFunctionalParameters")
     public void addConflict(
             @NonNull ReplicatedDocument doc,
             @NonNull Database database,
@@ -136,7 +137,7 @@ class ConflictResolverService {
                         onFinished.completed(t, d);
                         removePendingTask(t);
                     });
-            if(state != ConflictResolverState.RUNNING) {
+            if (state != ConflictResolverState.RUNNING) {
                 resolutionTask.cancel();
                 onFinished.completed(resolutionTask, doc);
                 return;
@@ -150,9 +151,9 @@ class ConflictResolverService {
     private void removePendingTask(ConflictResolutionTask task) {
         synchronized (lock) {
             pendingResolutions.remove(task);
-            if(state == ConflictResolverState.STOPPING && pendingResolutions.isEmpty()) {
+            if (state == ConflictResolverState.STOPPING && pendingResolutions.isEmpty()) {
                 state = ConflictResolverState.STOPPED;
-                if(pendingShutdownCompletion != null) {
+                if (pendingShutdownCompletion != null) {
                     pendingShutdownCompletion.run();
                 }
             }
