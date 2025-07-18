@@ -669,6 +669,9 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4MultipeerReplicator_g
     memcpy(peerId.bytes, peerIdSlice.buf, sizeof(peerId.bytes));
 
     C4PeerInfo *info = c4peersync_getPeerInfo((C4PeerSync *) peer, peerId);
+    if(info == nullptr) {
+        return nullptr;
+    }
 
     C4SliceResult rawCertChain = c4cert_copyChainData(info->certificate);
     jbyteArray certChain = toJByteArray(env, rawCertChain);
