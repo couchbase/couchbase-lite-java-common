@@ -21,16 +21,29 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertPath;
+import java.security.cert.CertPathValidator;
+import java.security.cert.CertPathValidatorException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
+import java.security.cert.PKIXParameters;
+import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+
+import com.couchbase.lite.LogDomain;
+import com.couchbase.lite.internal.logging.Log;
 
 
 public final class CertUtils {
     private static final String CERT_TYPE = "X.509";
+    private static final String VALIDATION_TYPE = "PKIX";
 
     private CertUtils() {
         // Prevent instantiation
@@ -71,6 +84,31 @@ public final class CertUtils {
             return retVal;
         }
         catch (IOException e) { throw new CertificateException("Failed streaming cert on fromBytes", e); }
+    }
+
+    public static boolean validate(List<X509Certificate> chain, List<X509Certificate> roots) {
+        try {
+            final CertificateFactory cf = CertificateFactory.getInstance(CERT_TYPE);
+            final CertPath certPath = cf.generateCertPath(chain);
+
+            final Set<TrustAnchor> trustAnchors = new HashSet<>();
+            for (X509Certificate root : roots) {
+                trustAnchors.add(new TrustAnchor(root, null));
+            }
+
+            final PKIXParameters validateParameters = new PKIXParameters(trustAnchors);
+            validateParameters.setRevocationEnabled(false);
+
+            final CertPathValidator validator = CertPathValidator.getInstance(VALIDATION_TYPE);
+            validator.validate(certPath, validateParameters);
+            return true;
+        } catch (CertificateException | InvalidAlgorithmParameterException | NoSuchAlgorithmException e) {
+            Log.w(LogDomain.MULTIPEER, "Error validating certificate chain", e);
+            return false;
+        } catch (CertPathValidatorException e) {
+            Log.w(LogDomain.MULTIPEER, "Certificate chain is invalid", e);
+            return false;
+        }
     }
 }
 

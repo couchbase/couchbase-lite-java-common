@@ -159,6 +159,7 @@
     <rule ref="category/java/performance.xml">
         <exclude name="UseStringBufferForStringAppends" />
         <exclude name="AvoidInstantiatingObjectsInLoops" />
+        <exclude name="AvoidFileStream" />
     </rule>
 
 
