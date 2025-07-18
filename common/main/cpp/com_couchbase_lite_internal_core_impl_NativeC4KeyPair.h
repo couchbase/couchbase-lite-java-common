@@ -19,7 +19,7 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4KeyPair_generateSelfS
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4KeyPair
- * Method:    generateSelfSignedCertificate
+ * Method:    generateCACertificate
  * Signature: (JBI[B[B[[Ljava/lang/String;BJ)[B
  */
 JNIEXPORT jbyteArray
