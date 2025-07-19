@@ -673,9 +673,12 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4MultipeerReplicator_g
         return nullptr;
     }
 
-    C4SliceResult rawCertChain = c4cert_copyChainData(info->certificate);
-    jbyteArray certChain = toJByteArray(env, rawCertChain);
-    c4slice_free(rawCertChain);
+    jbyteArray certChain = nullptr;
+    if(info->certificate) {
+        C4SliceResult rawCertChain = c4cert_copyChainData(info->certificate);
+        certChain = toJByteArray(env, rawCertChain);
+        c4slice_free(rawCertChain);
+    }
 
     jobject replStatus = toJavaReplStatus(env, info->replicatorStatus);
     jobjectArray neighborIds = fromC4PeerID(env, info->neighbors, info->neighborCount);
