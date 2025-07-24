@@ -101,7 +101,7 @@ namespace litecore::jni {
             m_C4MultipeerReplicator_createPeerInfo = env->GetStaticMethodID(
                     cls_C4MultipeerReplicator,
                     "createPeerInfo",
-                    "([B[BZ[[BLcom/couchbase/lite/ReplicatorStatus;)Lcom/couchbase/lite/PeerInfo;");
+                    "([B[BZ[[BLcom/couchbase/lite/internal/core/C4ReplicatorStatus;)Lcom/couchbase/lite/PeerInfo;");
 
             if (m_C4MultipeerReplicator_createPeerInfo == nullptr)
                 return false;
