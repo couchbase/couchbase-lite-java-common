@@ -18,8 +18,10 @@
 #ifdef COUCHBASE_ENTERPRISE
 
 #include <vector>
+#include <memory>
 #include "native_glue.hh"
 #include "c4Base.h"
+#include "Defer.hh"
 #include "com_couchbase_lite_internal_core_impl_NativeC4Listener.h"
 #include "com_couchbase_lite_internal_core_impl_NativeC4KeyPair.h"
 
@@ -642,51 +644,46 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4KeyPair_fromExternal(
     return (jlong) createKeyPair(env, algorithm, keyBits, context);
 }
 
-JNIEXPORT jbyteArray JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4KeyPair_generateSelfSignedCertificate(
+static jbyteArray generateCertificate(
         JNIEnv *env,
-        jclass ignore,
         jlong c4KeyPair,
-        jbyte algorithm,
-        jint keyBits,
+        jbyteArray caKey,
+        jbyteArray caCertificate,
         jobjectArray nameComponents,
         jbyte usage,
         jlong validityInSeconds) {
     auto keys = (C4KeyPair *) c4KeyPair;
+    jbyteArraySlice caKeySlice(env, caKey);
+    jbyteArraySlice caCertSlice(env, caCertificate);
 
     int size = env->GetArrayLength(nameComponents);
-    auto *subjectName = new C4CertNameComponent[size];
+    std::vector<C4CertNameComponent> subjectNames;
+    subjectNames.reserve(size);
 
     // For retaining jstringSlice objects of cert's attributes and values:
-    std::vector<jstringSlice *> attrs;
+    std::vector<std::unique_ptr<jstringSlice>> attrs;
     for (int i = 0; i < size; ++i) {
         auto component = (jobjectArray) env->GetObjectArrayElement(nameComponents, i);
         if (component == nullptr) continue;
 
         auto key = (jstring) env->GetObjectArrayElement(component, 0);
-        auto *keySlice = new jstringSlice(env, key);
+        attrs.emplace_back(new jstringSlice(env, key));
+        auto* keySlice = attrs[attrs.size() - 1].get();
         if (key != nullptr) env->DeleteLocalRef(key);
 
         auto value = (jstring) env->GetObjectArrayElement(component, 1);
-        auto *valueSlice = new jstringSlice(env, value);
+        attrs.emplace_back(new jstringSlice(env, key));
+        auto* valueSlice = attrs[attrs.size() - 1].get();
         if (value != nullptr) env->DeleteLocalRef(value);
 
         env->DeleteLocalRef(component);
 
-        attrs.push_back(keySlice);
-        attrs.push_back(valueSlice);
-
-        subjectName[i] = {*keySlice, *valueSlice};
+        subjectNames.emplace_back(C4CertNameComponent {*keySlice, *valueSlice});
     }
 
     C4Error error{};
-    C4Cert *csr = c4cert_createRequest(subjectName, size, usage, keys, &error);
-
-    // Release cert's attributes and values:
-    delete[] subjectName;
-    for (int i = 0; i < attrs.size(); i++) {
-        delete attrs.at(i);
-    }
+    C4Cert *csr = c4cert_createRequest(subjectNames.data(), size, usage, keys, &error);
+    DEFER { c4cert_release(csr); };
 
     if (csr == nullptr) {
         throwError(env, error);
@@ -697,17 +694,59 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4KeyPair_generateSelfSignedCer
     if (validityInSeconds > 0)
         issuerParams.validityInSeconds = validityInSeconds;
 
-    C4Cert *cert = c4cert_signRequest(csr, &issuerParams, keys, nullptr, &error);
-    c4cert_release(csr);
+    C4KeyPair* issuerKey = keys;
+    C4Cert* issuerCert = nullptr;
+    if(caKey != nullptr && caCertificate != nullptr) {
+        issuerKey = c4keypair_fromPrivateKeyData(caKeySlice, kC4SliceNull, &error);
+        DEFER { c4keypair_release(issuerKey); };
+        if(!issuerKey) {
+            throwError(env, error);
+            return nullptr;
+        }
+
+        issuerCert = c4cert_fromData(caCertSlice, &error);
+        DEFER { c4cert_release(issuerCert); };
+        if(!issuerCert) {
+            throwError(env, error);
+            return nullptr;
+        }
+    }
+
+    C4Cert *cert = c4cert_signRequest(csr, &issuerParams, issuerKey, issuerCert, &error);
+    DEFER { c4cert_release(cert); };
     if (cert == nullptr) {
         throwError(env, error);
         return nullptr;
     }
 
     jbyteArray certData = fromC4Cert(env, cert);
-    c4cert_release(cert);
-
     return certData;
+}
+
+JNIEXPORT jbyteArray JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4KeyPair_generateSelfSignedCertificate(
+        JNIEnv *env,
+        jclass ignore,
+        jlong c4KeyPair,
+        jbyte algorithm,
+        jint keyBits,
+        jobjectArray nameComponents,
+        jbyte usage,
+        jlong validityInSeconds) {
+    return generateCertificate(env, c4KeyPair, nullptr, nullptr, nameComponents, usage, validityInSeconds);
+}
+
+JNIEXPORT jbyteArray JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4KeyPair_generateCASignedCertificate(
+        JNIEnv *env,
+        jclass ignore,
+        jlong c4KeyPair,
+        jbyteArray caKey,
+        jbyteArray caCertificate,
+        jobjectArray nameComponents,
+        jbyte usage,
+        jlong validityInSeconds) {
+    return generateCertificate(env, c4KeyPair, caKey, caCertificate, nameComponents, usage, validityInSeconds);
 }
 
 JNIEXPORT void JNICALL
