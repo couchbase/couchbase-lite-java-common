@@ -667,22 +667,22 @@ static jbyteArray generateCertificate(
         if (component == nullptr) continue;
 
         auto key = (jstring) env->GetObjectArrayElement(component, 0);
-        attrs.emplace_back(new jstringSlice(env, key));
+        attrs.emplace_back(std::make_unique<jstringSlice>(env, key));
         auto* keySlice = attrs[attrs.size() - 1].get();
         if (key != nullptr) env->DeleteLocalRef(key);
 
         auto value = (jstring) env->GetObjectArrayElement(component, 1);
-        attrs.emplace_back(new jstringSlice(env, key));
+        attrs.emplace_back(std::make_unique<jstringSlice>(env, value));
         auto* valueSlice = attrs[attrs.size() - 1].get();
         if (value != nullptr) env->DeleteLocalRef(value);
 
         env->DeleteLocalRef(component);
 
-        subjectNames.emplace_back(C4CertNameComponent {*keySlice, *valueSlice});
+        subjectNames.push_back(C4CertNameComponent { *keySlice, *valueSlice });
     }
 
     C4Error error{};
-    C4Cert *csr = c4cert_createRequest(subjectNames.data(), size, usage, keys, &error);
+    C4Cert *csr = c4cert_createRequest(subjectNames.data(), subjectNames.size(), usage, keys, &error);
     DEFER { c4cert_release(csr); };
 
     if (csr == nullptr) {
@@ -698,14 +698,12 @@ static jbyteArray generateCertificate(
     C4Cert* issuerCert = nullptr;
     if(caKey != nullptr && caCertificate != nullptr) {
         issuerKey = c4keypair_fromPrivateKeyData(caKeySlice, kC4SliceNull, &error);
-        DEFER { c4keypair_release(issuerKey); };
         if(!issuerKey) {
             throwError(env, error);
             return nullptr;
         }
 
         issuerCert = c4cert_fromData(caCertSlice, &error);
-        DEFER { c4cert_release(issuerCert); };
         if(!issuerCert) {
             throwError(env, error);
             return nullptr;
@@ -713,7 +711,12 @@ static jbyteArray generateCertificate(
     }
 
     C4Cert *cert = c4cert_signRequest(csr, &issuerParams, issuerKey, issuerCert, &error);
-    DEFER { c4cert_release(cert); };
+    DEFER {
+        c4keypair_release(issuerKey);
+        c4cert_release(issuerCert);
+        c4cert_release(cert);
+    };
+    
     if (cert == nullptr) {
         throwError(env, error);
         return nullptr;
