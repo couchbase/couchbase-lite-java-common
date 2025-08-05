@@ -380,8 +380,9 @@ class ConflictResolutionTest : BaseReplicatorTest() {
         // An instrumented replicator: it counts documentEnded calls.
         val conflictedCount = AtomicInteger()
         val unconflictedCount = AtomicInteger()
-        val repl: AbstractReplicator = object :
-            AbstractReplicator(ReplicatorConfiguration(mockURLEndpoint).addCollection(testCollection, null)) {
+
+        val configs: Set<CollectionConfiguration> = CollectionConfiguration.fromCollections(setOf(testCollection))
+        val repl: AbstractReplicator = object : AbstractReplicator(ReplicatorConfiguration(configs, mockURLEndpoint)) {
             override fun createReplicatorForTarget(target: Endpoint): C4Replicator = TODO("Not implemented")
             override fun handleOffline(state: ReplicatorActivityLevel, online: Boolean) = TODO("Not implemented")
 

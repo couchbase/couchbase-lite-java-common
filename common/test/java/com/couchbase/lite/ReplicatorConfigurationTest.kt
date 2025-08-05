@@ -61,8 +61,8 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
     // Can't test the EE parameter (self-signed only) here
     @Test
     fun testCreateConfigDefaults() {
-        val config = ReplicatorConfiguration(mockURLEndpoint)
-        config.addCollection(testCollection, null)
+        val collectionConfigs = CollectionConfiguration.fromCollections(setOf(testCollection))
+        val config = ReplicatorConfiguration(collectionConfigs, mockURLEndpoint)
 
         val immutableConfig = ImmutableReplicatorConfiguration(config)
         Assert.assertEquals(Defaults.Replicator.TYPE, immutableConfig.type)
@@ -91,8 +91,8 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
     // Can't test the EE parameter (self-signed only) here
     @Test
     fun testCreateConfigCompatibility() {
-        val config = ReplicatorConfiguration(mockURLEndpoint)
-        config.addCollection(testCollection, null)
+        val collectionConfigs = CollectionConfiguration.fromCollections(setOf(testCollection))
+        val config = ReplicatorConfiguration(collectionConfigs, mockURLEndpoint)
 
         config.heartbeat = 6
         config.maxAttempts = 6
@@ -390,6 +390,7 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
 
     // 8.13.6a Create a config object with ReplicatorConfiguration.init(endpoint: endpoint).
     // Access collections property and an empty collection list should be returned.\
+    @Suppress("DEPRECATION")
     @Test
     fun testCreateConfigWithEndpointOnly1() {
         val replConfig1 = ReplicatorConfiguration(mockURLEndpoint)
@@ -423,6 +424,7 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
     // the returned configs of both collections. The returned configs should be
     // different instances. The conflict resolver and filters of both configs should be
     // all NULL.
+    @Suppress("DEPRECATION")
     @Test
     fun testAddCollectionsWithoutCollectionConfig() {
         val collectionA = testDatabase.createCollection("colA", "scopeA")
@@ -467,6 +469,7 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
     // returned configs of both collections should be different instances. The conflict
     // resolver and filters of both configs should be the same as what was specified
     // when calling addCollections().
+    @Suppress("DEPRECATION")
     @Test
     fun testAddCollectionsWithCollectionConfig() {
         val collectionA = testDatabase.createCollection("colA", "scopeA")
@@ -517,6 +520,7 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
     // returned config of the colA should contain all NULL values. The returned config
     // of the colB should contain the values according to the config used when adding
     // the collection.
+    @Suppress("DEPRECATION")
     @Test
     fun testAddCollection() {
         val collectionA = testDatabase.createCollection("colA", "scopeA")
@@ -579,6 +583,7 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
     // Use getCollectionConfig() to get the collection config for colA and colB. Check
     // the returned configs of both collections and ensure that both configs contain
     // the updated values correctly.
+    @Suppress("DEPRECATION")
     @Test
     fun testUpdateCollectionConfigA() {
         val collectionA = testDatabase.createCollection("colA", "scopeA")
@@ -722,6 +727,7 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
     //
     // Use getCollectionConfig() to get the collection config for colA and colB. The
     // returned config for the colB should be NULL.
+    @Suppress("DEPRECATION")
     @Test
     fun testRemoveCollection() {
         val collectionA = testDatabase.createCollection("colA", "scopeA")
@@ -764,6 +770,7 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
     //
     // Use addCollection() to add colB. An invalid argument exception should be thrown
     // as the collections are from different database instances.
+    @Suppress("DEPRECATION")
     @Test
     fun testAddCollectionsFromDifferentDatabaseInstancesA() {
         val collectionA = testDatabase.createCollection("colA", "scopeA")
@@ -789,6 +796,7 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
     //
     // Use addCollection() to add colB. An invalid argument exception should be thrown
     // as the collections are from different database instances.
+    @Suppress("DEPRECATION")
     @Test
     fun testAddCollectionsFromDifferentDatabaseInstancesB() {
         val collectionA = testDatabase.createCollection("colA", "scopeA")
@@ -814,6 +822,7 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
     // Use addCollection() to add colA. Ensure that the colA has been added correctly.
     //
     // Use addCollection() to add colB. An invalid argument exception should be thrown as an added collection has been deleted.
+    @Suppress("DEPRECATION")
     @Test
     fun testAddDeletedCollectionsA() {
         val collectionA = testDatabase.createCollection("colA", "scopeA")
@@ -840,6 +849,7 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
     // Use addCollection() to add colA. Ensure that the colA has been added correctly.
     //
     // Use addCollection() to add colB. An invalid argument exception should be thrown as an added collection has been deleted.
+    @Suppress("DEPRECATION")
     @Test
     fun testAddDeletedCollectionsB() {
         val collectionA = testDatabase.createCollection("colA", "scopeA")
@@ -870,6 +880,7 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
     // Use addCollection() to add colA. Ensure that the colA has been added correctly.
     //
     // Use addCollection() to add colB. An invalid argument exception should be thrown as an added collection has been deleted.
+    @Suppress("DEPRECATION")
     @Test
     fun testAddDeletedCollectionsC() {
         testDatabase.createCollection("colA", "scopeA")
@@ -885,6 +896,7 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
     // CBL-3736
     // Attempting to configure a replicator with no collection
     // should throw an illegal argument exception.
+    @Suppress("DEPRECATION")
     @Test
     fun testCreateReplicatorWithNoCollections() {
         Assert.assertThrows(IllegalArgumentException::class.java) { Replicator(ReplicatorConfiguration(mockURLEndpoint)) }

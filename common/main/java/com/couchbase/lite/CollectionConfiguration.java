@@ -19,11 +19,16 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+
+import com.couchbase.lite.internal.utils.Preconditions;
 
 
 public class CollectionConfiguration {
     @Nullable
+    private Collection collection;
     private List<String> channels;
     @Nullable
     private List<String> documentIDs;
@@ -38,8 +43,28 @@ public class CollectionConfiguration {
     // Constructors
     //---------------------------------------------
 
+    /**
+     * Creates a configuration instance.
+     *
+     * @deprecated This constructor is deprecated. Use {@link #CollectionConfiguration(Collection)}
+     * and setter methods to configure channels, filters, and a cusom conflict resolver.
+     */
+    @Deprecated
     public CollectionConfiguration() { }
 
+    /**
+     * Creates a configuration instance.
+     *
+     * @deprecated This constructor is deprecated. Use {@link #CollectionConfiguration(Collection)}
+     * and setter methods to configure channels, filters, and a cusom conflict resolver.
+     *
+     * @param channels           The list of channels to pull from Sync Gateway.
+     * @param documentIDs        The list of document IDs to filter replication.
+     * @param pullFilter         The filter function for pulling documents.
+     * @param pushFilter         The filter function for pushing documents.
+     * @param conflictResolver   The custom conflict resolver.
+     */
+    @Deprecated
     public CollectionConfiguration(
         @Nullable List<String> channels,
         @Nullable List<String> documentIDs,
@@ -53,8 +78,57 @@ public class CollectionConfiguration {
         this.conflictResolver = conflictResolver;
     }
 
+    /**
+     * Creates a new configuration instance for the given collection.
+     *
+     * <p>Use setter methods to customize the configuration such as channels, filters or
+     * a custom conflict resolver.</p>
+     *
+     * @param collection The {@link Collection} instance to replicate.
+     */
+    public CollectionConfiguration(@NonNull Collection collection) {
+        this.collection = collection;
+    }
+
+    /**
+     * Internal API.
+     * Creates a new {@link CollectionConfiguration} by copying the values from another instance
+     * */
     CollectionConfiguration(@NonNull CollectionConfiguration config) {
-        this(config.channels, config.documentIDs, config.pullFilter, config.pushFilter, config.conflictResolver);
+        this.collection = config.collection;
+        this.channels = config.channels != null ? new ArrayList<>(config.channels) : null;
+        this.documentIDs = config.documentIDs != null ? new ArrayList<>(config.documentIDs) : null;
+        this.pullFilter = config.pullFilter;
+        this.pushFilter = config.pushFilter;
+        this.conflictResolver = config.conflictResolver;
+    }
+
+    //---------------------------------------------
+    // Factory
+    // ---------------------------------------------
+
+    /**
+     * Creates a set of {@link CollectionConfiguration} instances from the given collections.
+     *
+     * <p>Each specified collection will be wrapped in a {@link CollectionConfiguration}
+     * using default settings (no filters and no custom conflict resolvers).</p>
+     *
+     * <p>This is a convenience method for configuring multiple collections with
+     * default replication settings. If custom configurations are needed,
+     * construct {@link CollectionConfiguration} instances directly instead.</p>
+     *
+     * @param collections A collection of {@link Collection} instances to replicate.
+     * @return A set of {@link CollectionConfiguration} instances for the provided collections.
+     */
+    @NonNull
+    public static Set<CollectionConfiguration> fromCollections(@NonNull java.util.Collection<Collection> collections) {
+        Preconditions.assertNotNull(collections, "collections");
+        Preconditions.assertNotEmpty(collections, "collections");
+        final Set<CollectionConfiguration> configs = new HashSet<>();
+        for (Collection collection : collections) {
+            configs.add(new CollectionConfiguration(collection));
+        }
+        return configs;
     }
 
     //---------------------------------------------
@@ -140,6 +214,14 @@ public class CollectionConfiguration {
     //---------------------------------------------
 
     /**
+     * Returns the collection.
+     */
+    @Nullable
+    public final Collection getCollection() {
+        return collection;
+    }
+
+    /**
      * Sets a collection of Sync Gateway channel names from which to pull Documents.
      * If unset, all accessible channels will be pulled.
      * Default is empty: pull from all accessible channels.
@@ -193,6 +275,7 @@ public class CollectionConfiguration {
             + ((pushFilter != null) ? ">" : "")
             + "): "
             + channels + ", "
-            + documentIDs + "}";
+            + documentIDs + "}"
+            + (collection != null ? ", collection=" + collection.getFullName() : "");
     }
 }

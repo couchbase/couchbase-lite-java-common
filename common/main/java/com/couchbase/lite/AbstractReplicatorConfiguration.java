@@ -44,6 +44,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
  * Replicator configuration.
  */
 @SuppressWarnings({
+    "PMD.ExcessivePublicCount",
     "PMD.TooManyFields",
     "PMD.TooManyMethods",
     "PMD.UnnecessaryFullyQualifiedName",
@@ -89,6 +90,23 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
         collections.put(defaultCollection, new CollectionConfiguration());
 
         return collections;
+    }
+
+    @NonNull
+    protected static Map<Collection, CollectionConfiguration> createCollectionConfigMap(
+            @NonNull java.util.Collection<CollectionConfiguration> configs) {
+        Preconditions.assertNotNull(configs, "collections");
+        Preconditions.assertNotEmpty(configs, "collections");
+
+        final Map<Collection, CollectionConfiguration> map = new HashMap<>();
+        for (CollectionConfiguration config : configs) {
+            final Collection collection = config.getCollection();
+            if (collection == null) {
+                throw new IllegalArgumentException("Each CollectionConfiguration must have a non-null Collection.");
+            }
+            map.put(collection, config);
+        }
+        return map;
     }
 
     @Nullable
@@ -218,7 +236,23 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
         this.maxAttemptWaitTime = maxAttemptWaitTime;
         this.heartbeat = heartbeat;
         this.enableAutoPurge = enableAutoPurge;
-        this.database = database;
+
+        if (database != null) {
+            // Using legacy database API or the database has been validated and set
+            this.database = database;
+        } else if (collections != null) {
+            // Get the database from the collection configs if specified
+            for (Collection collection : collections.keySet()) {
+                if (this.database == null) {
+                    this.database = collection.getDatabase();
+                } else {
+                    if (!this.database.equals(collection.getDatabase())) {
+                        throw new IllegalArgumentException(
+                                "Use collection " + collection.getFullName() + " from different database");
+                    }
+                }
+            }
+        }
     }
 
     //---------------------------------------------
@@ -233,7 +267,10 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
      * @param collection the collection
      * @param config     its configuration
      * @return this
+     *
+     * @deprecated Use ReplicatorConfiguration(java.util.Collection, Endpoint)} instead.
      */
+    @Deprecated
     @NonNull
     public final ReplicatorConfiguration addCollection(
         @NonNull Collection collection,
@@ -252,7 +289,10 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
      * @param collections a collection of Collections
      * @param config      the configuration to be applied to all of the collections
      * @return this
+     *
+     * @deprecated Use ReplicatorConfiguration(java.util.Collection, Endpoint)} instead.
      */
+    @Deprecated
     @NonNull
     public final ReplicatorConfiguration addCollections(
         @NonNull java.util.Collection<Collection> collections,
@@ -268,7 +308,10 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
      *
      * @param collection the collection to be removed
      * @return this
+     *
+     * @deprecated Use ReplicatorConfiguration(java.util.Collection, Endpoint)} instead.
      */
+    @Deprecated
     @NonNull
     public final ReplicatorConfiguration removeCollection(@NonNull Collection collection) {
         removeCollectionInternal(collection);
@@ -590,7 +633,10 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
      *
      * @param collection a collection whose configuration is sought.
      * @return the collections configuration
+     *
+     * @deprecated Use getCollectionConfigs() instead.
      */
+    @Deprecated
     @Nullable
     public final CollectionConfiguration getCollectionConfiguration(@NonNull Collection collection) {
         final CollectionConfiguration config = collectionConfigurations.get(collection);
@@ -599,9 +645,22 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
 
     /**
      * Return the list of collections in the replicator configuration
+     *
+     * @deprecated Use getCollectionConfigs() instead.
      */
+    @Deprecated
     @NonNull
     public final Set<Collection> getCollections() { return new HashSet<>(collectionConfigurations.keySet()); }
+
+    /**
+     * Returns a copy of the collection configurations associated with this replicator configuration.
+     *
+     * @return a set of {@link CollectionConfiguration} objects.
+     */
+    @NonNull
+    public final Set<CollectionConfiguration> getCollectionConfigs() {
+        return new HashSet<>(collectionConfigurations.values());
+    }
 
     /**
      * Return Replicator type indicating the direction of the replicator.
@@ -844,6 +903,8 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     @SuppressFBWarnings(
         {"NP_NULL_ON_SOME_PATH", "NP_LOAD_OF_KNOWN_NULL_VALUE", "RCN_REDUNDANT_NULLCHECK_OF_NULL_VALUE"})
     private void addCollectionConfig(@NonNull Collection collection, @NonNull CollectionConfiguration config) {
+        Preconditions.assertThat(config.getCollection() == null,
+                "CollectionConfiguration created with a Collection is not allowed.");
         final Database db = Preconditions.assertNotNull(collection, "collection").getDatabase();
         if (database == null) { database = db; }
         else {
