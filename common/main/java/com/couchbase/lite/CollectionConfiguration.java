@@ -47,7 +47,7 @@ public class CollectionConfiguration {
      * Creates a configuration instance.
      *
      * @deprecated This constructor is deprecated. Use {@link #CollectionConfiguration(Collection)}
-     * and setter methods to configure channels, filters, and a cusom conflict resolver.
+     * and setter methods to configure channels, filters, and a custom conflict resolver.
      */
     @Deprecated
     public CollectionConfiguration() { }
@@ -56,7 +56,7 @@ public class CollectionConfiguration {
      * Creates a configuration instance.
      *
      * @deprecated This constructor is deprecated. Use {@link #CollectionConfiguration(Collection)}
-     * and setter methods to configure channels, filters, and a cusom conflict resolver.
+     * and setter methods to configure channels, filters, and a custom conflict resolver.
      *
      * @param channels           The list of channels to pull from Sync Gateway.
      * @param documentIDs        The list of document IDs to filter replication.

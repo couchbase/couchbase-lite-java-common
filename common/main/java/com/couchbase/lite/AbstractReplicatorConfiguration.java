@@ -268,7 +268,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
      * @param config     its configuration
      * @return this
      *
-     * @deprecated Use ReplicatorConfiguration(java.util.Collection, Endpoint)} instead.
+     * @deprecated Use ReplicatorConfiguration(java.util.Collection&lt;CollectionConfiguration&gt;, Endpoint) instead.
      */
     @Deprecated
     @NonNull
@@ -290,7 +290,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
      * @param config      the configuration to be applied to all of the collections
      * @return this
      *
-     * @deprecated Use ReplicatorConfiguration(java.util.Collection, Endpoint)} instead.
+     * @deprecated Use ReplicatorConfiguration(java.util.Collection&lt;CollectionConfiguration&gt;, Endpoint) instead.
      */
     @Deprecated
     @NonNull
@@ -309,7 +309,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
      * @param collection the collection to be removed
      * @return this
      *
-     * @deprecated Use ReplicatorConfiguration(java.util.Collection, Endpoint)} instead.
+     * @deprecated Use ReplicatorConfiguration(java.util.Collection&lt;CollectionConfiguration&gt;, Endpoint) instead.
      */
     @Deprecated
     @NonNull
@@ -903,8 +903,10 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     @SuppressFBWarnings(
         {"NP_NULL_ON_SOME_PATH", "NP_LOAD_OF_KNOWN_NULL_VALUE", "RCN_REDUNDANT_NULLCHECK_OF_NULL_VALUE"})
     private void addCollectionConfig(@NonNull Collection collection, @NonNull CollectionConfiguration config) {
-        Preconditions.assertThat(config.getCollection() == null,
-                "CollectionConfiguration created with a Collection is not allowed.");
+        Preconditions.assertThat(
+                config.getCollection() == null || config.getCollection() == collection,
+                "CollectionConfiguration collection must be null or match the given collection."
+        );
         final Database db = Preconditions.assertNotNull(collection, "collection").getDatabase();
         if (database == null) { database = db; }
         else {
