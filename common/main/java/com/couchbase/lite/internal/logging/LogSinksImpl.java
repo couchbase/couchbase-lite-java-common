@@ -205,6 +205,7 @@ public final class LogSinksImpl implements LogSinks {
     public BaseLogSink getCustom() { return customLogSink; }
 
     @Override
+    @SuppressWarnings("PMD.CloseResource")
     public void setCustom(@Nullable BaseLogSink newSink) {
         forbidNewAndLegacyLogging(newSink);
         customLogSink = newSink;

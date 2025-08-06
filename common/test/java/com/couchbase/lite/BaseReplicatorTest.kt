@@ -136,13 +136,14 @@ abstract class BaseReplicatorTest : BaseDbTest() {
     }
 
     protected fun makeCollectionConfig(
+        collection: Collection = testCollection,
         channels: List<String>? = null,
         docIds: List<String>? = null,
         pullFilter: ReplicationFilter? = null,
         pushFilter: ReplicationFilter? = null,
         resolver: ConflictResolver? = null
     ): CollectionConfiguration {
-        val config = CollectionConfiguration()
+        val config = CollectionConfiguration(collection)
         channels?.let { config.channels = it }
         docIds?.let { config.documentIDs = it }
         pullFilter?.let { config.pullFilter = it }
@@ -153,33 +154,8 @@ abstract class BaseReplicatorTest : BaseDbTest() {
 
     protected fun makeSimpleReplConfig(
         target: Endpoint = mockURLEndpoint,
-        source: kotlin.collections.Collection<Collection> = setOf(testCollection),
-        srcConfig: CollectionConfiguration? = null,
-        type: ReplicatorType? = null,
-        continuous: Boolean? = null,
-        authenticator: Authenticator? = null,
-        headers: Map<String, String>? = null,
-        pinnedServerCert: Certificate? = null,
-        maxAttempts: Int = 1,
-        maxAttemptWaitTime: Int = 1,
-        autoPurge: Boolean = true
-    ) = makeReplConfig(
-        target,
-        mapOf(source to srcConfig),
-        type,
-        continuous,
-        authenticator,
-        headers,
-        pinnedServerCert,
-        maxAttempts,
-        maxAttemptWaitTime,
-        autoPurge
-    )
-
-    protected fun makeReplConfig(
-        target: Endpoint = mockURLEndpoint,
-        source: Map<out kotlin.collections.Collection<Collection>, CollectionConfiguration?> =
-            mapOf(setOf(testCollection) to null),
+        source: kotlin.collections.Collection<CollectionConfiguration> =
+            CollectionConfiguration.fromCollections(setOf(testCollection)),
         type: ReplicatorType? = null,
         continuous: Boolean? = null,
         authenticator: Authenticator? = null,
@@ -189,9 +165,7 @@ abstract class BaseReplicatorTest : BaseDbTest() {
         maxAttemptWaitTime: Int = 1,
         autoPurge: Boolean = true
     ): ReplicatorConfiguration {
-        val config = ReplicatorConfiguration(target)
-
-        source.forEach { config.addCollections(it.key, it.value) }
+        val config = ReplicatorConfiguration(source, target)
         type?.let { config.type = it }
         continuous?.let { config.isContinuous = it }
         authenticator?.let { config.setAuthenticator(it) }
