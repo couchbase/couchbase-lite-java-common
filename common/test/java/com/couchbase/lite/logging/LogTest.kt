@@ -138,7 +138,7 @@ class LogTest : BaseDbTest() {
 
         val message = "11223344556677889900" // ~43 bytes
         // 24 * 43 = 1032
-        for (i in 0..23) {
+        repeat(24) {
             c4Log.logToCore(LogDomain.DATABASE, LogLevel.DEBUG, message)
             c4Log.logToCore(LogDomain.DATABASE, LogLevel.VERBOSE, message)
             c4Log.logToCore(LogDomain.DATABASE, LogLevel.INFO, message)
@@ -361,7 +361,7 @@ class LogTest : BaseDbTest() {
             // This should create several files for each of the 5 levels except verbose (debug, info, warning, error):
             // 1k of logs plus .5k headers. Although lots of files are created they should be trimmed to only 3
             // at each level.  There should be only one file at the verbose level (just the headers)
-            for (i in 0..20) {
+            repeat(21) {
                 write1KBToLog()
             }
             Assert.assertEquals((4 * 3) + 1, logFiles.size)
@@ -696,7 +696,7 @@ class LogTest : BaseDbTest() {
     private fun write1KBToLog() {
         val message = "11223344556677889900" // ~65 bytes including the line headers
         // 16 * 65 ~= 1024.
-        for (i in 0..15) {
+        repeat(16) {
             writeAllLogs(message)
         }
     }
