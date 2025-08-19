@@ -195,12 +195,10 @@ public class Document implements DictionaryInterface, JSONEncodable, Iterable<St
      * Get the document's timestamp.
      *
      * This value represents the actual timestamp associated with the document,
-     * indicating when it was generated or last updated. Unlike earlier versions,
-     * this method no longer return a generation number but provides a true timestamp value
+     * indicating when it was generated or last updated.
      *
      * @return the document's timestamp
      */
-    @Volatile
     public long getTimestamp() {
         synchronized (lock) { return (c4Document == null) ? 0 : c4Document.getTimestamp(); }
     }
