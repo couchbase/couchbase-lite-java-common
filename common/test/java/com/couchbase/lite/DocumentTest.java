@@ -2662,6 +2662,19 @@ public class DocumentTest extends BaseDbTest {
         Assert.assertNotEquals(docRevID, mdoc.getRevisionID());
     }
 
+    @Test
+    public void testRevisionIDIncrement() throws CouchbaseLiteException {
+        MutableDocument mdoc = new MutableDocument("doc1");
+        getTestCollection().save(mdoc);
+        long mdocTimestamp = mdoc.getTimestamp();
+
+        MutableDocument updatedMdoc = getTestCollection().getDocument("doc1").toMutable();
+        getTestCollection().save(updatedMdoc);
+        long updatedMdocTimestamp = updatedMdoc.getTimestamp();
+
+        Assert.assertEquals(1, Long.compare(updatedMdocTimestamp, mdocTimestamp));
+    }
+
     /// ////////////  JSON tests
 
     // JSON 3.2

@@ -48,7 +48,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
 
 @SuppressWarnings({"PMD.ExcessivePublicCount", "PMD.TooManyMethods"})
 public abstract class C4Database extends C4Peer {
-    public static final boolean VERSION_VECTORS_ENABLED = false;
+    public static final boolean VERSION_VECTORS_ENABLED = true;
 
     @VisibleForTesting
     public static final String DB_EXTENSION = ".cblite2";

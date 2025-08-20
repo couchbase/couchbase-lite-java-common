@@ -194,14 +194,13 @@ public class Document implements DictionaryInterface, JSONEncodable, Iterable<St
     /**
      * Get the document's timestamp.
      *
-     * The values returned by this method are, actually, just the document's generation
-     * number.  This is a increasing number but not, until future releases, an actual timestamp.
+     * This value represents the actual timestamp associated with the document,
+     * indicating when it was generated or last updated.
      *
      * @return the document's timestamp
      */
-    @Volatile
     public long getTimestamp() {
-        synchronized (lock) { return (c4Document == null) ? -1 : c4Document.getTimestamp(); }
+        synchronized (lock) { return (c4Document == null) ? 0 : c4Document.getTimestamp(); }
     }
 
     /**
