@@ -265,12 +265,12 @@ public final class C4Log {
 
     @VisibleForTesting
     public void setLogLevel(@NonNull LogDomain domain, @NonNull LogLevel level) {
-        Set<String> c4Domains = LOGGING_DOMAIN_TO_C4.get(domain);
-        if(c4Domains == null) {
+        final Set<String> c4Domains = LOGGING_DOMAIN_TO_C4.get(domain);
+        if (c4Domains == null) {
             return;
         }
 
-        for(String c4Domain : c4Domains) {
+        for (String c4Domain : c4Domains) {
             setLogLevel(c4Domain, getC4LevelForLogLevel(level));
         }
     }
