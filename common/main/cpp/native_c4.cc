@@ -65,38 +65,6 @@ bool litecore::jni::initC4Logging(JNIEnv *env) {
 
     c4log_writeToCallback((C4LogLevel) kC4LogDebug, logCallback, true);
 
-    // Start stderr reader thread for Android logcat
-#ifdef __ANDROID__
-    std::thread stderrReaderThread([]() {
-        // Redirect stderr to a pipe so we can read from it
-        int pipefd[2];
-        if (pipe(pipefd) == -1) {
-            __android_log_print(ANDROID_LOG_ERROR, "LiteCore/JNI", "Failed to create pipe for stderr reading");
-            return;
-        }
-
-        if (dup2(pipefd[1], STDERR_FILENO) == -1) {
-            __android_log_print(ANDROID_LOG_ERROR, "LiteCore/JNI", "Failed to redirect stderr to pipe");
-            close(pipefd[0]);
-            close(pipefd[1]);
-            return;
-        }
-
-        close(pipefd[1]); // Close write end in this thread
-        FILE* inputFile = fdopen(pipefd[0], "r");
-        char readBuffer[256];
-#pragma clang diagnostic push
-#pragma ide diagnostic ignored "EndlessLoop"
-        while(true) {
-            fgets(readBuffer, 256, inputFile);
-            __android_log_write(ANDROID_LOG_ERROR, "stderr", readBuffer);
-        }
-#pragma clang diagnostic pop
-
-    });
-    stderrReaderThread.detach();
-#endif
-
     jniLog("logging initialized");
     return true;
 }

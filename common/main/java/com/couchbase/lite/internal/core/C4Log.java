@@ -118,6 +118,7 @@ public final class C4Log {
         m.put(C4Constants.LogDomain.BLOB, LogDomain.DATABASE);
         m.put(C4Constants.LogDomain.CHANGES, LogDomain.DATABASE);
         m.put(C4Constants.LogDomain.DATABASE, LogDomain.DATABASE);
+        m.put(C4Constants.LogDomain.MDNS, LogDomain.PEER_DISCOVERY);
         m.put(C4Constants.LogDomain.DISCOVERY, LogDomain.PEER_DISCOVERY);
         m.put(C4Constants.LogDomain.ENUM, LogDomain.QUERY);
         m.put(C4Constants.LogDomain.LISTENER, LogDomain.LISTENER);
@@ -264,7 +265,14 @@ public final class C4Log {
 
     @VisibleForTesting
     public void setLogLevel(@NonNull LogDomain domain, @NonNull LogLevel level) {
-        setLogLevel(getCanonicalC4DomainForLoggingDomain(domain), getC4LevelForLogLevel(level));
+        Set<String> c4Domains = LOGGING_DOMAIN_TO_C4.get(domain);
+        if(c4Domains == null) {
+            return;
+        }
+
+        for(String c4Domain : c4Domains) {
+            setLogLevel(c4Domain, getC4LevelForLogLevel(level));
+        }
     }
 
     @VisibleForTesting
