@@ -38,7 +38,6 @@ import com.couchbase.lite.internal.fleece.MRoot;
 import com.couchbase.lite.internal.utils.ClassUtils;
 import com.couchbase.lite.internal.utils.Internal;
 import com.couchbase.lite.internal.utils.Preconditions;
-import com.couchbase.lite.internal.utils.Volatile;
 
 
 /**
