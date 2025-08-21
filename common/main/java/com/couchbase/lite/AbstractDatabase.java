@@ -127,22 +127,6 @@ abstract class AbstractDatabase extends BaseDatabase
     }
 
     // ---------------------------------------------
-    // API - public static fields
-    // ---------------------------------------------
-
-    /**
-     * Gets the logging controller for the Couchbase Lite library to configure the
-     * logging settings and add custom logging.
-     *
-     * @deprecated Use LogSinks.get()
-     */
-    // Public API.  Do not fix the name.
-    @Deprecated
-    @SuppressWarnings({"ConstantName", "PMD.FieldNamingConventions"})
-    @NonNull
-    public static final com.couchbase.lite.Log log = new com.couchbase.lite.Log();
-
-    // ---------------------------------------------
     // API - public static methods
     // ---------------------------------------------
 
