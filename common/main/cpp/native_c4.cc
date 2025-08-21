@@ -22,13 +22,6 @@
 #endif
 
 #include <unordered_set>
-#include <thread>
-#include <unistd.h>
-#ifdef __ANDROID__
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#endif
 #include "native_glue.hh"
 #include "com_couchbase_lite_internal_core_impl_NativeC4.h"
 #include "com_couchbase_lite_internal_core_impl_NativeC4Log.h"
