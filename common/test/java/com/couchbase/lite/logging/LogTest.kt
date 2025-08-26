@@ -15,6 +15,7 @@ import com.couchbase.lite.internal.core.CBLVersion
 import com.couchbase.lite.internal.logging.Log
 import com.couchbase.lite.internal.logging.LogSinksImpl
 import com.couchbase.lite.internal.logging.writeToLog
+import kotlinx.coroutines.*
 import org.junit.After
 import org.junit.Assert
 import org.junit.Before
@@ -136,15 +137,21 @@ class LogTest : BaseDbTest() {
         c4Log.initFileLogging(scratchDirPath, LogLevel.DEBUG, 10, 1024, true, "$$$$ TEST")
         c4Log.setLogLevel(LogDomain.DATABASE, LogLevel.DEBUG)
 
-        val message = "11223344556677889900" // ~43 bytes
-        // 24 * 43 = 1032
-        repeat(24) {
-            c4Log.logToCore(LogDomain.DATABASE, LogLevel.DEBUG, message)
-            c4Log.logToCore(LogDomain.DATABASE, LogLevel.VERBOSE, message)
-            c4Log.logToCore(LogDomain.DATABASE, LogLevel.INFO, message)
-            c4Log.logToCore(LogDomain.DATABASE, LogLevel.WARNING, message)
-            c4Log.logToCore(LogDomain.DATABASE, LogLevel.ERROR, message)
-        }
+        val message = "11223344556677889900" // ~59 bytes worst case, for level like verbose and warning
+
+        // worst case is when warning and verbose are used as they have more characters to write in log file(plain text)
+        // worst case header size is 56 bytes with 192 bytes of info like serial no, path etc
+        // 1024 - 56 - 192 = 776 ~ 15 * 59
+         runBlocking {
+            repeat(15) {
+                delay(1)    // delay added to prevent same filename
+                c4Log.logToCore(LogDomain.DATABASE, LogLevel.DEBUG, message)
+                c4Log.logToCore(LogDomain.DATABASE, LogLevel.VERBOSE, message)
+                c4Log.logToCore(LogDomain.DATABASE, LogLevel.INFO, message)
+                c4Log.logToCore(LogDomain.DATABASE, LogLevel.WARNING, message)
+                c4Log.logToCore(LogDomain.DATABASE, LogLevel.ERROR, message)
+            }
+         }
 
         // each level should have rolled over once
         // and there may have been a few extra things logged as well.
