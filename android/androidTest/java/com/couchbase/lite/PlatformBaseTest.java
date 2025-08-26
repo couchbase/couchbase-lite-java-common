@@ -43,7 +43,7 @@ public abstract class PlatformBaseTest implements PlatformTest {
     }
 
     protected static void initCouchbase() {
-        CouchbaseLite.init(getAppContext());
+        CouchbaseLite.init(getAppContext(), true);
     }
 
     private static Context getAppContext() { return ApplicationProvider.getApplicationContext(); }
