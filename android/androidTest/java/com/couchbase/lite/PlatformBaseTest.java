@@ -18,15 +18,9 @@ package com.couchbase.lite;
 import android.content.Context;
 import android.os.Build;
 
-import androidx.annotation.NonNull;
 import androidx.test.core.app.ApplicationProvider;
 
 import java.io.File;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import com.couchbase.lite.internal.AndroidExecutionService;
@@ -48,7 +42,9 @@ public abstract class PlatformBaseTest implements PlatformTest {
         catch (Exception e) { android.util.Log.w("TEST", "Failed adding to chatty whitelist", e); }
     }
 
-    protected static void initCouchbase() { CouchbaseLite.init(getAppContext(), true); }
+    protected static void initCouchbase() {
+        CouchbaseLite.init(getAppContext(), true);
+    }
 
     private static Context getAppContext() { return ApplicationProvider.getApplicationContext(); }
 
