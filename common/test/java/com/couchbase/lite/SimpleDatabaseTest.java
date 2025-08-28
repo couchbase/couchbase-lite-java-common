@@ -119,13 +119,12 @@ public class SimpleDatabaseTest extends BaseTest {
     }
 
 
-    @SuppressWarnings("deprecation")
     @Test
-    public void testCreateWithDefaultConfiguration() {
+    public void testCreateWithDefaultConfiguration() throws CouchbaseLiteException {
         Database db = createDb("default_config_db");
         try {
             Assert.assertNotNull(db);
-            Assert.assertEquals(0, db.getCount());
+            Assert.assertEquals(0, db.getDefaultCollection().getCount());
         }
         finally { eraseDb(db); }
     }
@@ -163,7 +162,6 @@ public class SimpleDatabaseTest extends BaseTest {
         finally { eraseDb(db); }
     }
 
-    @SuppressWarnings("deprecation")
     @Test
     public void testCreateWithCustomDirectory() throws CouchbaseLiteException, IOException {
         final File dir = new File(getScratchDirectoryPath(getUniqueName("create-custom-dir")));
@@ -184,7 +182,7 @@ public class SimpleDatabaseTest extends BaseTest {
             Assert.assertTrue(path.endsWith(C4Database.DB_EXTENSION));
             Assert.assertTrue(path.contains(dir.getPath()));
 
-            Assert.assertEquals(0, db.getCount());
+            Assert.assertEquals(0, db.getDefaultCollection().getCount());
         }
         finally {
             eraseDb(db);

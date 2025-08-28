@@ -48,13 +48,4 @@ public final class DocumentChange {
     @NonNull
     @Override
     public String toString() { return "DocumentChange{" + collection + ", " + documentID + "}"; }
-
-    /**
-     * Return the Database instance
-     *
-     * @deprecated Use DocumentChange.getCollection()
-     */
-    @Deprecated
-    @NonNull
-    public Database getDatabase() { return collection.getDatabase(); }
 }

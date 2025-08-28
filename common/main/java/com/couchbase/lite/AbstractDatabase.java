@@ -22,16 +22,13 @@ import androidx.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
@@ -49,8 +46,6 @@ import com.couchbase.lite.internal.exec.ExecutionService;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLSharedKeys;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
-import com.couchbase.lite.internal.listener.ChangeListenerToken;
-import com.couchbase.lite.internal.listener.Listenable;
 import com.couchbase.lite.internal.logging.Log;
 import com.couchbase.lite.internal.logging.LogSinksImpl;
 import com.couchbase.lite.internal.replicator.ConflictResolutionException;
@@ -82,7 +77,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
     "PMD.TooManyMethods",
     "PMD.CouplingBetweenObjects"})
 abstract class AbstractDatabase extends BaseDatabase
-    implements Listenable<DatabaseChange, DatabaseChangeListener>, AutoCloseable {
+        implements AutoCloseable {
     //---------------------------------------------
     // Constants
     //---------------------------------------------
@@ -621,315 +616,6 @@ abstract class AbstractDatabase extends BaseDatabase
         return Objects.equals(getPath(), other.getPath()) && name.equals(other.name);
     }
 
-    //---------------------------------------------
-    // Deprecated API methods
-    //---------------------------------------------
-
-    /**
-     * The number of documents in the default collection.
-     *
-     * @return the number of documents in the database, 0 if database is closed.
-     * @deprecated Use getDefaultCollection().getCount()
-     */
-    @Deprecated
-    public long getCount() {
-        try {
-            synchronized (getDbLock()) { return getDefaultCollectionLocked().getCount(); }
-        }
-        catch (CouchbaseLiteException e) { throw new CouchbaseLiteError("Failed getting default collection", e); }
-    }
-
-    /**
-     * Gets an existing Document with the given ID from the default collection.
-     * If the document with the given ID doesn't exist in the default collection,
-     * the method will return null.  If the default collection does not exist or if
-     * the database is closed, the method will throw an CouchbaseLiteError
-     *
-     * @param id the document ID
-     * @return the Document object or null
-     * @throws CouchbaseLiteError when the database is closed or the default collection has been deleted
-     * @deprecated Use getDefaultCollection().getDocument()
-     */
-    @SuppressWarnings("PMD.PreserveStackTrace")
-    @Deprecated
-    @Nullable
-    public Document getDocument(@NonNull String id) {
-        synchronized (getDbLock()) {
-            try { return getDefaultCollectionOrThrow().getDocument(id); }
-            catch (CouchbaseLiteException e) { Log.i(LogDomain.DATABASE, "Failed retrieving document: %s", e, id); }
-        }
-        return null;
-    }
-
-    /**
-     * Saves a document to the default collection. When write operations are executed
-     * concurrently, the last writer will overwrite all other written values.
-     * Calling this method is the same as calling save(MutableDocument, ConcurrencyControl.LAST_WRITE_WINS)
-     *
-     * @param document The document.
-     * @throws CouchbaseLiteException on error
-     * @deprecated Use getDefaultCollection().save
-     */
-    @Deprecated
-    public void save(@NonNull MutableDocument document) throws CouchbaseLiteException {
-        save(document, ConcurrencyControl.LAST_WRITE_WINS);
-    }
-
-    /**
-     * Saves a document to the default collection. When used with LAST_WRITE_WINS
-     * concurrency control, the last write operation will win if there is a conflict.
-     * When used with FAIL_ON_CONFLICT concurrency control, save will fail when there
-     * is a conflict and the method will return false
-     *
-     * @param document           The document.
-     * @param concurrencyControl The concurrency control.
-     * @return true if successful. false if the FAIL_ON_CONFLICT concurrency
-     * @throws CouchbaseLiteException on error
-     * @deprecated Use getDefaultCollection().save()
-     */
-    @Deprecated
-    public boolean save(@NonNull MutableDocument document, @NonNull ConcurrencyControl concurrencyControl)
-        throws CouchbaseLiteException {
-        return getDefaultCollectionOrThrow().save(document, concurrencyControl);
-    }
-
-    /**
-     * Saves a document to the default collection. Conflicts will be resolved by the passed ConflictHandler
-     *
-     * @param document        The document.
-     * @param conflictHandler A conflict handler.
-     * @return true if successful. false if the FAIL_ON_CONFLICT concurrency
-     * @throws CouchbaseLiteException on error
-     * @deprecated Use getDefaultCollection().save
-     */
-    @Deprecated
-    public boolean save(@NonNull MutableDocument document, @NonNull ConflictHandler conflictHandler)
-        throws CouchbaseLiteException {
-        Preconditions.assertNotNull(document, "document");
-        Preconditions.assertNotNull(conflictHandler, "conflictHandler");
-        try { return getDefaultCollectionOrThrow().save(document, conflictHandler); }
-        catch (CouchbaseLiteException e) {
-            if (!(CBLError.Domain.CBLITE.equals(e.getDomain()) && (CBLError.Code.NOT_OPEN == e.getCode()))) { throw e; }
-            else { throw new CouchbaseLiteError(Log.lookupStandardMessage("DBClosedOrCollectionDeleted"), e); }
-        }
-    }
-
-    /**
-     * Deletes a document from the default collection. When write operations are executed
-     * concurrently, the last writer will overwrite all other written values.
-     * Calling this function is the same as calling delete(Document, ConcurrencyControl.LAST_WRITE_WINS)
-     *
-     * @param document The document.
-     * @throws CouchbaseLiteException on error
-     * @deprecated Use getDefaultCollection().delete
-     */
-    @Deprecated
-    public void delete(@NonNull Document document) throws CouchbaseLiteException {
-        delete(document, ConcurrencyControl.LAST_WRITE_WINS);
-    }
-
-    /**
-     * Deletes a document from the default collection. When used with lastWriteWins concurrency
-     * control, the last write operation will win if there is a conflict.
-     * When used with FAIL_ON_CONFLICT concurrency control, delete will fail and the method will return false.
-     *
-     * @param document           The document.
-     * @param concurrencyControl The concurrency control.
-     * @throws CouchbaseLiteException on error
-     * @deprecated Use getDefaultCollection().delete
-     */
-    @Deprecated
-    public boolean delete(@NonNull Document document, @NonNull ConcurrencyControl concurrencyControl)
-        throws CouchbaseLiteException {
-        return getDefaultCollectionOrThrow().delete(document, concurrencyControl);
-    }
-
-    /**
-     * Purges the passed document from the default collection. This is more drastic than delete(Document):
-     * it removes all local traces of the document. Purges will NOT be replicated to other databases.
-     *
-     * @param document the document to be purged.
-     * @deprecated Use getDefaultCollection().purge
-     */
-    @Deprecated
-    public void purge(@NonNull Document document) throws CouchbaseLiteException {
-        getDefaultCollectionOrThrow().purge(document);
-    }
-
-    /**
-     * Purges the document with the passed id from default collection. This is more drastic than delete(Document),
-     * it removes all local traces of the document. Purges will NOT be replicated to other databases.
-     *
-     * @param id the document ID
-     * @deprecated Use getDefaultCollection().purge
-     */
-    @Deprecated
-    public void purge(@NonNull String id) throws CouchbaseLiteException { getDefaultCollectionOrThrow().purge(id); }
-
-    /**
-     * Sets an expiration date for a document in the default collection. The document
-     * will be purged from the database at the set time.
-     *
-     * @param id         The ID of the Document
-     * @param expiration Nullable expiration timestamp as a Date, set timestamp to null
-     *                   to remove expiration date time from doc.
-     * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
-     * @deprecated Use getDefaultCollection().setDocumentExpiration
-     */
-    @Deprecated
-    public void setDocumentExpiration(@NonNull String id, @Nullable Date expiration) throws CouchbaseLiteException {
-        getDefaultCollectionOrThrow().setDocumentExpiration(id, expiration);
-    }
-
-    /**
-     * Returns the expiration time of the document. If the document has no expiration time set,
-     * the method will return null.
-     *
-     * @param id The ID of the Document
-     * @return Date a nullable expiration timestamp of the document or null if time not set.
-     * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
-     * @deprecated Use getDefaultCollection().getDocumentExpiration
-     */
-    @Deprecated
-    @Nullable
-    public Date getDocumentExpiration(@NonNull String id) throws CouchbaseLiteException {
-        return getDefaultCollectionOrThrow().getDocumentExpiration(id);
-    }
-
-    // - Change listeners:
-
-    /**
-     * Adds a change listener for the changes that occur in the database. The changes will be delivered on the UI
-     * thread for the Android platform and on an arbitrary thread for the Java platform. When developing a Java
-     * Desktop application using Swing or JavaFX that needs to update the UI after receiving the changes, make
-     * sure to schedule the UI update on the UI thread by using SwingUtilities.invokeLater(Runnable) or
-     * Platform.runLater(Runnable) respectively.
-     *
-     * @param listener callback
-     * @deprecated Use getDefaultCollection().addChangeListener
-     */
-    @Deprecated
-    @NonNull
-    public ListenerToken addChangeListener(@NonNull DatabaseChangeListener listener) {
-        return addChangeListener(null, listener);
-    }
-
-    /**
-     * Adds a change listener for the changes that occur in the database with an executor on which the changes will be
-     * posted to the listener. If the executor is not specified, the changes will be delivered on the UI thread for
-     * the Android platform and on an arbitrary thread for the Java platform.
-     *
-     * @param listener callback
-     * @deprecated Use getDefaultCollection().addChangeListener
-     */
-    @Deprecated
-    @NonNull
-    public ListenerToken addChangeListener(@Nullable Executor executor, @NonNull DatabaseChangeListener listener) {
-        return getDefaultCollectionOrThrow().addChangeListener(executor, listener::changed);
-    }
-
-    /**
-     * Adds a change listener for the changes that occur to the specified document, in the default collection.
-     * On the Android platform changes will be delivered on the UI thread.  On other Java platforms changes
-     * will be delivered on an arbitrary thread. When developing a Java Desktop application using Swing or JavaFX
-     * for a UI that will be updated in response to a change, make sure to schedule the UI update
-     * on the UI thread by using SwingUtilities.invokeLater(Runnable) or Platform.runLater(Runnable)
-     * respectively.
-     *
-     * @deprecated Use getDefaultCollection().addDocumentChangeListener
-     */
-    @Deprecated
-    @NonNull
-    public ListenerToken addDocumentChangeListener(@NonNull String docId, @NonNull DocumentChangeListener listener) {
-        return addDocumentChangeListener(docId, null, listener);
-    }
-
-    /**
-     * Adds a change listener for the changes that occur to the specified document, in the default collection.
-     * Changes will be posted to the listener on the passed  executor on which.
-     * If the executor is not specified, the changes will be delivered on the UI thread for
-     * the Android platform and on an arbitrary thread for the Java platform.
-     *
-     * @deprecated Use getDefaultCollection().addDocumentChangeListener
-     */
-    @Deprecated
-    @NonNull
-    public ListenerToken addDocumentChangeListener(
-        @NonNull String docId,
-        @Nullable Executor executor,
-        @NonNull DocumentChangeListener listener) {
-        return getDefaultCollectionOrThrow().addDocumentChangeListener(docId, executor, listener);
-    }
-
-    /**
-     * Removes a change listener added to the default collection.
-     *
-     * @param token returned by a previous call to addChangeListener or addDocumentListener.
-     * @deprecated Use ListenerToken.remove
-     */
-    @Deprecated
-    public void removeChangeListener(@NonNull ListenerToken token) {
-        Preconditions.assertNotNull(token, "token");
-        if (!(token instanceof ChangeListenerToken)) { return; }
-        final Collection defaultCollection = getDefaultCollectionOrThrow();
-        final String docId = ((ChangeListenerToken<?>) token).getKey();
-        // This hackery depends on the fact that we only set the keys for DocumentChangeListeners
-        if (docId == null) { defaultCollection.removeCollectionChangeListener(token); }
-        else { defaultCollection.removeDocumentChangeListener(token); }
-    }
-
-    // - Indices:
-
-    /**
-     * Get a list of the names of indices on the default collection.
-     *
-     * @return the list of index names
-     * @throws CouchbaseLiteException on failure
-     * @deprecated Use getDefaultCollection().getIndexes
-     */
-    @Deprecated
-    @NonNull
-    public List<String> getIndexes() throws CouchbaseLiteException {
-        return new ArrayList<>(getDefaultCollectionOrThrow().getIndexes());
-    }
-
-    /**
-     * Add an index to the default collection.
-     *
-     * @param name  index name
-     * @param index index description
-     * @throws CouchbaseLiteException on failure
-     * @deprecated Use getDefaultCollection().createIndex
-     */
-    @Deprecated
-    public void createIndex(@NonNull String name, @NonNull Index index) throws CouchbaseLiteException {
-        getDefaultCollectionOrThrow().createIndexInternal(name, index);
-    }
-
-    /**
-     * Add an index to the default collection.
-     *
-     * @param name   index name
-     * @param config index configuration
-     * @throws CouchbaseLiteException on failure
-     * @deprecated Use getDefaultCollection().createIndex
-     */
-    @Deprecated
-    public void createIndex(@NonNull String name, @NonNull IndexConfiguration config) throws CouchbaseLiteException {
-        getDefaultCollectionOrThrow().createIndexInternal(name, config);
-    }
-
-    /**
-     * Delete the named index from the default collection.
-     *
-     * @param name name of the index to delete
-     * @throws CouchbaseLiteException on failure
-     * @deprecated Use getDefaultCollection().deleteIndex
-     */
-    @Deprecated
-    public void deleteIndex(@NonNull String name) throws CouchbaseLiteException {
-        getDefaultCollectionOrThrow().deleteIndex(name);
-    }
 
     //---------------------------------------------
     // Protected access
@@ -1278,19 +964,6 @@ abstract class AbstractDatabase extends BaseDatabase
     //---------------------------------------------
 
     // - Collection:
-
-    @NonNull
-    private Collection getDefaultCollectionOrThrow() {
-        try {
-            synchronized (getDbLock()) {
-                assertOpenUnchecked();
-                return getDefaultCollectionLocked();
-            }
-        }
-        catch (CouchbaseLiteException e) {
-            throw new CouchbaseLiteError(Log.lookupStandardMessage("DBClosedOrCollectionDeleted"), e);
-        }
-    }
 
     @NonNull
     private Collection getDefaultCollectionLocked() throws CouchbaseLiteException {

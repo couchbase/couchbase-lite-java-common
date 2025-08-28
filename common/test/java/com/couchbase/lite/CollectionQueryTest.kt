@@ -843,19 +843,18 @@ class CollectionQueryTest : BaseQueryTest() {
 
     // 8.12.4a: Test that the result’s key names of the SELECT * are as follows.
     //     SELECT * FROM db => “db”
-    @Suppress("DEPRECATION")
     @Test
     fun testBuilderSelectAllResultKeyA() {
         var doc = MutableDocument()
         doc.setValue("name", "rose")
         doc.setValue("description", "Red flowers")
         doc.setValue("cid", "c1")
-        testDatabase.save(doc)
+        testDatabase.defaultCollection.save(doc)
         doc = MutableDocument()
         doc.setValue("name", "hydrangea")
         doc.setValue("description", "Blue flowers")
         doc.setValue("cid", "c2")
-        testDatabase.save(doc)
+        testDatabase.defaultCollection.save(doc)
 
         val query = QueryBuilder.select(SelectResult.all()).from(DataSource.database(testDatabase))
         query.execute().use { rs ->
@@ -867,19 +866,18 @@ class CollectionQueryTest : BaseQueryTest() {
 
     // 8.12.4b: Test that the result’s key names of the SELECT * are as follows.
     //     SELECT * FROM db AS foo => “db”
-    @Suppress("DEPRECATION")
     @Test
     fun testBuilderSelectAllResultKeyB() {
         var doc = MutableDocument()
         doc.setValue("name", "rose")
         doc.setValue("description", "Red flowers")
         doc.setValue("cid", "c1")
-        testDatabase.save(doc)
+        testDatabase.defaultCollection.save(doc)
         doc = MutableDocument()
         doc.setValue("name", "hydrangea")
         doc.setValue("description", "Blue flowers")
         doc.setValue("cid", "c2")
-        testDatabase.save(doc)
+        testDatabase.defaultCollection.save(doc)
 
         val query = QueryBuilder.select(SelectResult.all()).from(DataSource.database(testDatabase).`as`("foo"))
         query.execute().use { rs ->
