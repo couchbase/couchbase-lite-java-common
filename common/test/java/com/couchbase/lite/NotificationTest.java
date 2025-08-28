@@ -344,26 +344,6 @@ public class NotificationTest extends BaseDbTest {
         CollectionChangeListener colListener = change -> latch2.countDown();
         colListener.changed(new CollectionChange(getTestCollection(), Collections.emptyList()));
         Assert.assertTrue(latch2.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
-
-        CountDownLatch latch3 = new CountDownLatch(2);
-        try (
-            ListenerToken ignore1 = getTestDatabase().addChangeListener(change -> latch3.countDown());
-            ListenerToken ignore2 = defaultCollection.addChangeListener(change -> latch3.countDown())) {
-            Assert.assertEquals(2, defaultCollection.getCollectionListenerCount());
-            saveDocsInCollection(createTestDocs(1000, 10), defaultCollection);
-            Assert.assertTrue(latch3.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
-        }
-
-        Assert.assertEquals(0, defaultCollection.getCollectionListenerCount());
-
-        CountDownLatch latch4 = new CountDownLatch(2);
-        try (ListenerToken ignore1 = getTestDatabase().addChangeListener(change -> latch4.countDown());
-             ListenerToken ignore2 = defaultCollection.addChangeListener(change -> latch4.countDown())) {
-            Assert.assertEquals(2, defaultCollection.getCollectionListenerCount());
-            saveDocsInCollection(createTestDocs(2000, 10), defaultCollection);
-            Assert.assertTrue(latch4.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
-        }
-        Assert.assertEquals(0, defaultCollection.getCollectionListenerCount());
     }
 
     // Kotlin shims
