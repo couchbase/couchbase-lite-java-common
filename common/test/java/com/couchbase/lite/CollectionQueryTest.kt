@@ -856,11 +856,11 @@ class CollectionQueryTest : BaseQueryTest() {
         doc.setValue("cid", "c2")
         testDatabase.defaultCollection.save(doc)
 
-        val query = QueryBuilder.select(SelectResult.all()).from(DataSource.database(testDatabase))
+        val query = QueryBuilder.select(SelectResult.all()).from(DataSource.collection(testDatabase.defaultCollection))
         query.execute().use { rs ->
             val colNames = rs.columnNames
             Assert.assertEquals(1, colNames.size)
-            Assert.assertEquals(testDatabase.name, colNames[0])
+            Assert.assertEquals(testDatabase.defaultCollection.name, colNames[0])
         }
     }
 
@@ -879,7 +879,7 @@ class CollectionQueryTest : BaseQueryTest() {
         doc.setValue("cid", "c2")
         testDatabase.defaultCollection.save(doc)
 
-        val query = QueryBuilder.select(SelectResult.all()).from(DataSource.database(testDatabase).`as`("foo"))
+        val query = QueryBuilder.select(SelectResult.all()).from(DataSource.collection(testDatabase.defaultCollection).`as`("foo"))
         query.execute().use { rs ->
             val colNames = rs.columnNames
             Assert.assertEquals(1, colNames.size)
