@@ -3159,14 +3159,14 @@ public class QueryTest extends BaseQueryTest {
         Expression work = Expression.property("work");
 
         for (TestCase testCase: new TestCase[] {
-            new TestCase(name.isNullOrMissing()),
-            new TestCase(name.notNullOrMissing(), doc1.getId(), doc2.getId()),
-            new TestCase(address.isNullOrMissing(), doc1.getId()),
-            new TestCase(address.notNullOrMissing(), doc2.getId()),
-            new TestCase(age.isNullOrMissing(), doc1.getId()),
-            new TestCase(age.notNullOrMissing(), doc2.getId()),
-            new TestCase(work.isNullOrMissing(), doc1.getId(), doc2.getId()),
-            new TestCase(work.notNullOrMissing())
+            new TestCase(name.isNotValued()),
+            new TestCase(name.isValued(), doc1.getId(), doc2.getId()),
+            new TestCase(address.isNotValued(), doc1.getId()),
+            new TestCase(address.isValued(), doc2.getId()),
+            new TestCase(age.isNotValued(), doc1.getId()),
+            new TestCase(age.isValued(), doc2.getId()),
+            new TestCase(work.isNotValued(), doc1.getId(), doc2.getId()),
+            new TestCase(work.isValued())
         }) {
             verifyQuery(
                 QueryBuilder.select(SelectResult.expression(Meta.id))
@@ -3186,12 +3186,14 @@ public class QueryTest extends BaseQueryTest {
     public void testLegacyIndexMatch() throws CouchbaseLiteException {
         loadJSONResourceIntoCollection("sentences.json");
 
+        IndexExpression idx = Expression.fullTextIndex("sentence");
+
         getTestCollection().createIndex("sentence", IndexBuilder.fullTextIndex(FullTextIndexItem.property("sentence")));
 
         Query query = QueryBuilder
             .select(SelectResult.expression(Meta.id), SelectResult.property("sentence"))
             .from(DataSource.collection(getTestCollection()))
-            .where(FullTextFunction.match("sentence", "'Dummie woman'"))
+            .where(FullTextFunction.match(idx, "'Dummie woman'"))
             .orderBy(Ordering.expression(FullTextFunction.rank("sentence")).descending());
 
         verifyQuery(

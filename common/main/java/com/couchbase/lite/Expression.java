@@ -867,30 +867,4 @@ public abstract class Expression {
     @SuppressWarnings("PMD.LinguisticNaming")
     @NonNull
     public Expression isNotValued() { return negated(new UnaryExpression(this, UnaryExpression.OP_VALUED)); }
-
-    /**
-     * Creates an IS NULL OR MISSING expression that evaluates whether or not the current
-     * expression is null or missing.
-     *
-     * @return An IS NULL expression.
-     * @deprecated Use Expression.isNotValued
-     */
-    @Deprecated
-    @SuppressWarnings("PMD.LinguisticNaming")
-    @NonNull
-    public Expression isNullOrMissing() {
-        return new UnaryExpression(this, UnaryExpression.OP_NULL)
-            .or(new UnaryExpression(this, UnaryExpression.OP_MISSING));
-    }
-
-    /**
-     * Creates an NOT IS NULL OR MISSING expression that evaluates whether or not the current
-     * expression is NOT null or missing.
-     *
-     * @return An NOT IS NULL expression.
-     * @deprecated Use Expression.isValued
-     */
-    @Deprecated
-    @NonNull
-    public Expression notNullOrMissing() { return negated(isNullOrMissing()); }
 }

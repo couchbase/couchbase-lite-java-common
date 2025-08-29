@@ -74,21 +74,4 @@ public final class FullTextFunction {
             "RANK()",
             Expression.string(Preconditions.assertNotNull(indexName, "indexName")));
     }
-
-    /**
-     * Creates a full-text expression with the given full-text index name and search text.
-     *
-     * @param indexName The full-text index name.
-     * @param query     The query string.
-     * @return The full-text match expression
-     * @deprecated Use: FullTextFunction.match(IndexExpression)
-     */
-    @Deprecated
-    @NonNull
-    public static Expression match(@NonNull String indexName, @NonNull String query) {
-        return new Expression.FunctionExpression(
-            "MATCH()",
-            Expression.string(Preconditions.assertNotNull(indexName, "indexName")),
-            Expression.string(query));
-    }
 }

@@ -21,8 +21,6 @@ import androidx.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
@@ -56,28 +54,6 @@ public class DataSource {
             super.alias = alias;
             return this;
         }
-    }
-
-    /**
-     * Create a database as a data source.
-     *
-     * @param database the database used as a source of data for query.
-     * @return {@code DataSource.Database} object.
-     * @deprecated use DataSource.collection(Collection)
-     */
-    @Deprecated
-    @NonNull
-    @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
-    public static As database(@NonNull Database database) {
-        Preconditions.assertNotNull(database, "database");
-
-        final Collection defaultCollection;
-        try { defaultCollection = database.getDefaultCollection(); }
-        catch (CouchbaseLiteException e) { throw new IllegalArgumentException("Database not open", e); }
-
-        final As source = new As(defaultCollection);
-        source.as(database.getName());
-        return source;
     }
 
     /**
