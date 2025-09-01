@@ -1907,21 +1907,14 @@ class DatabaseTest : BaseDbTest() {
 
     /**
      * Steps
-     * 1. Create a DatabaseConfiguration object and set mmapEnabled to false.
-     * 2. Create a database with the config.
-     * 3. Get the configuration object from the database and check that the mmapEnabled is false.
-     * 4. Use c4db_config2 to confirm that its config contains the kC4DB_MmapDisabled flag
-     * 5. Set the config's mmapEnabled property true
-     * 6. Create a database with the config.
-     * 7. Get the configuration object from the database and verify that mmapEnabled is true
-     * 8. Use c4db_config2 to confirm that its config doesn't contains the kC4DB_MmapDisabled flag
+     * 1. Create a database mmapdb1.
+     * 2. Get the configuration object from the database and check that the mmapEnabled is false.
+     * 3. Use c4db_config2 to confirm that its config contains the kC4DB_MmapDisabled flag
+     * 4. Erase the Db.
      */
     @Test
-    fun testDatabaseWithConfiguredMMap() {
-        val config = DatabaseConfiguration()
-        config.setMMapEnabled(false)
-
-        var db = createDb("mmapdb1", config)
+    fun testDatabaseWithDefaultConfiguredMMap() {
+        var db = createDb("mmapdb1")
         Assert.assertFalse(db.config.isMMapEnabled)
 
         try {
@@ -1929,16 +1922,6 @@ class DatabaseTest : BaseDbTest() {
                 C4Constants.DatabaseFlags.DISABLE_MMAP,
                 C4TestUtils.getFlags(db.openC4Database) and C4Constants.DatabaseFlags.DISABLE_MMAP
             )
-        } finally {
-            eraseDb(db)
-        }
-
-        config.setMMapEnabled(true)
-        db = createDb("mmapdb2", config)
-        Assert.assertTrue(db.config.isMMapEnabled)
-
-        try {
-            Assert.assertEquals(0, C4TestUtils.getFlags(db.openC4Database) and C4Constants.DatabaseFlags.DISABLE_MMAP)
         } finally {
             eraseDb(db)
         }

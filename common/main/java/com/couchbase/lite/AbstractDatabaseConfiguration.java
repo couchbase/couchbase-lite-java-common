@@ -114,17 +114,6 @@ abstract class AbstractDatabaseConfiguration {
 
     public boolean isFullSync() { return fullSync; }
 
-    /**
-     * Advises Core to enable or disable memory-mapped Database files, if possible.
-     * Nmory-mapped database files are, currently, enabled by default, except on MacOS
-     * where they <b>cannot</b> be enabled at all.
-     */
-    @NonNull
-    public DatabaseConfiguration setMMapEnabled(boolean mmapEnabled) {
-        this.mmapEnabled = mmapEnabled;
-        return getDatabaseConfiguration();
-    }
-
     public boolean isMMapEnabled() { return mmapEnabled; }
 
     //---------------------------------------------
