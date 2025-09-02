@@ -1905,28 +1905,6 @@ class DatabaseTest : BaseDbTest() {
         }
     }
 
-    /**
-     * Steps
-     * 1. Create a database mmapdb1.
-     * 2. Get the configuration object from the database and check that the mmapEnabled is false.
-     * 3. Use c4db_config2 to confirm that its config contains the kC4DB_MmapDisabled flag
-     * 4. Erase the Db.
-     */
-    @Test
-    fun testDatabaseWithDefaultConfiguredMMap() {
-        var db = createDb("mmapdb1")
-        Assert.assertFalse(db.config.isMMapEnabled)
-
-        try {
-            Assert.assertEquals(
-                C4Constants.DatabaseFlags.DISABLE_MMAP,
-                C4TestUtils.getFlags(db.openC4Database) and C4Constants.DatabaseFlags.DISABLE_MMAP
-            )
-        } finally {
-            eraseDb(db)
-        }
-    }
-
     @Test
     fun testDatabaseCookies() {
         testDatabase.setCookies(

@@ -78,7 +78,6 @@ public final class C4Constants {
         static final long READ_ONLY = 0x02;              // Open file read-only
         private static final long AUTO_COMPACT = 0x04;   // Enable auto-compaction [UNIMPLEMENTED]
         static final long VERSION_VECTORS = 0x08;        // Upgrade DB to version vectors instead of rev trees [EXPERIMENTAL]
-        public static final long DISABLE_MMAP = 0x10;    // Disable MMAP in SQLite.
         private static final long NO_UPGRADE = 0x20;     // Disable upgrading an older-version database
         private static final long NON_OBSERVABLE = 0x40; // Disable database/collection observers, for slightly faster writes
         public static final long DISC_FULL_SYNC = 0x80;  // Flush to disk after each transaction
