@@ -245,15 +245,6 @@ abstract class AbstractQuery implements Listenable<QueryChange, QueryChangeListe
         return token;
     }
 
-    /**
-     * Removes a change listener wih the given listener token.
-     *
-     * @param token The listener token.
-     * @deprecated use ListenerToken.remove()
-     */
-    @Deprecated
-    @Override
-    public void removeChangeListener(@NonNull ListenerToken token) { removeListener(token); }
 
     @Nullable
     protected abstract AbstractDatabase getDatabase();
