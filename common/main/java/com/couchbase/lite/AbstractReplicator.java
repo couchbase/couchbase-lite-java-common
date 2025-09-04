@@ -408,29 +408,6 @@ public abstract class AbstractReplicator extends BaseReplicator
         return token;
     }
 
-    /**
-     * Remove the given ReplicatorChangeListener or DocumentReplicationListener from the this replicator.
-     *
-     * @param token returned by a previous call to addChangeListener or addDocumentListener.
-     * @deprecated use ListenerToken.remove
-     */
-    @Deprecated
-    public void removeChangeListener(@NonNull ListenerToken token) {
-        Preconditions.assertNotNull(token, "token");
-        synchronized (getReplicatorLock()) {
-            if (token instanceof ReplicatorChangeListenerToken) {
-                removeReplicationListener(token);
-                return;
-            }
-
-            if (token instanceof DocumentReplicationListenerToken) {
-                removeDocumentReplicationListener(token);
-                return;
-            }
-
-            throw new IllegalArgumentException("unexpected token: " + token);
-        }
-    }
 
     // I've thought a lot about how to implement this.  The problem is that you cannot, fundamentally,
     // close a replicator(discard its resources before this method returns). If it is not stopped,
