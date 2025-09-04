@@ -60,7 +60,7 @@ public final class QueryBuilder {
      * @return database The database against which the query will be run.
      */
     @NonNull
-    public static Query createQuery(@NonNull String query, @NonNull Database database) {
+    public static Query createQuery(@NonNull String query, @NonNull Database database) throws CouchbaseLiteException {
         return database.createQuery(query);
     }
 }

@@ -290,7 +290,7 @@ abstract class AbstractDatabase extends BaseDatabase
 
     public boolean performMaintenance(MaintenanceType type) throws CouchbaseLiteException {
         synchronized (getDbLock()) {
-            try { return getOpenC4DbLocked().performMaintenance(type); }
+            try { return getC4DbOrThrowLocked().performMaintenance(type); }
             catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
         }
     }
@@ -518,7 +518,7 @@ abstract class AbstractDatabase extends BaseDatabase
 
         boolean commit = false;
         synchronized (getDbLock()) {
-            final C4Database db = getOpenC4DbLocked();
+            final C4Database db = getC4DbOrThrowLocked();
 
             try {
                 db.beginTransaction();
@@ -545,9 +545,9 @@ abstract class AbstractDatabase extends BaseDatabase
      * @return the Query object
      */
     @NonNull
-    public Query createQuery(@NonNull String query) {
+    public Query createQuery(@NonNull String query) throws CouchbaseLiteException {
         synchronized (getDbLock()) {
-            assertOpenUnchecked();
+            assertOpenChecked();
             return new N1qlQuery(this, query);
         }
     }
@@ -1224,7 +1224,7 @@ abstract class AbstractDatabase extends BaseDatabase
             Log.d(DOMAIN, "Shutdown (%b, %b)", failIfClosed, open);
             if (!(failIfClosed || open)) { return; }
 
-            c4Db = getOpenC4DbLocked();
+            c4Db = getC4DbOrThrowLocked();
             setC4DatabaseLocked(null);
             // mustBeOpen will now fail, which should prevent any new processes from being registered.
 
