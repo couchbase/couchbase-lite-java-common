@@ -19,6 +19,7 @@ import androidx.annotation.NonNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -27,6 +28,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -2936,18 +2938,38 @@ public class QueryTest extends BaseQueryTest {
             });
     }
 
-    @FlakyTest(description = "Fails on devices that don't agree about the local time")
+    private String getLocalTime(int hour, int minute, int second, String millis) {
+        // Create local time for the specific hour/minute/second
+        Calendar localTimeCal = new GregorianCalendar(1985, Calendar.OCTOBER, 26, hour, minute, second);
+
+        // Convert to UTC
+        Calendar utcTimeCal = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
+        utcTimeCal.setTimeInMillis(localTimeCal.getTimeInMillis());
+
+        return String.format("%04d-%02d-%02dT%02d:%02d:%02d%sZ",
+                                       utcTimeCal.get(Calendar.YEAR),
+                                       utcTimeCal.get(Calendar.MONTH) + 1,
+                                       utcTimeCal.get(Calendar.DAY_OF_MONTH),
+                                       utcTimeCal.get(Calendar.HOUR_OF_DAY),
+                                       utcTimeCal.get(Calendar.MINUTE),
+                                       utcTimeCal.get(Calendar.SECOND),
+                                       millis);
+    }
+
     @Test
     public void testStringToUTC() {
         createDateDocs();
 
+        // Add the other time entries (01:21:00, 01:21:30, etc.)
+        int[] hours = {0, 1, 1, 1, 1, 1};
+        int[] minutes = {0, 21, 21, 21, 21, 21};
+        int[] seconds = {0, 0, 30, 30, 30, 30};
+        String[] millisSuffix = {"", "", "", ".500", ".550", ".555"};
+
         ArrayList<String> expectedLocal = new ArrayList<>();
-        expectedLocal.add("1985-10-26T07:00:00Z");
-        expectedLocal.add("1985-10-26T08:21:00Z");
-        expectedLocal.add("1985-10-26T08:21:30Z");
-        expectedLocal.add("1985-10-26T08:21:30.500Z");
-        expectedLocal.add("1985-10-26T08:21:30.550Z");
-        expectedLocal.add("1985-10-26T08:21:30.555Z");
+        for (int i = 0; i < hours.length; i++) {
+            expectedLocal.add(getLocalTime(hours[i], minutes[i], seconds[i], millisSuffix[i]));
+        }
 
         ArrayList<String> expectedJST = new ArrayList<>();
         expectedJST.add(null);
