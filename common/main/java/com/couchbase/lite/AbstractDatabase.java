@@ -601,7 +601,6 @@ abstract class AbstractDatabase extends BaseDatabase
         return "Database{@" + ClassUtils.objId(this)
             + ": '" + name
             + (config.isFullSync() ? "!" : "")
-            + (config.isMMapEnabled() ? "*" : "")
             + "'}";
     }
 
@@ -986,7 +985,6 @@ abstract class AbstractDatabase extends BaseDatabase
                 parentDirPath,
                 name,
                 config.isFullSync(),
-                config.isMMapEnabled(),
                 getEncryptionAlgorithm(),
                 getEncryptionKey());
         }
