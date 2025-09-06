@@ -647,6 +647,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
      * Return the list of collections in the replicator configuration
      *
      * @deprecated Use getCollectionConfigs() instead.
+     * This method will return {@code Set<CollectionConfiguration>} in the next major release.
      */
     @Deprecated
     @NonNull
@@ -656,6 +657,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
      * Returns a copy of the collection configurations associated with this replicator configuration.
      *
      * @return a set of {@link CollectionConfiguration} objects.
+     * @apiNote This method will be renamed to {@code getCollections()} in the next major release.
      */
     @NonNull
     public final Set<CollectionConfiguration> getCollectionConfigs() {
