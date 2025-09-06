@@ -3091,7 +3091,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testN1QLSelect() {
+    public void testN1QLSelect() throws CouchbaseLiteException {
         loadDocuments(100);
 
         Query query = getTestDatabase().createQuery(
@@ -3127,7 +3127,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testN1QLSelectStarFromCollection() {
+    public void testN1QLSelectStarFromCollection() throws CouchbaseLiteException {
         loadDocuments(100);
 
         verifyQuery(
