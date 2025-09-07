@@ -596,7 +596,7 @@ class DatabaseTest : BaseDbTest() {
         Assert.assertTrue(testDatabase.isOpen)
         testDatabase.close()
         Assert.assertFalse(testDatabase.isOpen)
-        Assert.assertThrows(CouchbaseLiteError::class.java) {
+        Assert.assertThrows(CouchbaseLiteException::class.java) {
             testDatabase.inBatch<RuntimeException> { }
         }
     }
@@ -616,7 +616,7 @@ class DatabaseTest : BaseDbTest() {
         Assert.assertTrue(testDatabase.isOpen)
         testDatabase.close()
         Assert.assertFalse(testDatabase.isOpen)
-        Assert.assertThrows(CouchbaseLiteError::class.java) { testDatabase.delete() }
+        Assert.assertThrows(CouchbaseLiteException::class.java) { testDatabase.delete() }
     }
 
     //---------------------------------------------
@@ -640,7 +640,7 @@ class DatabaseTest : BaseDbTest() {
         Assert.assertFalse(path.exists())
 
         // second delete should fail
-        Assert.assertThrows(CouchbaseLiteError::class.java) { testDatabase.delete() }
+        Assert.assertThrows(CouchbaseLiteException::class.java) { testDatabase.delete() }
     }
 
     @Test
@@ -718,7 +718,7 @@ class DatabaseTest : BaseDbTest() {
         Assert.assertTrue(path.exists())
         testDatabase.delete()
         Assert.assertFalse(path.exists())
-        Assert.assertThrows(CouchbaseLiteError::class.java) {
+        Assert.assertThrows(CouchbaseLiteException::class.java) {
             testDatabase.inBatch<RuntimeException> { }
         }
     }
