@@ -30,32 +30,29 @@ abstract class AbstractDatabaseConfiguration {
     //---------------------------------------------
     private String dbDirectory;
     private boolean fullSync;
-    private boolean mmapEnabled;
 
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
     protected AbstractDatabaseConfiguration() {
-        this(null, Defaults.Database.FULL_SYNC, Defaults.Database.MMAP_ENABLED);
+        this(null, Defaults.Database.FULL_SYNC);
     }
 
     protected AbstractDatabaseConfiguration(@Nullable AbstractDatabaseConfiguration config) {
         this(
             (config == null) ? null : config.getDirectory(),
-            (config == null) ? Defaults.Database.FULL_SYNC : config.isFullSync(),
-            (config == null) ? Defaults.Database.MMAP_ENABLED : config.isMMapEnabled()
+            (config == null) ? Defaults.Database.FULL_SYNC : config.isFullSync()
         );
     }
 
     protected AbstractDatabaseConfiguration(@NonNull BaseImmutableDatabaseConfiguration config) {
-        this(config.getDirectory(), config.isFullSync(), config.isMMapEnabled());
+        this(config.getDirectory(), config.isFullSync());
     }
 
-    private AbstractDatabaseConfiguration(@Nullable String dbDir, boolean fullSync, boolean mmapEnabled) {
+    private AbstractDatabaseConfiguration(@Nullable String dbDir, boolean fullSync) {
         CouchbaseLiteInternal.requireInit("Cannot create database configuration");
         this.dbDirectory = (dbDir != null) ? dbDir : CouchbaseLiteInternal.getDefaultDbDirPath();
         this.fullSync = fullSync;
-        this.mmapEnabled = mmapEnabled;
     }
 
     //---------------------------------------------
@@ -113,19 +110,6 @@ abstract class AbstractDatabaseConfiguration {
     }
 
     public boolean isFullSync() { return fullSync; }
-
-    /**
-     * Advises Core to enable or disable memory-mapped Database files, if possible.
-     * Nmory-mapped database files are, currently, enabled by default, except on MacOS
-     * where they <b>cannot</b> be enabled at all.
-     */
-    @NonNull
-    public DatabaseConfiguration setMMapEnabled(boolean mmapEnabled) {
-        this.mmapEnabled = mmapEnabled;
-        return getDatabaseConfiguration();
-    }
-
-    public boolean isMMapEnabled() { return mmapEnabled; }
 
     //---------------------------------------------
     // Protected level access

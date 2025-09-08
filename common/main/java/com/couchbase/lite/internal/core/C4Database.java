@@ -203,13 +203,11 @@ public abstract class C4Database extends C4Peer {
         @NonNull String parentDirPath,
         @NonNull String name,
         boolean isFullSync,
-        boolean isMMapEnabled,
         int algorithm,
         @Nullable byte[] encryptionKey)
         throws LiteCoreException {
         long dbFlags = DB_FLAGS;
         if (isFullSync) { dbFlags |= C4Constants.DatabaseFlags.DISC_FULL_SYNC; }
-        if (!isMMapEnabled) { dbFlags |= C4Constants.DatabaseFlags.DISABLE_MMAP; }
         return getDatabase(NATIVE_IMPL, parentDirPath, name, dbFlags, algorithm, encryptionKey);
     }
 

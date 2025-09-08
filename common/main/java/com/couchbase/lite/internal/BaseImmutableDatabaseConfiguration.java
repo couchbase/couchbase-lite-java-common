@@ -33,7 +33,6 @@ public class BaseImmutableDatabaseConfiguration {
     @NonNull
     private final String dbDir;
     private final boolean fullSync;
-    private final boolean mmapEnabled;
 
     //-------------------------------------------------------------------------
     // Constructors
@@ -42,7 +41,6 @@ public class BaseImmutableDatabaseConfiguration {
         final String dbDirectory = (config == null) ? null : config.getDirectory();
         this.dbDir = (dbDirectory != null) ? dbDirectory : CouchbaseLiteInternal.getDefaultDbDirPath();
         this.fullSync = (config == null) ? Defaults.Database.FULL_SYNC : config.isFullSync();
-        this.mmapEnabled = (config == null) ? Defaults.Database.MMAP_ENABLED : config.isMMapEnabled();
     }
 
     //-------------------------------------------------------------------------
@@ -52,6 +50,4 @@ public class BaseImmutableDatabaseConfiguration {
     public final String getDirectory() { return dbDir; }
 
     public final boolean isFullSync() { return fullSync; }
-
-    public final boolean isMMapEnabled() { return mmapEnabled; }
 }
