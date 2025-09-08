@@ -34,13 +34,14 @@ val CollectionConfigurationFactory: CollectionConfiguration? = null
  * @see com.couchbase.lite.CollectionConfiguration
  */
 fun CollectionConfiguration?.newConfig(
+    collection: Collection
     channels: List<String>? = null,
     documentIDs: List<String>? = null,
     pullFilter: ReplicationFilter? = null,
     pushFilter: ReplicationFilter? = null,
     conflictResolver: ConflictResolver? = null
 ): CollectionConfiguration {
-    val config = CollectionConfiguration()
+    val config = CollectionConfiguration(collection)
 
     (channels ?: this?.channels)?.let { config.channels = it }
     (documentIDs ?: this?.documentIDs)?.let { config.documentIDs = it }

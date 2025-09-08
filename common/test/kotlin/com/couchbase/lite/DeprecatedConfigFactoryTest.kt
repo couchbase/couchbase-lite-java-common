@@ -74,7 +74,7 @@ class DeprecatedConfigFactoryTest : BaseDbTest() {
     @Test
     fun testReplicatorConfigFromCollectionWithDefault() {
         val config1 = ReplicatorConfigurationFactory
-            .newConfig(testEndpoint, mapOf(listOf(testDatabase.defaultCollection) to CollectionConfiguration()))
+            .newConfig(testEndpoint, mapOf(listOf(testDatabase.defaultCollection) to CollectionConfiguration(testDatabase.defaultCollection)))
         val config2 = config1.create()
         Assert.assertNotSame(config1, config2)
         Assert.assertEquals(config1.database, config2.database)
@@ -85,7 +85,7 @@ class DeprecatedConfigFactoryTest : BaseDbTest() {
     @Test
     fun testReplicatorConfigFromCollectionWithDefaultAndOther() {
         val config1 = ReplicatorConfigurationFactory
-            .newConfig(testEndpoint, mapOf(listOf(testCollection) to CollectionConfiguration()))
+            .newConfig(testEndpoint, mapOf(listOf(testCollection) to CollectionConfiguration(testCollection)))
         val filter = ReplicationFilter { _, _ -> true }
 
         // Information gets lost here (the configuration of testCollection): should be a log message

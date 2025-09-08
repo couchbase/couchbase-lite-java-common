@@ -283,18 +283,6 @@ public abstract class AbstractReplicator extends BaseReplicator
     }
 
     /**
-     * Get a best effort list of documents in the default collection, that are still pending replication.
-     *
-     * @return a set of ids for documents in the default collection still awaiting replication.
-     * @deprecated Use getPendingDocumentIds(Collection)
-     */
-    @Deprecated
-    @NonNull
-    public Set<String> getPendingDocumentIds() throws CouchbaseLiteException {
-        return getPendingDocIds(Scope.DEFAULT_NAME, Collection.DEFAULT_NAME);
-    }
-
-    /**
      * Get a best effort list of documents in the passed collection that are still pending replication.
      *
      * @return a set of ids for documents in the passed collection still awaiting replication.
@@ -302,19 +290,6 @@ public abstract class AbstractReplicator extends BaseReplicator
     @NonNull
     public Set<String> getPendingDocumentIds(@NonNull Collection collection) throws CouchbaseLiteException {
         return getPendingDocIds(collection.getScope().getName(), collection.getName());
-    }
-
-    /**
-     * Best effort check to see if the document whose ID is passed is still pending replication.
-     *
-     * @param docId Document id
-     * @return true if the document is pending
-     * @deprecated Use isDocumentPending(String, Collection)
-     */
-    @Deprecated
-    public boolean isDocumentPending(@NonNull String docId)
-        throws CouchbaseLiteException {
-        return isDocPending(docId, Scope.DEFAULT_NAME, Collection.DEFAULT_NAME);
     }
 
     /**

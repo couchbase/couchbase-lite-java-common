@@ -29,7 +29,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import okhttp3.internal.Util;
 
 import com.couchbase.lite.internal.BaseReplicatorConfiguration;
@@ -87,7 +86,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
         }
 
         final Map<Collection, CollectionConfiguration> collections = new HashMap<>();
-        collections.put(defaultCollection, new CollectionConfiguration());
+        collections.put(defaultCollection, new CollectionConfiguration(defaultCollection));
 
         return collections;
     }
@@ -258,65 +257,6 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     //---------------------------------------------
     // Setters
     //---------------------------------------------
-
-    /**
-     * Add a collection used for the replication with an optional collection configuration.
-     * If the collection has been added before, the previously added collection
-     * and its configuration if specified will be replaced.
-     *
-     * @param collection the collection
-     * @param config     its configuration
-     * @return this
-     *
-     * @deprecated Use ReplicatorConfiguration(java.util.Collection&lt;CollectionConfiguration&gt;, Endpoint) instead.
-     */
-    @Deprecated
-    @NonNull
-    public final ReplicatorConfiguration addCollection(
-        @NonNull Collection collection,
-        @Nullable CollectionConfiguration config) {
-        addCollectionConfig(
-            collection,
-            (config == null) ? new CollectionConfiguration() : new CollectionConfiguration(config));
-        return getReplicatorConfiguration();
-    }
-
-    /**
-     * Add multiple collections used for the replication with an optional shared collection configuration.
-     * If any of the collections have been added before, the previously added collections and their
-     * configuration if specified will be replaced. Adding an empty collection array is a no-op.
-     *
-     * @param collections a collection of Collections
-     * @param config      the configuration to be applied to all of the collections
-     * @return this
-     *
-     * @deprecated Use ReplicatorConfiguration(java.util.Collection&lt;CollectionConfiguration&gt;, Endpoint) instead.
-     */
-    @Deprecated
-    @NonNull
-    public final ReplicatorConfiguration addCollections(
-        @NonNull java.util.Collection<Collection> collections,
-        @Nullable CollectionConfiguration config) {
-        // Use a single config instance for all of the collections
-        if (config == null) { config = new CollectionConfiguration(); }
-        for (Collection collection: collections) { addCollectionConfig(collection, config); }
-        return getReplicatorConfiguration();
-    }
-
-    /**
-     * Remove a collection from the replication.
-     *
-     * @param collection the collection to be removed
-     * @return this
-     *
-     * @deprecated Use ReplicatorConfiguration(java.util.Collection&lt;CollectionConfiguration&gt;, Endpoint) instead.
-     */
-    @Deprecated
-    @NonNull
-    public final ReplicatorConfiguration removeCollection(@NonNull Collection collection) {
-        removeCollectionInternal(collection);
-        return getReplicatorConfiguration();
-    }
 
     /**
      * Sets the replicator type indicating the direction of the replicator.
@@ -629,30 +569,6 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     public final Endpoint getTarget() { return target; }
 
     /**
-     * Get the CollectionConfiguration for the passed Collection.
-     *
-     * @param collection a collection whose configuration is sought.
-     * @return the collections configuration
-     *
-     * @deprecated Use getCollectionConfigs() instead.
-     */
-    @Deprecated
-    @Nullable
-    public final CollectionConfiguration getCollectionConfiguration(@NonNull Collection collection) {
-        final CollectionConfiguration config = collectionConfigurations.get(collection);
-        return (config == null) ? null : new CollectionConfiguration(config);
-    }
-
-    /**
-     * Return the list of collections in the replicator configuration
-     *
-     * @deprecated Use getCollectionConfigs() instead.
-     */
-    @Deprecated
-    @NonNull
-    public final Set<Collection> getCollections() { return new HashSet<>(collectionConfigurations.keySet()); }
-
-    /**
      * Returns a copy of the collection configurations associated with this replicator configuration.
      *
      * @return a set of {@link CollectionConfiguration} objects.
@@ -792,71 +708,6 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
         throw new CouchbaseLiteError("No database or collections provided for replication configuration");
     }
 
-    /**
-     * A collection of document IDs to filter: if not nil, only documents with these IDs will be pushed
-     * and/or pulled.
-     *
-     * @deprecated Use CollectionConfiguration.getDocumentIDs
-     */
-    @Deprecated
-    @Nullable
-    public final List<String> getDocumentIDs() {
-        final List<String> docIds = getValidDefaultConfigOrThrow().getDocumentIDs();
-        return (docIds == null) ? null : new ArrayList<>(docIds);
-    }
-
-    /**
-     * Gets the collection of Sync Gateway channel names from which to pull documents.
-     * If unset, all accessible channels will be pulled.
-     * Default is empty: pull from all accessible channels.
-     * <p>
-     * Note:  Channel specifications apply only to replications
-     * pulling from a SyncGateway and only the channels visible
-     * to the authenticated user.  Channel specs are ignored:
-     * <ul>
-     *     <li>during a push replication.</li>
-     *     <li>during peer-to-peer or database-to-database replication</li>
-     *     <li>when the specified channel is not accessible to the user</li>
-     * </ul>
-     *
-     * @deprecated Use CollectionConfiguration.getChannels
-     */
-    @Deprecated
-    @Nullable
-    public final List<String> getChannels() {
-        final List<String> channels = getValidDefaultConfigOrThrow().getChannels();
-        return (channels == null) ? null : new ArrayList<>(channels);
-    }
-
-    /**
-     * Return the conflict resolver.
-     *
-     * @deprecated Use CollectionConfiguration.getConflictResolver
-     */
-    @Deprecated
-    @Nullable
-    public final ConflictResolver getConflictResolver() { return getValidDefaultConfigOrThrow().getConflictResolver(); }
-
-    /**
-     * Gets the filter used to determine whether a document will be pulled
-     * from the remote endpoint.
-     *
-     * @deprecated Use CollectionConfiguration.getPullFilter
-     */
-    @Deprecated
-    @Nullable
-    public final ReplicationFilter getPullFilter() { return getValidDefaultConfigOrThrow().getPullFilter(); }
-
-    /**
-     * Gets a filter used to determine whether a document will be pushed
-     * to the remote endpoint.
-     *
-     * @deprecated Use CollectionConfiguration.getPushFilter
-     */
-    @Deprecated
-    @Nullable
-    public final ReplicationFilter getPushFilter() { return getValidDefaultConfigOrThrow().getPushFilter(); }
-
     @SuppressWarnings("PMD.NPathComplexity")
     @NonNull
     @Override
@@ -898,44 +749,6 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     //---------------------------------------------
     // Private
     //---------------------------------------------
-
-    // I think this is a Spotbugs bug: it claims something is null on line 800git
-    @SuppressFBWarnings(
-        {"NP_NULL_ON_SOME_PATH", "NP_LOAD_OF_KNOWN_NULL_VALUE", "RCN_REDUNDANT_NULLCHECK_OF_NULL_VALUE"})
-    private void addCollectionConfig(@NonNull Collection collection, @NonNull CollectionConfiguration config) {
-        Preconditions.assertThat(
-                config.getCollection() == null || config.getCollection() == collection,
-                "CollectionConfiguration collection must be null or match the given collection."
-        );
-        final Database db = Preconditions.assertNotNull(collection, "collection").getDatabase();
-        if (database == null) { database = db; }
-        else {
-            if (!database.equals(db)) {
-                throw new IllegalArgumentException(
-                    Log.formatStandardMessage("AddCollectionFromAnotherDB", collection.toString(), database.getName()));
-            }
-        }
-
-        if (!database.isOpen()) {
-            throw new IllegalArgumentException(
-                Log.formatStandardMessage("AddCollectionFromClosedDB", collection.toString(), database.getName()));
-        }
-
-        try (Collection coll = database.getCollection(collection.getName(), collection.getScope().getName())) {
-            if (coll == null) {
-                throw new IllegalArgumentException(
-                    Log.formatStandardMessage("AddDeletedCollection", collection.toString()));
-            }
-        }
-        catch (CouchbaseLiteException e) {
-            throw new IllegalArgumentException("Failed getting collection " + collection, e);
-        }
-
-        addCollectionInternal(collection, config);
-    }
-
-    @NonNull
-    private CollectionConfiguration getValidDefaultConfigOrThrow() { return getAndUpdateDefaultConfig(null); }
 
     private void updateValidDefaultConfigOrThrow(@NonNull Fn.Consumer<CollectionConfiguration> updater) {
         getAndUpdateDefaultConfig(updater);

@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
@@ -472,7 +473,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     //    Get the proxy authenticator object and check that the returned object is null.
     @Test
     public void testGetDefaultProxyAuthenticator() throws URISyntaxException {
-        Assert.assertNull(new ReplicatorConfiguration(new URLEndpoint(new URI("ws://foo.com"))).getProxyAuthenticator());
+        Assert.assertNull(new ReplicatorConfiguration(Set.of(new CollectionConfiguration(getTestCollection())), new URLEndpoint(new URI("ws://foo.com"))).getProxyAuthenticator());
     }
 
     // 3.3 TestSetNewProxyAuthenticator
@@ -486,7 +487,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         final ProxyAuthenticator proxyAuth = new ProxyAuthenticator("Wilson", "Vince".toCharArray());
         Assert.assertEquals(
             proxyAuth,
-            new ReplicatorConfiguration(new URLEndpoint(new URI("ws://foo.com")))
+            new ReplicatorConfiguration(Set.of(new CollectionConfiguration(getTestCollection())), new URLEndpoint(new URI("ws://foo.com")))
                 .setProxyAuthenticator(proxyAuth)
                 .getProxyAuthenticator());
     }
@@ -498,7 +499,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     //    Check that the returned ProxyAuthenticator is null.
     @Test
     public void testSetNullProxyAuthenticator() throws URISyntaxException {
-        Assert.assertNull(new ReplicatorConfiguration(new URLEndpoint(new URI("ws://foo.com")))
+        Assert.assertNull(new ReplicatorConfiguration(Set.of(new CollectionConfiguration(getTestCollection())), new URLEndpoint(new URI("ws://foo.com")))
             .setProxyAuthenticator(null)
             .getProxyAuthenticator());
     }
@@ -515,7 +516,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     //    Check that the returned ProxyAuthenticator object has the updated correct username and password.
     @Test
     public void testUpdateProxyAuthenticator() throws URISyntaxException {
-        final ReplicatorConfiguration config = new ReplicatorConfiguration(new URLEndpoint(new URI("ws://foo.com")));
+        final ReplicatorConfiguration config = new ReplicatorConfiguration(Set.of(new CollectionConfiguration(getTestCollection())), new URLEndpoint(new URI("ws://foo.com")));
         ProxyAuthenticator proxyAuth = new ProxyAuthenticator("Wilson", "Vince".toCharArray());
         Assert.assertEquals(proxyAuth, config.setProxyAuthenticator(proxyAuth).getProxyAuthenticator());
         proxyAuth = new ProxyAuthenticator("Matheson", "Charlie".toCharArray());
@@ -533,7 +534,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     //    Check that the returned ProxyAuthenticator is null.
     @Test
     public void testResetProxyAuthenticator() throws URISyntaxException {
-        final ReplicatorConfiguration config = new ReplicatorConfiguration(new URLEndpoint(new URI("ws://foo.com")));
+        final ReplicatorConfiguration config = new ReplicatorConfiguration(Set.of(new CollectionConfiguration(getTestCollection())), new URLEndpoint(new URI("ws://foo.com")));
         final ProxyAuthenticator proxyAuth = new ProxyAuthenticator("Wilson", "Vince".toCharArray());
         Assert.assertEquals(proxyAuth, config.setProxyAuthenticator(proxyAuth).getProxyAuthenticator());
         Assert.assertNull(config.setProxyAuthenticator(null).getProxyAuthenticator());
@@ -550,7 +551,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     // Note that this does not set heartbeat.  This config is likely to cause flaky tests
     // when used in test with a live replicator
     private ReplicatorConfiguration makeDefaultConfig() {
-        return new ReplicatorConfiguration(getMockURLEndpoint()).addCollection(getTestCollection(), null);
+        return new ReplicatorConfiguration(Set.of(new CollectionConfiguration(getTestCollection())), getMockURLEndpoint());
     }
 
     private ReplicatorConfiguration makeBasicConfig() {
