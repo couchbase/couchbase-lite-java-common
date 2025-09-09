@@ -695,19 +695,6 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
         }
     }
 
-    /**
-     * Return the local database to replicate with the replication target.
-     *
-     * @deprecated Use Collection.getDatabase
-     */
-    @Deprecated
-    @NonNull
-    public final Database getDatabase() {
-        if (database != null) { return database; }
-        // Can't change the nullity of this method: it has to throw.
-        throw new CouchbaseLiteError("No database or collections provided for replication configuration");
-    }
-
     @SuppressWarnings("PMD.NPathComplexity")
     @NonNull
     @Override
