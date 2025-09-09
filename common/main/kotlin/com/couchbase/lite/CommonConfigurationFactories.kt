@@ -170,48 +170,6 @@ fun FileLogSink?.install(
 }
 
 /**
- * Configuration factory for new LogFileConfigurations
- *
- * Usage:
- *      val logFileConfig = LogFileConfigurationFactory.newConfig(...)
- */
-val LogFileConfigurationFactory: LogFileConfiguration? = null
-
-/**
- * Create a LogFileConfiguration, overriding the receiver's
- * values with the passed parameters:
- *
- * @param directory (required) the directory in which the logs files are stored.
- * @param maxSize the max size of the log file in bytes.
- * @param maxRotateCount the number of rotated logs that are saved.
- * @param usePlainText whether or not to log in plaintext.
- *
- * @see com.couchbase.lite.LogFileConfiguration
- * @deprecated Use FileLogSink?.install(String?, LogLevel?, Long?, Int?, Boolean?)
- */
-@Deprecated(
-    "Use FileLogSink?.install(String?, LogLevel?, Long?, Int?, Boolean?)",
-    replaceWith = ReplaceWith("FileLogSink?.install(dir: String?, level: LogLevel?, maxSize: Long?, maxRotate: Int?, plaintxt: Boolean?)")
-)
-fun LogFileConfiguration?.newConfig(
-    directory: String? = null,
-    maxSize: Long? = null,
-    maxRotateCount: Int? = null,
-    usePlainText: Boolean? = null
-): LogFileConfiguration {
-    val config = LogFileConfiguration(
-        directory ?: this?.directory
-        ?: throw IllegalArgumentException("A LogFileConfiguration must specify a directory")
-    )
-
-    (maxSize ?: this?.maxSize)?.let { config.maxSize = it }
-    (maxRotateCount ?: this?.maxRotateCount)?.let { config.maxRotateCount = it }
-    (usePlainText ?: this?.usesPlaintext())?.let { config.setUsePlaintext(it) }
-
-    return config
-}
-
-/**
  * Create a FullTextIndexConfiguration, overriding the receiver's
  * values with the passed parameters:
  *
@@ -244,29 +202,6 @@ fun FullTextIndexConfiguration?.create(
     replaceWith = ReplaceWith("ValueIndexConfiguration?.newConfig(vararg expressions: String)")
 )
 fun ValueIndexConfiguration?.create(vararg expressions: String = emptyArray()) = this.newConfig(*expressions)
-
-/**
- * Create a LogFileConfiguration, overriding the receiver's
- * values with the passed parameters:
- *
- * @param directory (required) the directory in which the logs files are stored.
- * @param maxSize the max size of the log file in bytes.
- * @param maxRotateCount the number of rotated logs that are saved.
- * @param usePlainText whether or not to log in plaintext.
- *
- * @see com.couchbase.lite.LogFileConfiguration
- * @deprecated Use FileLogSink?.install(String?, LogLevel?, Long?, Int?, Boolean?)
- */
-@Deprecated(
-    "Use FileLogSink?.install(String?, LogLevel?, Long?, Int?, Boolean?)",
-    replaceWith = ReplaceWith("FileLogSink?.install(dir: String?, level: LogLevel?, maxSize: Long?, maxRotate: Int?, plaintxt: Boolean?)")
-)
-fun LogFileConfiguration?.create(
-    directory: String? = null,
-    maxSize: Long? = null,
-    maxRotateCount: Int? = null,
-    usePlainText: Boolean? = null
-) = this.newConfig(directory, maxSize, maxRotateCount, usePlainText)
 
 
 // If the source config contains anything other than exactly the
