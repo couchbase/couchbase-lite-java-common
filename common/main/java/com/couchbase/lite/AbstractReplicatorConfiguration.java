@@ -21,10 +21,8 @@ import androidx.annotation.Nullable;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -33,9 +31,7 @@ import okhttp3.internal.Util;
 
 import com.couchbase.lite.internal.BaseReplicatorConfiguration;
 import com.couchbase.lite.internal.ImmutableReplicatorConfiguration;
-import com.couchbase.lite.internal.logging.Log;
 import com.couchbase.lite.internal.utils.CertUtils;
-import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
@@ -73,22 +69,6 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
         try { Util.checkDuration("heartbeat", heartbeat, TimeUnit.SECONDS); }
         catch (IllegalStateException e) { throw new IllegalArgumentException(e.getMessage()); }
         return heartbeat;
-    }
-
-    @Nullable
-    protected static Map<Collection, CollectionConfiguration> configureDefaultCollection(@Nullable Database db) {
-        if (db == null) { return null; }
-
-        final Collection defaultCollection;
-        try { defaultCollection = db.getDefaultCollection(); }
-        catch (CouchbaseLiteException e) {
-            throw new CouchbaseLiteError(Log.lookupStandardMessage("NoDefaultCollectionInConfig"), e);
-        }
-
-        final Map<Collection, CollectionConfiguration> collections = new HashMap<>();
-        collections.put(defaultCollection, new CollectionConfiguration(defaultCollection));
-
-        return collections;
     }
 
     @NonNull
@@ -463,101 +443,6 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
         return getReplicatorConfiguration();
     }
 
-    /**
-     * A collection of document IDs identifying documents to be replicated.
-     * If non-empty, only documents with IDs in this collection will be pushed and/or pulled.
-     * Default is empty: do not filter documents.
-     *
-     * @param documentIDs The document IDs.
-     * @return this.
-     * @deprecated Use CollectionConfiguration.setDocumentIDs
-     */
-    @SuppressWarnings("DeprecatedIsStillUsed")
-    @Deprecated
-    @NonNull
-    public final ReplicatorConfiguration setDocumentIDs(@Nullable List<String> documentIDs) {
-        updateValidDefaultConfigOrThrow(
-            config -> config.setDocumentIDs((documentIDs == null) ? null : new ArrayList<>(documentIDs)));
-        return getReplicatorConfiguration();
-    }
-
-    /**
-     * Sets a collection of Sync Gateway channel names from which to pull Documents.
-     * If unset, all accessible channels will be pulled.
-     * Default is empty: pull from all accessible channels.
-     * <p>
-     * Note:  Channel specifications apply only to replications
-     * pulling from a SyncGateway and only the channels visible
-     * to the authenticated user.  Channel specs are ignored:
-     * <ul>
-     *     <li>during a push replication.</li>
-     *     <li>during peer-to-peer or database-to-database replication</li>
-     *     <li>when the specified channel is not accessible to the user</li>
-     * </ul>
-     *
-     * @param channels The Sync Gateway channel names.
-     * @return this.
-     * @deprecated Use CollectionConfiguration.setChannels
-     */
-    @SuppressWarnings("DeprecatedIsStillUsed")
-    @Deprecated
-    @NonNull
-    public final ReplicatorConfiguration setChannels(@Nullable List<String> channels) {
-        updateValidDefaultConfigOrThrow(
-            config -> config.setChannels((channels == null) ? null : new ArrayList<>(channels)));
-        return getReplicatorConfiguration();
-    }
-
-    /**
-     * Sets the the conflict resolver.
-     * Default is <code>ConflictResolver.DEFAULT</code>
-     *
-     * @param conflictResolver A conflict resolver.
-     * @return this.
-     * @deprecated Use CollectionConfiguration.setConflictResolver
-     */
-    @SuppressWarnings("DeprecatedIsStillUsed")
-    @Deprecated
-    @NonNull
-    public final ReplicatorConfiguration setConflictResolver(@Nullable ConflictResolver conflictResolver) {
-        updateValidDefaultConfigOrThrow(config -> config.setConflictResolver(conflictResolver));
-        return getReplicatorConfiguration();
-    }
-
-    /**
-     * Sets a filter object for validating whether the documents can be pulled from the
-     * remote endpoint. Only documents for which the object returns true are replicated.
-     * Default is no filter.
-     *
-     * @param pullFilter The filter to filter the document to be pulled.
-     * @return this.
-     * @deprecated Use CollectionConfiguration.setPullFilter
-     */
-    @SuppressWarnings("DeprecatedIsStillUsed")
-    @Deprecated
-    @NonNull
-    public final ReplicatorConfiguration setPullFilter(@Nullable ReplicationFilter pullFilter) {
-        updateValidDefaultConfigOrThrow(config -> config.setPullFilter(pullFilter));
-        return getReplicatorConfiguration();
-    }
-
-    /**
-     * Sets a filter object for validating whether the documents can be pushed
-     * to the remote endpoint.
-     * Default is no filter.
-     *
-     * @param pushFilter The filter to filter the document to be pushed.
-     * @return this.
-     * @deprecated Use CollectionConfiguration.setPushFilter
-     */
-    @SuppressWarnings("DeprecatedIsStillUsed")
-    @Deprecated
-    @NonNull
-    public final ReplicatorConfiguration setPushFilter(@Nullable ReplicationFilter pushFilter) {
-        updateValidDefaultConfigOrThrow(config -> config.setPushFilter(pushFilter));
-        return getReplicatorConfiguration();
-    }
-
     //---------------------------------------------
     // Getters
     //---------------------------------------------
@@ -732,35 +617,4 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
 
     @NonNull
     abstract ReplicatorConfiguration getReplicatorConfiguration();
-
-    //---------------------------------------------
-    // Private
-    //---------------------------------------------
-
-    private void updateValidDefaultConfigOrThrow(@NonNull Fn.Consumer<CollectionConfiguration> updater) {
-        getAndUpdateDefaultConfig(updater);
-    }
-
-    @NonNull
-    private CollectionConfiguration getAndUpdateDefaultConfig(@Nullable Fn.Consumer<CollectionConfiguration> updater) {
-        final Collection defaultCollection = Fn.firstOrNull(collectionConfigurations.keySet(), Collection::isDefault);
-        if (defaultCollection == null) {
-            throw new IllegalArgumentException("Cannot use legacy parameters when there is no default collection");
-        }
-
-        CollectionConfiguration config = collectionConfigurations.get(defaultCollection);
-        if (config == null) {
-            throw new IllegalArgumentException(
-                "Cannot use legacy parameters when the default collection has no configuration");
-        }
-
-        // Copy on write...
-        if (updater != null) {
-            config = new CollectionConfiguration(config);
-            updater.accept(config);
-            addCollectionInternal(defaultCollection, config);
-        }
-
-        return config;
-    }
 }

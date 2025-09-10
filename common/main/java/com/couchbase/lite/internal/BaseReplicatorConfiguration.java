@@ -27,8 +27,6 @@ import com.couchbase.lite.CollectionConfiguration;
 
 
 public class BaseReplicatorConfiguration {
-    @NonNull
-    private final Map<Collection, CollectionConfiguration> internalCollectionConfigurations;
 
     // subclasses can read the collection configurations directly but must use mutators to change them.
     @NonNull
@@ -37,16 +35,9 @@ public class BaseReplicatorConfiguration {
     protected BaseReplicatorConfiguration(@Nullable Map<Collection, CollectionConfiguration> configs) {
         CouchbaseLiteInternal.requireInit("Can't create ReplicatorConfiguration");
 
-        internalCollectionConfigurations = (configs != null) ? configs : new HashMap<>();
+        final Map<Collection, CollectionConfiguration> internalCollectionConfigurations =
+                (configs != null) ? configs : new HashMap<>();
         collectionConfigurations = Collections.unmodifiableMap(internalCollectionConfigurations);
-    }
-
-    protected void addCollectionInternal(@Nullable Collection coll, @Nullable CollectionConfiguration config) {
-        if (coll != null) { internalCollectionConfigurations.put(coll, config); }
-    }
-
-    protected void removeCollectionInternal(@Nullable Collection coll) {
-        if (coll != null) { internalCollectionConfigurations.remove(coll); }
     }
 
     @NonNull
