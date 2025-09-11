@@ -27,7 +27,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import okhttp3.internal.Util;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import com.couchbase.lite.internal.BaseReplicatorConfiguration;
 import com.couchbase.lite.internal.ImmutableReplicatorConfiguration;
@@ -66,9 +66,17 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     // which is not entirely kosher
     @SuppressWarnings("PMD.PreserveStackTrace")
     private static int verifyHeartbeat(int heartbeat) {
-        try { Util.checkDuration("heartbeat", heartbeat, TimeUnit.SECONDS); }
+        try { checkDuration("heartbeat", heartbeat); }
         catch (IllegalStateException e) { throw new IllegalArgumentException(e.getMessage()); }
         return heartbeat;
+    }
+
+    private static void checkDuration(String name, long duration) {
+        Preconditions.assertNotNegative(duration, name);
+        final long millis = TimeUnit.SECONDS.toMillis(duration);
+        if (millis > Integer.MAX_VALUE || (millis == 0L && duration > 0L)) {
+            throw new IllegalArgumentException(name + (millis > Integer.MAX_VALUE ? " too large." : " too small."));
+        }
     }
 
     @NonNull
