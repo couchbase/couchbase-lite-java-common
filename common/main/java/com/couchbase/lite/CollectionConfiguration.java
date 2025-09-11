@@ -27,8 +27,9 @@ import com.couchbase.lite.internal.utils.Preconditions;
 
 
 public class CollectionConfiguration {
-    @NonNull
+    @Nullable
     private Collection collection;
+    @Nullable
     private List<String> channels;
     @Nullable
     private List<String> documentIDs;
@@ -42,32 +43,6 @@ public class CollectionConfiguration {
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
-
-    /**
-     * Creates a configuration instance.
-     *
-     * @deprecated This constructor is deprecated. Use {@link #CollectionConfiguration(Collection)}
-     * and setter methods to configure channels, filters, and a custom conflict resolver.
-     *
-     * @param channels           The list of channels to pull from Sync Gateway.
-     * @param documentIDs        The list of document IDs to filter replication.
-     * @param pullFilter         The filter function for pulling documents.
-     * @param pushFilter         The filter function for pushing documents.
-     * @param conflictResolver   The custom conflict resolver.
-     */
-    @Deprecated
-    public CollectionConfiguration(
-        @Nullable List<String> channels,
-        @Nullable List<String> documentIDs,
-        @Nullable ReplicationFilter pullFilter,
-        @Nullable ReplicationFilter pushFilter,
-        @Nullable ConflictResolver conflictResolver) {
-        this.channels = channels;
-        this.documentIDs = documentIDs;
-        this.pullFilter = pullFilter;
-        this.pushFilter = pushFilter;
-        this.conflictResolver = conflictResolver;
-    }
 
     /**
      * Creates a new configuration instance for the given collection.

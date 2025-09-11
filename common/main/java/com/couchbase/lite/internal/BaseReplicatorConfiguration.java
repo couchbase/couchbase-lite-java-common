@@ -16,10 +16,8 @@
 package com.couchbase.lite.internal;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 
 import com.couchbase.lite.Collection;
@@ -32,12 +30,10 @@ public class BaseReplicatorConfiguration {
     @NonNull
     protected final Map<Collection, CollectionConfiguration> collectionConfigurations;
 
-    protected BaseReplicatorConfiguration(@Nullable Map<Collection, CollectionConfiguration> configs) {
+    protected BaseReplicatorConfiguration(@NonNull Map<Collection, CollectionConfiguration> configs) {
         CouchbaseLiteInternal.requireInit("Can't create ReplicatorConfiguration");
 
-        final Map<Collection, CollectionConfiguration> internalCollectionConfigurations =
-                (configs != null) ? configs : new HashMap<>();
-        collectionConfigurations = Collections.unmodifiableMap(internalCollectionConfigurations);
+        collectionConfigurations = Collections.unmodifiableMap(configs);
     }
 
     @NonNull

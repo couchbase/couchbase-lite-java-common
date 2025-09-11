@@ -88,10 +88,10 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
         return map;
     }
 
-    @Nullable
+    @NonNull
     private static Map<Collection, CollectionConfiguration> copyConfigs(
-        @Nullable Map<Collection, CollectionConfiguration> configs) {
-        return (configs == null) ? null : new HashMap<>(configs);
+        @NonNull Map<Collection, CollectionConfiguration> configs) {
+        return new HashMap<>(configs);
     }
 
     //---------------------------------------------
@@ -127,7 +127,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     @SuppressWarnings({"PMD.ExcessiveParameterList", "PMD.ArrayIsStoredDirectly"})
     protected AbstractReplicatorConfiguration(
         @Nullable Database db,
-        @Nullable Map<Collection, CollectionConfiguration> collections,
+        @NonNull Map<Collection, CollectionConfiguration> collections,
         @NonNull Endpoint target) {
         this(
             collections,
@@ -188,7 +188,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     // They are, therefore, effectively immutable
     @SuppressWarnings("PMD.ExcessiveParameterList")
     private AbstractReplicatorConfiguration(
-        @Nullable Map<Collection, CollectionConfiguration> collections,
+        @NonNull Map<Collection, CollectionConfiguration> collections,
         @NonNull Endpoint target,
         @NonNull com.couchbase.lite.ReplicatorType type,
         boolean continuous,

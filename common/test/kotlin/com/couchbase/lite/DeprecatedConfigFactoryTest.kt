@@ -23,8 +23,8 @@ class DeprecatedConfigFactoryTest : BaseDbTest() {
     fun testReplicatorConfigWithGoodArgs() {
         val collectConfig = CollectionConfiguration.fromCollections(setOf(testCollection))
         val config = ReplicatorConfigurationFactory.newConfig(
-            testEndpoint,
-            collectConfig
+            collectConfig,
+            testEndpoint
         )
         config.collectionConfigs.map { Assert.assertEquals(testCollection, it.collection) }
         Assert.assertEquals(testEndpoint, config.target)
@@ -35,8 +35,8 @@ class DeprecatedConfigFactoryTest : BaseDbTest() {
     fun testReplicatorConfigCopy() {
         val collectConfig = CollectionConfiguration.fromCollections(setOf(testCollection))
         val config1 = ReplicatorConfigurationFactory.newConfig(
-            testEndpoint,
             collectConfig,
+            testEndpoint,
             type = ReplicatorType.PULL
         )
         val config2 = ReplicatorConfiguration(config1)
@@ -51,11 +51,11 @@ class DeprecatedConfigFactoryTest : BaseDbTest() {
     fun testReplicatorConfigReplace() {
         val collectConfig = CollectionConfiguration.fromCollections(setOf(testCollection))
         val config1 = ReplicatorConfigurationFactory.newConfig(
-            testEndpoint,
             collectConfig,
+            testEndpoint,
             type = ReplicatorType.PULL
         )
-        val config2 = config1.newConfig(testEndpoint).setType(ReplicatorType.PUSH)
+        val config2 = config1.newConfig(collectConfig, testEndpoint).setType(ReplicatorType.PUSH)
         Assert.assertNotSame(config1, config2)
         Assert.assertEquals(
             config1.collectionConfigs.map { it.collection?.database },
@@ -70,8 +70,8 @@ class DeprecatedConfigFactoryTest : BaseDbTest() {
         val collectConfig =
             CollectionConfiguration.fromCollections(setOf(testDatabase.defaultCollection))
         val config1 = ReplicatorConfigurationFactory
-            .newConfig(testEndpoint, collectConfig)
-        val config2 = config1.newConfig(testEndpoint)
+            .newConfig(collectConfig, testEndpoint)
+        val config2 = config1.newConfig(collectConfig, testEndpoint)
         Assert.assertNotSame(config1, config2)
         Assert.assertEquals(config1.collectionConfigs, config2.collectionConfigs)
         config2.collectionConfigs.map { it ->
@@ -88,12 +88,12 @@ class DeprecatedConfigFactoryTest : BaseDbTest() {
         val collectConfig =
             CollectionConfiguration.fromCollections(setOf(testDatabase.defaultCollection))
         val config1 = ReplicatorConfigurationFactory
-            .newConfig(testEndpoint, collectConfig)
+            .newConfig(collectConfig, testEndpoint)
         val filter = ReplicationFilter { _, _ -> true }
 
         // Information gets lost here (the configuration of testCollection): should be a log message
         collectConfig.map { it.pushFilter = filter }
-        val config2 = config1.newConfig(testEndpoint, collectConfig)
+        val config2 = config1.newConfig(collectConfig, testEndpoint)
 
         Assert.assertNotSame(config1, config2)
         val db1 = config1.collectionConfigs.map { it.collection?.database }.first()
@@ -118,7 +118,7 @@ class DeprecatedConfigFactoryTest : BaseDbTest() {
         val collectConfig =
             CollectionConfiguration.fromCollections(setOf(testDatabase.defaultCollection))
         collectConfig.map { it.channels = listOf("boop") }
-        val config = ReplicatorConfigurationFactory.newConfig(testEndpoint, collectConfig)
+        val config = ReplicatorConfigurationFactory.newConfig(collectConfig, testEndpoint)
         val collections: Set<Collection> = config.collectionConfigs.map { it.collection!! }.toSet()
         Assert.assertEquals(testDatabase.collections, collections)
         Assert.assertEquals(testEndpoint, config.target)
@@ -134,7 +134,7 @@ class DeprecatedConfigFactoryTest : BaseDbTest() {
         val collectConfig =
             CollectionConfiguration.fromCollections(setOf(testDatabase.defaultCollection))
         collectConfig.map { it.channels = listOf("boop") }
-        val config1 = ReplicatorConfigurationFactory.newConfig(testEndpoint, collectConfig)
+        val config1 = ReplicatorConfigurationFactory.newConfig(collectConfig, testEndpoint)
         val config2 = config1.setContinuous(true)
         val collections: Set<Collection> = config2.collectionConfigs.map { it.collection!! }.toSet()
         Assert.assertEquals(testDatabase.collections, collections)

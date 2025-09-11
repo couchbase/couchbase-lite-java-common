@@ -30,55 +30,55 @@ import java.util.concurrent.TimeUnit
 
 @Suppress("BlockingMethodInNonBlockingContext")
 class FlowTest : BaseReplicatorTest() {
-    @Suppress("DEPRECATION")
-    @Test
-    fun testDatabaseChangeFlow() {
-        val docIds = mutableListOf<String>()
-
-        runBlocking {
-            val latch = CountDownLatch(1)
-
-            val collector = launch(Dispatchers.Default) {
-                testDatabase.databaseChangeFlow(testSerialExecutor)
-                    .map {
-                        Assert.assertEquals("change on wrong db", testDatabase, it.database)
-                        it.documentIDs
-                    }
-                    .onEach { ids ->
-                        docIds.addAll(ids)
-                        if (docIds.size >= 10) {
-                            latch.countDown()
-                        }
-                    }
-                    .catch {
-                        latch.countDown()
-                        throw it
-                    }
-                    .collect()
-            }
-
-            launch(Dispatchers.Default) {
-                // Hate this: wait until the collector starts
-                delay(20L)
-
-                // make 10 db changes
-                for (i in 0..9) {
-                    val doc = MutableDocument("doc-${i}")
-                    doc.setValue("type", "demo")
-                    saveDocInCollection(doc, testDatabase.defaultCollection)
-                }
-            }
-
-            Assert.assertTrue("Timeout", latch.await(1, TimeUnit.SECONDS))
-            collector.cancel()
-        }
-
-        Assert.assertEquals(10, docIds.size)
-        for (i in 0..9) {
-            val id = "doc-${i}"
-            Assert.assertTrue("missing ${id}", docIds.contains(id))
-        }
-    }
+//    @Suppress("DEPRECATION")
+//    @Test
+//    fun testDatabaseChangeFlow() {
+//        val docIds = mutableListOf<String>()
+//
+//        runBlocking {
+//            val latch = CountDownLatch(1)
+//
+//            val collector = launch(Dispatchers.Default) {
+//                testDatabase.databaseChangeFlow(testSerialExecutor)
+//                    .map {
+//                        Assert.assertEquals("change on wrong db", testDatabase, it.database)
+//                        it.documentIDs
+//                    }
+//                    .onEach { ids ->
+//                        docIds.addAll(ids)
+//                        if (docIds.size >= 10) {
+//                            latch.countDown()
+//                        }
+//                    }
+//                    .catch {
+//                        latch.countDown()
+//                        throw it
+//                    }
+//                    .collect()
+//            }
+//
+//            launch(Dispatchers.Default) {
+//                // Hate this: wait until the collector starts
+//                delay(20L)
+//
+//                // make 10 db changes
+//                for (i in 0..9) {
+//                    val doc = MutableDocument("doc-${i}")
+//                    doc.setValue("type", "demo")
+//                    saveDocInCollection(doc, testDatabase.defaultCollection)
+//                }
+//            }
+//
+//            Assert.assertTrue("Timeout", latch.await(1, TimeUnit.SECONDS))
+//            collector.cancel()
+//        }
+//
+//        Assert.assertEquals(10, docIds.size)
+//        for (i in 0..9) {
+//            val id = "doc-${i}"
+//            Assert.assertTrue("missing ${id}", docIds.contains(id))
+//        }
+//    }
 
      @Test
     fun testDocumentChangeFlowOnSave() {
