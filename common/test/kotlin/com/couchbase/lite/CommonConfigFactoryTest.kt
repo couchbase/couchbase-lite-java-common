@@ -78,27 +78,27 @@ class CommonConfigFactoryTest : BaseTest() {
         Assert.assertEquals(CONFIG_FACTORY_TEST_STRING, config2.expressions[0])
     }
 
-//    @Test
-//    fun testLogFileConfigurationFactory() {
-//        val config = LogFileConfigurationFactory.newConfig(directory = CONFIG_FACTORY_TEST_STRING, maxSize = 4096L)
-//        Assert.assertEquals(CONFIG_FACTORY_TEST_STRING, config.directory)
-//        Assert.assertEquals(4096L, config.maxSize)
-//    }
-//
-//    @Test
-//    fun testLogFileConfigurationFactoryNullDir() {
-//        Assert.assertThrows(IllegalArgumentException::class.java) { LogFileConfigurationFactory.newConfig() }
-//    }
-//
-//    @Test
-//    fun
-//            testLogFileConfigurationFactoryCopy() {
-//        val config1 = LogFileConfigurationFactory.newConfig(directory = CONFIG_FACTORY_TEST_STRING, maxSize = 4096L)
-//        val config2 = config1.newConfig(maxSize = 1024L)
-//        Assert.assertNotEquals(config1, config2)
-//        Assert.assertEquals(CONFIG_FACTORY_TEST_STRING, config2.directory)
-//        Assert.assertEquals(1024L, config2.maxSize)
-//    }
+    @Test
+    fun testLogFileConfigurationFactory() {
+        val config = LogFileConfigurationFactory.newConfig(directory = CONFIG_FACTORY_TEST_STRING, maxSize = 4096L)
+        Assert.assertEquals(CONFIG_FACTORY_TEST_STRING, config.directory)
+        Assert.assertEquals(4096L, config.maxSize)
+    }
+
+    @Test
+    fun testLogFileConfigurationFactoryNullDir() {
+        Assert.assertThrows(IllegalArgumentException::class.java) { LogFileConfigurationFactory.newConfig() }
+    }
+
+    @Test
+    fun
+            testLogFileConfigurationFactoryCopy() {
+        val config1 = LogFileConfigurationFactory.newConfig(directory = CONFIG_FACTORY_TEST_STRING, maxSize = 4096L)
+        val config2 = config1.newConfig(maxSize = 1024L)
+        Assert.assertNotEquals(config1, config2)
+        Assert.assertEquals(CONFIG_FACTORY_TEST_STRING, config2.directory)
+        Assert.assertEquals(1024L, config2.maxSize)
+    }
 
     @Test
     fun testFileLogSinkFactory() {

@@ -28,7 +28,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
 
 public class CollectionConfiguration {
     @Nullable
-    private Collection collection;
+    private final Collection collection;
     @Nullable
     private List<String> channels;
     @Nullable
