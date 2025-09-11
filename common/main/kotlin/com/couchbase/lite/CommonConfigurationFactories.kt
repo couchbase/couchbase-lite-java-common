@@ -32,7 +32,12 @@ val CollectionConfigurationFactory: CollectionConfiguration? = null
 /**
  *
  * @see com.couchbase.lite.CollectionConfiguration
+ * @deprecated Use CollectionConfiguration?.newConfig(collection: Collection, channels: List<String>?, documentIDs: List<String>?, pullFilter: ReplicationFilter?, pushFilter: ReplicationFilter?, conflictResolver: ConflictResolver?)
  */
+@Deprecated(
+    "Use CollectionConfiguration?.newConfig(collection: Collection, channels: List<String>?, documentIDs: List<String>?, pullFilter: ReplicationFilter?, pushFilter: ReplicationFilter?, conflictResolver: ConflictResolver?)",
+    replaceWith = ReplaceWith("CollectionConfiguration?.newConfig(collection: Collection, channels: List<String>?, documentIDs: List<String>?, pullFilter: ReplicationFilter?, pushFilter: ReplicationFilter?, conflictResolver: ConflictResolver?)")
+)
 fun CollectionConfiguration?.newConfig(
     channels: List<String>? = null,
     documentIDs: List<String>? = null,
@@ -41,6 +46,25 @@ fun CollectionConfiguration?.newConfig(
     conflictResolver: ConflictResolver? = null
 ): CollectionConfiguration {
     val config = CollectionConfiguration()
+
+    (channels ?: this?.channels)?.let { config.channels = it }
+    (documentIDs ?: this?.documentIDs)?.let { config.documentIDs = it }
+    (pushFilter ?: this?.pushFilter)?.let { config.pushFilter = it }
+    (pullFilter ?: this?.pullFilter)?.let { config.pullFilter = it }
+    (conflictResolver ?: this?.conflictResolver)?.let { config.conflictResolver = it }
+
+    return config
+}
+
+fun CollectionConfiguration?.newConfig(
+    collection: Collection,
+    channels: List<String>? = null,
+    documentIDs: List<String>? = null,
+    pullFilter: ReplicationFilter? = null,
+    pushFilter: ReplicationFilter? = null,
+    conflictResolver: ConflictResolver? = null
+): CollectionConfiguration {
+    val config = CollectionConfiguration(collection)
 
     (channels ?: this?.channels)?.let { config.channels = it }
     (documentIDs ?: this?.documentIDs)?.let { config.documentIDs = it }
