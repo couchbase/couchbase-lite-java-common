@@ -27,8 +27,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 import com.couchbase.lite.internal.BaseReplicatorConfiguration;
 import com.couchbase.lite.internal.ImmutableReplicatorConfiguration;
 import com.couchbase.lite.internal.utils.CertUtils;
