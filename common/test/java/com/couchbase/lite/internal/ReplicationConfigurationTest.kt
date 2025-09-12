@@ -55,8 +55,12 @@ class ReplicationConfigurationTest : BaseDbTest() {
     @Test
     fun testCreateAllReplicationCollection() {
         val colls = mapOf(
-            testDatabase.defaultCollection to CollectionConfiguration(),
-            testDatabase.createCollection("antique_clocks") to CollectionConfiguration()
+            testDatabase.defaultCollection to CollectionConfiguration(testDatabase.defaultCollection),
+            testDatabase.createCollection("antique_clocks") to CollectionConfiguration(
+                testDatabase.getCollection(
+                    "antique_clocks"
+                )!!
+            )
         )
 
         Assert.assertEquals(0, boundCollectionCount())
@@ -75,9 +79,10 @@ class ReplicationConfigurationTest : BaseDbTest() {
 
     @Test
     fun testReplicationCollectionChannels() {
-        val config = CollectionConfiguration()
+        val tempCollection = testDatabase.createCollection("rockwell_plates")
+        val config = CollectionConfiguration(tempCollection)
         config.channels = listOf("x", "y", "z")
-        val colls = mapOf(testDatabase.createCollection("rockwell_plates") to config)
+        val colls = mapOf(tempCollection to config)
         val opts = FLValue.fromData(ReplicationCollection.createAll(colls)[0].options!!)
             .asMap(String::class.java, Object::class.java)
         Assert.assertEquals(1, opts.size)
@@ -86,9 +91,10 @@ class ReplicationConfigurationTest : BaseDbTest() {
 
     @Test
     fun testReplicationCollectionDocIds() {
-        val config = CollectionConfiguration()
+        val tempCollection = testDatabase.createCollection("porcelain_dolls")
+        val config = CollectionConfiguration(tempCollection)
         config.documentIDs = listOf("x", "y", "z")
-        val colls = mapOf(testDatabase.createCollection("porcelain_dolls") to config)
+        val colls = mapOf(tempCollection to config)
         val opts = FLValue.fromData(ReplicationCollection.createAll(colls)[0].options!!)
             .asMap(String::class.java, Object::class.java)
         Assert.assertEquals(1, opts.size)
@@ -105,9 +111,10 @@ class ReplicationConfigurationTest : BaseDbTest() {
 
         val body = FLValue.fromData(FLEncoder.encodeMap(mapOf("Haight" to "Ashbury"))!!)
 
-        val config = CollectionConfiguration()
+        val tempCollection = testDatabase.createCollection("pogs")
+        val config = CollectionConfiguration(tempCollection)
         config.pullFilter = ReplicationFilter { _, _ -> calls++; true }
-        val colls = mapOf(testDatabase.createCollection("pogs") to config)
+        val colls = mapOf(tempCollection to config)
         val token = ReplicationCollection.createAll(colls)[0].token
 
         withContent(body) {
@@ -128,9 +135,10 @@ class ReplicationConfigurationTest : BaseDbTest() {
 
         val body = FLValue.fromData(FLEncoder.encodeMap(mapOf("Haight" to "Ashbury"))!!)
 
-        val config = CollectionConfiguration()
+        val tempCollection = testDatabase.createCollection("pogs")
+        val config = CollectionConfiguration(tempCollection)
         config.pushFilter = ReplicationFilter { _, _ -> calls++; true }
-        val colls = mapOf(testDatabase.createCollection("pogs") to config)
+        val colls = mapOf(tempCollection to config)
         val token = ReplicationCollection.createAll(colls)[0].token
 
         withContent(body) {
@@ -148,13 +156,14 @@ class ReplicationConfigurationTest : BaseDbTest() {
         val coll = testDatabase.createCollection("pogs")
         val doc = MutableDocument("BorisTheSpider")
         coll.save(doc)
-
+        
         val body = FLValue.fromData(FLEncoder.encodeMap(mapOf("Haight" to "Ashbury"))!!)
 
-        val config = CollectionConfiguration()
+        val tempCollection = testDatabase.createCollection("pogs")
+        val config = CollectionConfiguration(tempCollection)
         config.pushFilter = ReplicationFilter { _, _ -> calls++; true }
         config.pullFilter = ReplicationFilter { _, _ -> calls++; true }
-        val colls = mapOf(testDatabase.createCollection("pogs") to config)
+        val colls = mapOf(tempCollection to config)
         val token = ReplicationCollection.createAll(colls)[0].token
 
         withContent(body) {
@@ -175,10 +184,11 @@ class ReplicationConfigurationTest : BaseDbTest() {
 
         val body = FLValue.fromData(FLEncoder.encodeMap(mapOf("Haight" to "Ashbury"))!!)
 
-        val config = CollectionConfiguration()
+        val tempCollection = testDatabase.createCollection("pogs")
+        val config = CollectionConfiguration(tempCollection)
         config.pushFilter = ReplicationFilter { _, _ -> calls++; true }
         config.pullFilter = ReplicationFilter { _, _ -> calls++; true }
-        val colls = mapOf(testDatabase.createCollection("pogs") to config)
+        val colls = mapOf(tempCollection to config)
 
         // this token should be ignored.
         val token = ReplicationCollection.createAll(colls)[0].token + 1

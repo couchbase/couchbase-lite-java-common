@@ -34,10 +34,4 @@ public final class KotlinHelpers {
         throws CouchbaseLiteException {
         return repl.isDocumentPending(null, collection);
     }
-
-    // Kotlin will not allow a the call isDocumentPending(null)
-    public static boolean callIsDocumentPendingWithNullId(@NonNull Replicator repl)
-        throws CouchbaseLiteException {
-        return repl.isDocumentPending(null);
-    }
 }

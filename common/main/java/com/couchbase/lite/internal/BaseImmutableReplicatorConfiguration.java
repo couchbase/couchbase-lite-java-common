@@ -103,7 +103,12 @@ public class BaseImmutableReplicatorConfiguration {
         this.maxAttemptWaitTime = config.getMaxAttemptWaitTime();
         this.heartbeat = config.getHeartbeat();
         this.enableAutoPurge = config.isAutoPurgeEnabled();
-        this.database = Preconditions.assertNotNull(config.getDatabase(), "replications source database");
+        this.database = Preconditions.assertNotNull(
+                collectionConfigs.keySet().stream().findFirst()
+                        .map(Collection::getDatabase)
+                        .orElse(null),
+                "replications source database"
+        );
     }
 
     //-------------------------------------------------------------------------

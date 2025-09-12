@@ -15,6 +15,7 @@
 //
 package com.couchbase.lite;
 
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -117,8 +118,8 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
     }
 
     private ReplicatorConfiguration makeDefaultConfig() {
-        return new ReplicatorConfiguration(getMockURLEndpoint())
-            .addCollection(getTestCollection(), null);
+        CollectionConfiguration collectionConfiguration = new CollectionConfiguration(getTestCollection());
+        return new ReplicatorConfiguration(Set.of(collectionConfiguration), getMockURLEndpoint());
     }
 
     private ReplicatorConfiguration makeConfig() {
