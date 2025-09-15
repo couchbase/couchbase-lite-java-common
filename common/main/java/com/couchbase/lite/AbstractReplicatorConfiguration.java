@@ -465,7 +465,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
      * @return a set of {@link CollectionConfiguration} objects.
      */
     @NonNull
-    public final Set<CollectionConfiguration> getCollectionConfigs() {
+    public final Set<CollectionConfiguration> getCollections() {
         return new HashSet<>(collectionConfigurations.values());
     }
 

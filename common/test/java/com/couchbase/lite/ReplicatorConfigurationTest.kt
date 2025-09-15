@@ -133,7 +133,7 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
         val collectConfigs = ReplicatorConfiguration(
             CollectionConfiguration.fromCollections(setOf(testDatabase.defaultCollection)),
             mockURLEndpoint
-        ).collectionConfigs
+        ).collections
 
         collectConfigs.forEach { it.conflictResolver = resolver }
 
@@ -159,7 +159,7 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
         val collectConfigs =
             CollectionConfiguration.fromCollections(setOf(testDatabase.defaultCollection))
         val replConfig1 = ReplicatorConfiguration(collectConfigs, mockURLEndpoint)
-        replConfig1.collectionConfigs.forEach { collecConfig ->
+        replConfig1.collections.forEach { collecConfig ->
             collecConfig
                 .setPushFilter(pushFilter1)
                 .setPullFilter(pullFilter1)
@@ -167,7 +167,7 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
                 .setDocumentIDs(listOf("doc1", "doc2"))
         }
 
-        replConfig1.collectionConfigs.forEach { collecConfig ->
+        replConfig1.collections.forEach { collecConfig ->
             Assert.assertEquals(pushFilter1, collecConfig.pushFilter)
             Assert.assertEquals(pullFilter1, collecConfig.pullFilter)
             Assert.assertArrayEquals(arrayOf("CNBC", "ABC"), collecConfig.channels?.toTypedArray())
@@ -216,7 +216,7 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
         val collectConfigA = CollectionConfiguration(collectionA)
         val replConfig1 = ReplicatorConfiguration(setOf(collectConfigA), mockURLEndpoint)
 
-        val collectionConfigs = replConfig1.collectionConfigs
+        val collectionConfigs = replConfig1.collections
         Assert.assertEquals(1, collectionConfigs.size)
         Assert.assertTrue(collectionConfigs.contains(collectConfigA))
     }
