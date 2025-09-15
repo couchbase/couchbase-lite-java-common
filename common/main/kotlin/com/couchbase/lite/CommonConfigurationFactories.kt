@@ -15,7 +15,6 @@
 //
 package com.couchbase.lite
 
-import com.couchbase.lite.internal.getCollectionConfigs
 import com.couchbase.lite.internal.logging.Log
 import com.couchbase.lite.logging.FileLogSink
 import com.couchbase.lite.logging.LogSinks
@@ -34,13 +33,14 @@ val CollectionConfigurationFactory: CollectionConfiguration? = null
  * @see com.couchbase.lite.CollectionConfiguration
  */
 fun CollectionConfiguration?.newConfig(
+    collection: Collection,
     channels: List<String>? = null,
     documentIDs: List<String>? = null,
     pullFilter: ReplicationFilter? = null,
     pushFilter: ReplicationFilter? = null,
     conflictResolver: ConflictResolver? = null
 ): CollectionConfiguration {
-    val config = CollectionConfiguration()
+    val config = CollectionConfiguration(collection)
 
     (channels ?: this?.channels)?.let { config.channels = it }
     (documentIDs ?: this?.documentIDs)?.let { config.documentIDs = it }
@@ -235,26 +235,4 @@ internal fun copyReplConfig(
     (heartbeat ?: src?.heartbeat)?.let { dst.heartbeat = it }
     (enableAutoPurge ?: src?.isAutoPurgeEnabled)?.let { dst.setAutoPurgeEnabled(it) }
     (acceptParentDomainCookies ?: src?.isAcceptParentDomainCookies)?.let { dst.setAcceptParentDomainCookies(it) }
-}
-
-@Suppress("DEPRECATION")
-internal fun copyLegacyReplConfig(
-    src: ReplicatorConfiguration?,
-    dst: ReplicatorConfiguration,
-    pinnedServerCertificate: ByteArray?,
-    channels: List<String>?,
-    documentIDs: List<String>?,
-    pushFilter: ReplicationFilter?,
-    pullFilter: ReplicationFilter?,
-    conflictResolver: ConflictResolver?
-) {
-    (pinnedServerCertificate ?: src?.pinnedServerCertificate)?.let { dst.setPinnedServerCertificate(it) }
-
-    // copy the default collection configuration, if it exists
-    val srcConfig = src?.database?.defaultCollection?.let { getCollectionConfigs(src)?.get(it) }
-    (channels ?: srcConfig?.channels)?.let { dst.channels = it }
-    (documentIDs ?: srcConfig?.documentIDs)?.let { dst.documentIDs = it }
-    (pushFilter ?: srcConfig?.pushFilter)?.let { dst.pushFilter = it }
-    (pullFilter ?: srcConfig?.pullFilter)?.let { dst.pullFilter = it }
-    (conflictResolver ?: srcConfig?.conflictResolver)?.let { dst.conflictResolver = it }
 }

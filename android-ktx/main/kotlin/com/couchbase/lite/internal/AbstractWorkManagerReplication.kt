@@ -23,8 +23,6 @@ import com.couchbase.lite.ReplicatorType
 import java.security.cert.X509Certificate
 
 abstract class AbstractWorkManagerReplicatorConfiguration(protected val replConfig: ReplicatorConfiguration) {
-    val collections: Set<Collection> by replConfig::collections
-
     var type: ReplicatorType by replConfig::type
     var authenticator: Authenticator? by replConfig::authenticator
     var headers: Map<String, String>? by replConfig::headers
@@ -36,20 +34,5 @@ abstract class AbstractWorkManagerReplicatorConfiguration(protected val replConf
         }
 
     fun getConfig() = ReplicatorConfiguration(replConfig)
-
-    fun addCollection(collection: Collection, collectionConfig: CollectionConfiguration? = null) {
-        replConfig.addCollection(collection, collectionConfig)
-    }
-
-    fun addCollections(
-        collections: kotlin.collections.Collection<Collection>,
-        collectionConfig: CollectionConfiguration? = null
-    ) {
-        replConfig.addCollections(collections, collectionConfig)
-    }
-
-    fun removeCollection(collection: Collection) {
-        replConfig.removeCollection(collection)
-    }
 }
 

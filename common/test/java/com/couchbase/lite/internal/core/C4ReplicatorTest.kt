@@ -56,8 +56,7 @@ class C4ReplicatorTest : BaseReplicatorTest() {
         Assert.assertEquals(0, C4Replicator.BOUND_REPLICATORS.size())
         Assert.assertEquals(0, boundCollectionCount())
 
-        val config = ReplicatorConfiguration(URLEndpoint(URI("wss://foo")))
-        config.addCollection(testCollection, CollectionConfiguration())
+        val config = ReplicatorConfiguration(setOf(CollectionConfiguration(testCollection)), URLEndpoint(URI("wss://foo")))
 
         val c4Repl = C4Replicator.createRemoteReplicator(
             object : MockNativeReplicator() {
@@ -69,7 +68,7 @@ class C4ReplicatorTest : BaseReplicatorTest() {
                     calls++
                 }
             },
-            mapOf(testCollection to CollectionConfiguration()),
+            mapOf(testCollection to CollectionConfiguration(testCollection)),
             C4BaseTest.MOCK_PEER,
             null,
             null,
@@ -112,8 +111,7 @@ class C4ReplicatorTest : BaseReplicatorTest() {
         Assert.assertEquals(0, C4Replicator.BOUND_REPLICATORS.size())
         Assert.assertEquals(0, boundCollectionCount())
 
-        val config = ReplicatorConfiguration(URLEndpoint(URI("wss://foo")))
-        config.addCollection(testCollection, CollectionConfiguration())
+        val config = ReplicatorConfiguration(setOf(CollectionConfiguration(testCollection)), URLEndpoint(URI("wss://foo")))
 
         val c4Repl = C4Replicator.createLocalReplicator(
             object : MockNativeReplicator() {
@@ -125,7 +123,7 @@ class C4ReplicatorTest : BaseReplicatorTest() {
                     calls++
                 }
             },
-            mapOf(testCollection to CollectionConfiguration()),
+            mapOf(testCollection to CollectionConfiguration(testCollection)),
             C4BaseTest.MOCK_PEER,
             testDatabase.getC4Db,
             ReplicatorType.PUSH_AND_PULL,
@@ -217,13 +215,11 @@ class C4ReplicatorTest : BaseReplicatorTest() {
     @Test
     fun testDocumentEndedCallback() {
         var calls = 0
-
-        val config = ReplicatorConfiguration(URLEndpoint(URI("wss://foo")))
-        config.addCollection(testCollection, CollectionConfiguration())
+        val config = ReplicatorConfiguration(setOf(CollectionConfiguration(testCollection)), URLEndpoint(URI("wss://foo")))
 
         val c4Repl = C4Replicator.createLocalReplicator(
             MockNativeReplicator(),
-            mapOf(testCollection to CollectionConfiguration()),
+            mapOf(testCollection to CollectionConfiguration(testCollection)),
             C4BaseTest.MOCK_PEER,
             testDatabase.getC4Db,
             ReplicatorType.PUSH_AND_PULL,
