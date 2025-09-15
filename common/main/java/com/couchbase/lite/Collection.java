@@ -785,7 +785,9 @@ public final class Collection extends BaseCollection
 
         synchronized (getDbLock()) {
             try { index.createIndex(name, c4Collection); }
-            catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
+            catch (LiteCoreException e) {
+                throw CouchbaseLiteException.convertException(e);
+            }
         }
     }
 

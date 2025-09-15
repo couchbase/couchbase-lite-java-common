@@ -27,7 +27,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
 
 
 public class CollectionConfiguration {
-    @Nullable
+    @NonNull
     private final Collection collection;
     @Nullable
     private List<String> channels;
@@ -182,7 +182,7 @@ public class CollectionConfiguration {
     /**
      * Returns the collection.
      */
-    @Nullable
+    @NonNull
     public final Collection getCollection() {
         return collection;
     }
@@ -235,13 +235,13 @@ public class CollectionConfiguration {
     @NonNull
     public String toString() {
         return "CollectionConfiguration{"
-            + "("
-            + ((pullFilter != null) ? "<" : "")
-            + ((conflictResolver != null) ? "!" : "")
-            + ((pushFilter != null) ? ">" : "")
-            + "): "
-            + channels + ", "
-            + documentIDs + "}"
-            + (collection != null ? ", collection=" + collection.getFullName() : "");
+                + "("
+                + (pullFilter != null ? "<" : "")
+                + (conflictResolver != null ? "!" : "")
+                + (pushFilter != null ? ">" : "")
+                + "): "
+                + channels + ", "
+                + documentIDs + "}"
+                + ", collection=" + collection.getFullName();
     }
 }

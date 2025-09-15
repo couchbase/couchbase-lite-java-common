@@ -180,15 +180,8 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
     //
     // Create collection "colB" in the scope "scopeA" using database instance B.
     //
-    // Create a config object with ReplicatorConfiguration.init(endpoint: endpoint).
-    //
-    // Use addCollections() to add both colA and colB. An invalid argument exception
-    // should be thrown as the collections are from different database instances.
-    //
-    // Use addCollection() to add colA. Ensure that the colA has been added correctly.
-    //
-    // Use addCollection() to add colB. An invalid argument exception should be thrown
-    // as the collections are from different database instances.
+    // Create a config object with ReplicatorConfiguration(collection: Set<CollectionConfiguration>, endpoint: endpoint).
+    // An invalid argument exception should be thrown as the collections are from different database instances.
     @Test
     fun testUseCollectionsFromDifferentDatabaseInstancesB() {
         val collectionA = testDatabase.createCollection("colA", "scopeA")
