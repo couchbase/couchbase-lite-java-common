@@ -118,7 +118,7 @@ public final class C4Log {
         m.put(C4Constants.LogDomain.BLOB, LogDomain.DATABASE);
         m.put(C4Constants.LogDomain.CHANGES, LogDomain.DATABASE);
         m.put(C4Constants.LogDomain.DATABASE, LogDomain.DATABASE);
-        m.put(C4Constants.LogDomain.MDNS, LogDomain.PEER_DISCOVERY);
+        m.put(C4Constants.LogDomain.MDNS, LogDomain.MDNS);
         m.put(C4Constants.LogDomain.DISCOVERY, LogDomain.PEER_DISCOVERY);
         m.put(C4Constants.LogDomain.ENUM, LogDomain.QUERY);
         m.put(C4Constants.LogDomain.LISTENER, LogDomain.LISTENER);
