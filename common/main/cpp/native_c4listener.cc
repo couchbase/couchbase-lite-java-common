@@ -712,7 +712,10 @@ static jbyteArray generateCertificate(
 
     C4Cert *cert = c4cert_signRequest(csr, &issuerParams, issuerKey, issuerCert, &error);
     DEFER {
-        c4keypair_release(issuerKey);
+        // Release issuerKey only if it's not the `c4KeyPair` passed to this function.
+        if (issuerKey != keys) {
+            c4keypair_release(issuerKey);
+        }
         c4cert_release(issuerCert);
         c4cert_release(cert);
     };
