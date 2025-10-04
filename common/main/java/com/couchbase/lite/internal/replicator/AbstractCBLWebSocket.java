@@ -752,8 +752,8 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
         // TrustManager for server cert verification:
         final CBLTrustManager trustManager = new CBLTrustManager(
             pinnedServerCert,
-            acceptAllCerts,
             acceptOnlySelfSignedServerCert,
+            acceptAllCerts,
             new AbstractCBLTrustManager.ServerCertsListener() {
                 @Override
                 public void certsPresented(@NonNull List<Certificate> certs) {
