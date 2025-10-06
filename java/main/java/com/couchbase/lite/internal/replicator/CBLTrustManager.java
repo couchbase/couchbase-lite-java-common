@@ -27,8 +27,8 @@ import java.security.cert.X509Certificate;
 public class CBLTrustManager extends AbstractCBLTrustManager {
     public CBLTrustManager(
         @Nullable X509Certificate pinnedServerCert,
-        boolean acceptAllCertificates, // ignore this and hardwire "false"
         boolean acceptOnlySelfSignedServerCertificate,
+        boolean acceptAllCertificates, // ignore this and hardwire "false"
         @NonNull ServerCertsListener serverCertsListener) {
         super(pinnedServerCert, acceptOnlySelfSignedServerCertificate, false, serverCertsListener);
     }
