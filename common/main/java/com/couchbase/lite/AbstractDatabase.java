@@ -1153,8 +1153,19 @@ abstract class AbstractDatabase extends BaseDatabase
         throws LiteCoreException {
         byte[] mergedBodyBytes = null;
 
-        // Unless the remote revision is being used as-is, we need a new revision:
-        if (resolvedDoc != remoteDoc) {
+        // Determine the actual winner and loser based on which doc was chosen
+        final String winningRevID;
+        final String losingRevID;
+        if (resolvedDoc == localDoc) {
+            winningRevID = localDoc.getRevisionID();
+            losingRevID = remoteDoc.getRevisionID();
+        } else {
+            winningRevID = remoteDoc.getRevisionID();
+            losingRevID = localDoc.getRevisionID();
+        }
+
+        // Generate merged body only for the merge case (not local-wins or remote-wins)
+        if (resolvedDoc != localDoc && resolvedDoc != remoteDoc) {
             if ((resolvedDoc == null) || resolvedDoc.isDeleted()) {
                 mergedFlags |= C4Constants.RevisionFlags.DELETED;
                 try (FLEncoder enc = getSharedFleeceEncoder()) {
@@ -1176,8 +1187,8 @@ abstract class AbstractDatabase extends BaseDatabase
         // Ask LiteCore to do the resolution:
         final C4Document rawDoc = Preconditions.assertNotNull(localDoc.getC4doc(), "raw doc is null");
 
-        // The remote branch has to win so that the doc revision history matches the server's.
-        rawDoc.resolveConflict(remoteDoc.getRevisionID(), localDoc.getRevisionID(), mergedBodyBytes, mergedFlags);
+        // Pass the actual winner and loser revision IDs
+        rawDoc.resolveConflict(winningRevID, losingRevID, mergedBodyBytes, mergedFlags);
         rawDoc.save(0);
 
         Log.d(DOMAIN, "Conflict resolved as doc '%s' rev %s", localDoc.getId(), rawDoc.getRevID());
