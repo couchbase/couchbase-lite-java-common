@@ -1154,8 +1154,8 @@ abstract class AbstractDatabase extends BaseDatabase
         byte[] mergedBodyBytes = null;
 
         // Determine the actual winner and loser based on which doc was chosen
-        String winningRevID;
-        String losingRevID;
+        final String winningRevID;
+        final String losingRevID;
         if (resolvedDoc == localDoc) {
             winningRevID = localDoc.getRevisionID();
             losingRevID = remoteDoc.getRevisionID();
