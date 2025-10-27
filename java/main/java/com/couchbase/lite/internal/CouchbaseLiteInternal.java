@@ -36,6 +36,7 @@ import com.couchbase.lite.internal.exec.ExecutionService;
 import com.couchbase.lite.internal.logging.Log;
 import com.couchbase.lite.internal.logging.LogSinksImpl;
 import com.couchbase.lite.internal.utils.FileUtils;
+import com.couchbase.lite.internal.sockets.OkHttpSocket;
 
 
 /**
@@ -160,5 +161,14 @@ public final class CouchbaseLiteInternal {
             synchronized (LOCK) { C4.setTempDir(scratchDir.getAbsolutePath()); }
         }
         catch (LiteCoreException e) { Log.w(LogDomain.DATABASE, "Failed to set c4TmpDir", e); }
+    }
+
+    public static void shutdown() {
+        final ExecutionService executionService = EXECUTION_SERVICE.getAndSet(null);
+        if (executionService instanceof JavaExecutionService) {
+            ((JavaExecutionService) executionService).shutdown();
+        }
+
+        OkHttpSocket.shutdownHttpClient();
     }
 }

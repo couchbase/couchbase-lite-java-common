@@ -72,6 +72,11 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
 
         .build();
 
+    public static void shutdownHttpClient() {
+        BASE_HTTP_CLIENT.dispatcher().executorService().shutdown();
+        BASE_HTTP_CLIENT.connectionPool().evictAll();
+    }
+
     // A singleton WebSocket
     @NonNull
     private static final WebSocket NULL_WS = new WebSocket() {

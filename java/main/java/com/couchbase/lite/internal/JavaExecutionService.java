@@ -19,6 +19,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
@@ -99,5 +100,15 @@ public class JavaExecutionService extends AbstractExecutionService {
 
         final Future<?> future = scheduler.schedule(delayedTask, delayMs, TimeUnit.MILLISECONDS);
         return new CancellableTask(future);
+    }
+    public void shutdown() {
+        if (defaultExecutor instanceof ExecutorService) {
+            ((ExecutorService) defaultExecutor).shutdown();
+        }
+        if (scheduler != null) {
+            scheduler.shutdown();
+        }
+
+        getConcurrentExecutor().stop(5, TimeUnit.SECONDS);
     }
 }
