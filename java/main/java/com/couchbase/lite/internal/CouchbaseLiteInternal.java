@@ -164,7 +164,7 @@ public final class CouchbaseLiteInternal {
     }
 
     public static void shutdown() {
-        final ExecutionService executionService = EXECUTION_SERVICE.getAndSet(null);
+        final ExecutionService executionService = EXECUTION_SERVICE.get();
         if (executionService instanceof JavaExecutionService) {
             ((JavaExecutionService) executionService).shutdown();
         }
