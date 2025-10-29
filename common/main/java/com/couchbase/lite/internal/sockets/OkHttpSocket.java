@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.StringTokenizer;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -44,6 +45,7 @@ import com.couchbase.lite.CouchbaseLiteError;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.core.C4Constants;
 import com.couchbase.lite.internal.core.C4Replicator;
+import com.couchbase.lite.internal.exec.ExecutorUtils;
 import com.couchbase.lite.internal.logging.Log;
 import com.couchbase.lite.internal.utils.ClassUtils;
 import com.couchbase.lite.internal.utils.Fn;
@@ -71,6 +73,13 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
         // ??? .retryOnConnectionFailure(false)
 
         .build();
+
+    public static void shutdownHttpClient() {
+        final ExecutorService dispatcher = BASE_HTTP_CLIENT.dispatcher().executorService();
+        ExecutorUtils.shutdownAndAwaitTermination(dispatcher, 5, LogDomain.NETWORK);
+        // Clean up connection pool
+        BASE_HTTP_CLIENT.connectionPool().evictAll();
+    }
 
     // A singleton WebSocket
     @NonNull
