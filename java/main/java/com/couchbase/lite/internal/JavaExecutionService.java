@@ -30,6 +30,7 @@ import java.util.concurrent.TimeUnit;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.exec.AbstractExecutionService;
 import com.couchbase.lite.internal.exec.CBLExecutor;
+import com.couchbase.lite.internal.exec.ExecutorUtils;
 import com.couchbase.lite.internal.logging.Log;
 import com.couchbase.lite.internal.utils.Preconditions;
 
@@ -103,25 +104,13 @@ public class JavaExecutionService extends AbstractExecutionService {
     }
 
     public void shutdown() {
-        shutdownAndAwaitTermination((ExecutorService) defaultExecutor, 5);
+        ExecutorUtils.shutdownAndAwaitTermination(
+                (ExecutorService) defaultExecutor, 5, LogDomain.DATABASE
+        );
+
         if (scheduler != null) {
-            shutdownAndAwaitTermination(scheduler, 5);
+            ExecutorUtils.shutdownAndAwaitTermination(scheduler, 5, LogDomain.DATABASE);
         }
-
         getConcurrentExecutor().stop(5, TimeUnit.SECONDS);
-    }
-
-    private void shutdownAndAwaitTermination(ExecutorService pool, int timeoutSeconds) {
-        pool.shutdown();
-        try {
-            if (!pool.awaitTermination(timeoutSeconds, TimeUnit.SECONDS)) {
-                pool.shutdownNow();
-                Log.w(LogDomain.DATABASE, "Executor did not terminate within timeout");
-            }
-        } catch (InterruptedException ie) {
-            pool.shutdownNow();
-            Thread.currentThread().interrupt();
-            Log.w(LogDomain.DATABASE, "Executor shutdown interrupted", ie);
-        }
     }
 }

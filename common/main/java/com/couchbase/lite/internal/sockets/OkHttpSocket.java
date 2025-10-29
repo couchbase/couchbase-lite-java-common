@@ -45,6 +45,7 @@ import com.couchbase.lite.CouchbaseLiteError;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.core.C4Constants;
 import com.couchbase.lite.internal.core.C4Replicator;
+import com.couchbase.lite.internal.exec.ExecutorUtils;
 import com.couchbase.lite.internal.logging.Log;
 import com.couchbase.lite.internal.utils.ClassUtils;
 import com.couchbase.lite.internal.utils.Fn;
@@ -73,23 +74,9 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
 
         .build();
 
-    @SuppressWarnings("checkstyle:FinalLocalVariable")
     public static void shutdownHttpClient() {
-        ExecutorService dispatcher = BASE_HTTP_CLIENT.dispatcher().executorService();
-        dispatcher.shutdown();
-
-        try {
-            // Wait for existing tasks to terminate
-            if (!dispatcher.awaitTermination(5, TimeUnit.SECONDS)) {
-                dispatcher.shutdownNow();
-                Log.w(LogDomain.NETWORK, "OkHttp dispatcher did not terminate within timeout");
-            }
-        } catch (InterruptedException ie) {
-            dispatcher.shutdownNow();
-            Thread.currentThread().interrupt();
-            Log.w(LogDomain.NETWORK, "OkHttp dispatcher shutdown interrupted", ie);
-        }
-
+        final ExecutorService dispatcher = BASE_HTTP_CLIENT.dispatcher().executorService();
+        ExecutorUtils.shutdownAndAwaitTermination(dispatcher, 5, LogDomain.NETWORK);
         // Clean up connection pool
         BASE_HTTP_CLIENT.connectionPool().evictAll();
     }
