@@ -67,40 +67,6 @@ public abstract class AbstractReplicator extends BaseReplicator
     implements Listenable<ReplicatorChange, ReplicatorChangeListener> {
     private static final LogDomain LOG_DOMAIN = LogDomain.REPLICATOR;
 
-    class ConflictResolutionTask implements ConflictResolutionTaskInterface {
-        @NonNull
-        private final AtomicBoolean cancelled = new AtomicBoolean(false);
-        @NonNull
-        private final Database db;
-        @Nullable
-        private final ConflictResolver resolver;
-        @NonNull
-        private final ReplicatedDocument rDoc;
-
-        ConflictResolutionTask(
-            @NonNull Database db,
-            @Nullable ConflictResolver resolver,
-            @NonNull ReplicatedDocument rDoc) {
-            this.db = db;
-            this.resolver = resolver;
-            this.rDoc = rDoc;
-        }
-
-        @Override
-        public void run() {
-            if (!cancelled.get()) { db.resolveReplicationConflict(resolver, rDoc, this); }
-        }
-
-        public void cancel() { cancelled.set(true); }
-
-        public boolean isCancelled() { return cancelled.get(); }
-
-        public void onResolved(@Nullable CouchbaseLiteException err) {
-            rDoc.setError(err);
-            onConflictResolved(this, rDoc);
-        }
-    }
-
     static class ReplicatorCookieStore implements CBLCookieStore {
         @NonNull
         private final Database db;
@@ -130,7 +96,10 @@ public abstract class AbstractReplicator extends BaseReplicator
     //---------------------------------------------
 
     private final ExecutionService.CloseableExecutor concurrentExecutor =
-        CouchbaseLiteInternal.getExecutionService().getConcurrentExecutor();
+            CouchbaseLiteInternal.getExecutionService().getConcurrentExecutor();
+
+    @NonNull
+    private final ConflictResolverService conflictResolverService = new ConflictResolverService();
 
     @NonNull
     private final ImmutableReplicatorConfiguration config;
@@ -161,9 +130,6 @@ public abstract class AbstractReplicator extends BaseReplicator
     @Nullable
     private CouchbaseLiteException lastError;
 
-    @GuardedBy("getReplicatorLock()")
-    @NonNull
-    private final Set<ConflictResolutionTask> pendingResolutions = new HashSet<>();
     @GuardedBy("getReplicatorLock()")
     @NonNull
     private final Deque<C4ReplicatorStatus> pendingStatusNotifications = new LinkedList<>();
@@ -212,6 +178,19 @@ public abstract class AbstractReplicator extends BaseReplicator
 
         getDatabase().addActiveReplicator(this);
 
+        getDatabase().registerProcess(new AbstractDatabase.ActiveProcess<ConflictResolverService>(conflictResolverService) {
+            @Override
+            public void stop() {
+                conflictResolverService.shutdown(false, () -> {});
+            }
+
+            @Override
+            public boolean isActive() {
+                // Service is active if it's not in STOPPED state
+                return conflictResolverService.isActive();
+            }
+        });
+
         final C4Replicator c4Repl;
         try { c4Repl = getOrCreateC4Replicator(); }
         catch (LiteCoreException e) { throw new CouchbaseLiteError("Failed to create replicator", e); }
@@ -245,9 +224,8 @@ public abstract class AbstractReplicator extends BaseReplicator
         Log.i(LOG_DOMAIN, "Replicator(%s) stopped: %s", getId(), this);
         if (c4repl == null) { return; }
 
-        final Set<ConflictResolutionTask> resolutions;
-        synchronized (getReplicatorLock()) { resolutions = new HashSet<>(pendingResolutions); }
-        for (ConflictResolutionTask task: resolutions) { task.cancel(); }
+        conflictResolverService.shutdown(false, () -> {});
+
         c4repl.stop();
     }
 
@@ -580,9 +558,8 @@ public abstract class AbstractReplicator extends BaseReplicator
 
         List<C4ReplicatorStatus> pendingNotifications = null;
         synchronized (getReplicatorLock()) {
-            pendingResolutions.remove(task);
             // if no more resolutions, deliver any outstanding status notifications
-            if (pendingResolutions.isEmpty()) {
+            if (!conflictResolverService.hasPendingResolutions()) {
                 pendingNotifications = new ArrayList<>(pendingStatusNotifications);
                 pendingStatusNotifications.clear();
             }
@@ -715,13 +692,13 @@ public abstract class AbstractReplicator extends BaseReplicator
                 LOG_DOMAIN,
                 "%s: status changed: (%d, %d) @%s",
                 getId(),
-                pendingResolutions.size(),
+                conflictResolverService.hasPendingResolutions() ? 1 : 0,
                 pendingStatusNotifications.size(),
                 c4Status);
 
             if (config.isContinuous()) { handleOffline(status.getActivityLevel(), !isOffline(c4Status)); }
 
-            if (!pendingResolutions.isEmpty()) { pendingStatusNotifications.add(c4Status); }
+            if (conflictResolverService.hasPendingResolutions()) { pendingStatusNotifications.add(c4Status); }
             if (!pendingStatusNotifications.isEmpty()) { return; }
 
             // Update my properties:
@@ -739,7 +716,11 @@ public abstract class AbstractReplicator extends BaseReplicator
 
     // this will probably make this instance eligible for garbage collection...
     private void postChange(boolean isStopped, ReplicatorChange change, Set<ReplicatorChangeListenerToken> listeners) {
-        if (isStopped) { getDatabase().removeActiveReplicator(this); }
+        if (isStopped) {
+            getDatabase().removeActiveReplicator(this);
+            getDatabase().unregisterProcess(conflictResolverService);
+        }
+
         Fn.forAll(listeners, token -> token.postChange(change));
     }
 
@@ -807,7 +788,8 @@ public abstract class AbstractReplicator extends BaseReplicator
         return new C4ReplicatorStatus(c4Status);
     }
 
-    private void queueConflictResolution(@NonNull ReplicatedDocument rDoc, @Nullable ConflictResolver resolver) {
+    @VisibleForTesting
+    protected void queueConflictResolution(@NonNull ReplicatedDocument rDoc, @Nullable ConflictResolver resolver) {
         final Database db = getDatabase();
         Log.i(
             LOG_DOMAIN,
@@ -818,11 +800,12 @@ public abstract class AbstractReplicator extends BaseReplicator
             rDoc.getCollection(),
             rDoc.getID());
 
-        final ConflictResolutionTask resolutionTask = new ConflictResolutionTask(db, resolver, rDoc);
-        synchronized (getReplicatorLock()) {
-            pendingResolutions.add(resolutionTask);
-            runTaskConcurrently(resolutionTask);
-        }
+        conflictResolverService.addConflict(
+                rDoc,
+                db,
+                resolver,
+                this::onConflictResolved
+        );
     }
 
     private void removeDocumentReplicationListener(@NonNull ListenerToken token) {
