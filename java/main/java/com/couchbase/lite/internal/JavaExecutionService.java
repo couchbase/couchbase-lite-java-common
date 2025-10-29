@@ -19,6 +19,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
@@ -29,6 +30,7 @@ import java.util.concurrent.TimeUnit;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.exec.AbstractExecutionService;
 import com.couchbase.lite.internal.exec.CBLExecutor;
+import com.couchbase.lite.internal.exec.ExecutorUtils;
 import com.couchbase.lite.internal.logging.Log;
 import com.couchbase.lite.internal.utils.Preconditions;
 
@@ -99,5 +101,16 @@ public class JavaExecutionService extends AbstractExecutionService {
 
         final Future<?> future = scheduler.schedule(delayedTask, delayMs, TimeUnit.MILLISECONDS);
         return new CancellableTask(future);
+    }
+
+    public void shutdown() {
+        ExecutorUtils.shutdownAndAwaitTermination(
+                (ExecutorService) defaultExecutor, 5, LogDomain.DATABASE
+        );
+
+        if (scheduler != null) {
+            ExecutorUtils.shutdownAndAwaitTermination(scheduler, 5, LogDomain.DATABASE);
+        }
+        getConcurrentExecutor().stop(5, TimeUnit.SECONDS);
     }
 }
