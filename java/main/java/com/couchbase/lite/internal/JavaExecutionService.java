@@ -104,12 +104,26 @@ public class JavaExecutionService extends AbstractExecutionService {
 
     public void shutdown() {
         if (defaultExecutor instanceof ExecutorService) {
-            ((ExecutorService) defaultExecutor).shutdown();
+            shutdownAndAwaitTermination((ExecutorService) defaultExecutor, 5);
         }
         if (scheduler != null) {
-            scheduler.shutdown();
+            shutdownAndAwaitTermination(scheduler, 5);
         }
 
         getConcurrentExecutor().stop(5, TimeUnit.SECONDS);
+    }
+
+    private void shutdownAndAwaitTermination(ExecutorService pool, int timeoutSeconds) {
+        pool.shutdown();
+        try {
+            if (!pool.awaitTermination(timeoutSeconds, TimeUnit.SECONDS)) {
+                pool.shutdownNow();
+                Log.w(LogDomain.DATABASE, "Executor did not terminate within timeout");
+            }
+        } catch (InterruptedException ie) {
+            pool.shutdownNow();
+            Thread.currentThread().interrupt();
+            Log.w(LogDomain.DATABASE, "Executor shutdown interrupted", ie);
+        }
     }
 }

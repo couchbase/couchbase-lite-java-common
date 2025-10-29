@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.StringTokenizer;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -73,7 +74,22 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
         .build();
 
     public static void shutdownHttpClient() {
-        BASE_HTTP_CLIENT.dispatcher().executorService().shutdown();
+        ExecutorService dispatcher = BASE_HTTP_CLIENT.dispatcher().executorService();
+        dispatcher.shutdown();
+
+        try {
+            // Wait for existing tasks to terminate
+            if (!dispatcher.awaitTermination(5, TimeUnit.SECONDS)) {
+                dispatcher.shutdownNow();
+                Log.w(LogDomain.NETWORK, "OkHttp dispatcher did not terminate within timeout");
+            }
+        } catch (InterruptedException ie) {
+            dispatcher.shutdownNow();
+            Thread.currentThread().interrupt();
+            Log.w(LogDomain.NETWORK, "OkHttp dispatcher shutdown interrupted", ie);
+        }
+
+        // Clean up connection pool
         BASE_HTTP_CLIENT.connectionPool().evictAll();
     }
 
