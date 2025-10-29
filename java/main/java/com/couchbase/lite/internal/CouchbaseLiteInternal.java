@@ -35,8 +35,9 @@ import com.couchbase.lite.internal.core.C4;
 import com.couchbase.lite.internal.exec.ExecutionService;
 import com.couchbase.lite.internal.logging.Log;
 import com.couchbase.lite.internal.logging.LogSinksImpl;
-import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.sockets.OkHttpSocket;
+import com.couchbase.lite.internal.utils.FileUtils;
+
 
 
 /**

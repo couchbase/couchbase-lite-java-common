@@ -73,6 +73,7 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
 
         .build();
 
+    @SuppressWarnings("checkstyle:FinalLocalVariable")
     public static void shutdownHttpClient() {
         ExecutorService dispatcher = BASE_HTTP_CLIENT.dispatcher().executorService();
         dispatcher.shutdown();

@@ -103,9 +103,7 @@ public class JavaExecutionService extends AbstractExecutionService {
     }
 
     public void shutdown() {
-        if (defaultExecutor instanceof ExecutorService) {
-            shutdownAndAwaitTermination((ExecutorService) defaultExecutor, 5);
-        }
+        shutdownAndAwaitTermination((ExecutorService) defaultExecutor, 5);
         if (scheduler != null) {
             shutdownAndAwaitTermination(scheduler, 5);
         }
