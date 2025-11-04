@@ -692,7 +692,7 @@ public abstract class AbstractReplicator extends BaseReplicator
                 LOG_DOMAIN,
                 "%s: status changed: (%d, %d) @%s",
                 getId(),
-                conflictResolverService.hasPendingResolutions() ? 1 : 0,
+                conflictResolverService.getPendingResolutionsCount(),
                 pendingStatusNotifications.size(),
                 c4Status);
 

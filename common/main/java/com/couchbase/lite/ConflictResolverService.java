@@ -154,6 +154,12 @@ class ConflictResolverService {
         }
     }
 
+    public int getPendingResolutionsCount() {
+        synchronized (lock) {
+            return pendingResolutions.size();
+        }
+    }
+
     public boolean isActive() {
         synchronized (lock) {
             return state != ConflictResolverState.STOPPED;
