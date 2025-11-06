@@ -386,8 +386,8 @@ class ConflictResolutionTest : BaseReplicatorTest() {
             override fun createReplicatorForTarget(target: Endpoint): C4Replicator = TODO("Not implemented")
             override fun handleOffline(state: ReplicatorActivityLevel, online: Boolean) = TODO("Not implemented")
 
-            // Called to enqueue a conflict resolution: count conflicted docs
-            override fun runTaskConcurrently(task: Runnable) {
+            // Override queueConflictResolution to count conflicted docs
+            override fun queueConflictResolution(rDoc: ReplicatedDocument, resolver: ConflictResolver?) {
                 conflictedCount.getAndIncrement()
             }
 

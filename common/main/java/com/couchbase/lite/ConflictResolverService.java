@@ -148,6 +148,24 @@ class ConflictResolverService {
         }
     }
 
+    public boolean hasPendingResolutions() {
+        synchronized (lock) {
+            return !pendingResolutions.isEmpty();
+        }
+    }
+
+    public int getPendingResolutionsCount() {
+        synchronized (lock) {
+            return pendingResolutions.size();
+        }
+    }
+
+    public boolean isActive() {
+        synchronized (lock) {
+            return state != ConflictResolverState.STOPPED;
+        }
+    }
+
     private void removePendingTask(ConflictResolutionTask task) {
         synchronized (lock) {
             pendingResolutions.remove(task);
