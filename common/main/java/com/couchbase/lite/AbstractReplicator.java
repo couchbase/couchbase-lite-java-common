@@ -32,7 +32,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Executor;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
@@ -178,18 +177,20 @@ public abstract class AbstractReplicator extends BaseReplicator
 
         getDatabase().addActiveReplicator(this);
 
-        getDatabase().registerProcess(new AbstractDatabase.ActiveProcess<ConflictResolverService>(conflictResolverService) {
-            @Override
-            public void stop() {
-                conflictResolverService.shutdown(false, () -> {});
-            }
+        getDatabase().registerProcess(
+                new AbstractDatabase.ActiveProcess<ConflictResolverService>(conflictResolverService) {
+                    @Override
+                    public void stop() {
+                        conflictResolverService.shutdown(false, () -> {
+                        });
+                    }
 
-            @Override
-            public boolean isActive() {
-                // Service is active if it's not in STOPPED state
-                return conflictResolverService.isActive();
-            }
-        });
+                    @Override
+                    public boolean isActive() {
+                        // Service is active if it's not in STOPPED state
+                        return conflictResolverService.isActive();
+                    }
+                });
 
         final C4Replicator c4Repl;
         try { c4Repl = getOrCreateC4Replicator(); }
