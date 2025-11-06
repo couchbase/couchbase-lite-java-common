@@ -20,6 +20,7 @@ import com.couchbase.lite.internal.replicator.CBLCookieStore
 import com.couchbase.lite.internal.sockets.CloseStatus
 import com.couchbase.lite.internal.sockets.SocketFromCore
 import com.couchbase.lite.internal.sockets.SocketFromRemote
+import com.couchbase.lite.internal.sockets.SocketState
 import com.couchbase.lite.internal.sockets.SocketToCore
 import com.couchbase.lite.internal.sockets.SocketToRemote
 import com.couchbase.lite.internal.utils.Fn
@@ -37,6 +38,7 @@ open class MockCBLWebSocket(
 ) : AbstractCBLWebSocket(toRemote, toCore, uri, opts, cookieStore, serverCertsListener) {
     override fun handleClose(error: Throwable): CloseStatus? = null
     override fun handleCloseCause(error: Throwable): Int = 0
+    public override fun getSocketState(): SocketState = super.getSocketState()
 }
 
 open class MockCore : SocketToCore {

@@ -550,7 +550,7 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
 
     @VisibleForTesting
     @NonNull
-    SocketState getSocketState() { return state.getCurrentState(); }
+    protected SocketState getSocketState() { return state.getCurrentState(); }
 
     //-------------------------------------------------------------------------
     // private methods
