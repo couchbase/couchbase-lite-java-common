@@ -31,6 +31,7 @@ import java.util.Map;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.LogLevel;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
+import com.couchbase.lite.internal.utils.Internal;
 
 
 /**
@@ -43,6 +44,7 @@ import com.couchbase.lite.internal.CouchbaseLiteInternal;
  * v: used by core: please do not use in platform coded.
  * d: low-level debugging information
  */
+@Internal("This class is not part of the public API")
 @SuppressWarnings("PMD.TooManyMethods")
 public final class Log {
     private Log() { } // Utility class
@@ -117,10 +119,6 @@ public final class Log {
      */
     public static void i(@NonNull LogDomain domain, @NonNull String msg, @Nullable Throwable err) {
         log(LogLevel.INFO, domain, err, msg);
-    }
-
-    public static void info(@NonNull LogDomain domain, @NonNull String msg, @Nullable Throwable err) {
-        i(domain, msg, err);
     }
 
     /**
@@ -254,7 +252,8 @@ public final class Log {
         errorMessages = Collections.unmodifiableMap(new HashMap<>(stdErrMsgs));
     }
 
-    private static void log(
+    /* <Unsupported API> Internal used for testing purpose. */
+    public static void log(
         @NonNull LogLevel level,
         @NonNull LogDomain domain,
         @Nullable Throwable err,
