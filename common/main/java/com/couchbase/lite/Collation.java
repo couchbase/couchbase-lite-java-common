@@ -124,7 +124,12 @@ public class Collation {
 
     @NonNull
     protected Collation setLocale(@Nullable String locale) {
-        this.locale = locale;
+        // For Unicode collations, default to system locale when null is passed
+        if (isUnicode && locale == null) {
+            this.locale = System.getProperty("user.language");
+        } else {
+            this.locale = locale;
+        }
         return this;
     }
 
