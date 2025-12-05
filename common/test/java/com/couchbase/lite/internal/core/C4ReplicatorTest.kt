@@ -41,12 +41,14 @@ class C4ReplicatorTest : BaseReplicatorTest() {
     fun setUpC4ReplicatorTest() {
         C4Replicator.BOUND_REPLICATORS.clear()
         clearBoundCollections()
+        C4Socket.BOUND_SOCKETS.clear()
     }
 
     @After
     fun tearDownC4ReplicatorTest() {
         clearBoundCollections()
         C4Replicator.BOUND_REPLICATORS.clear()
+        C4Socket.BOUND_SOCKETS.clear()
     }
 
     @Test
