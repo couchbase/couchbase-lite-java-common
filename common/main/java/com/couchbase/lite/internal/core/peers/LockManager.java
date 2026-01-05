@@ -124,4 +124,20 @@ public class LockManager {
             }
         }
     }
+
+    public static void shutdown() {
+        synchronized (INSTANCE.locks) {
+            if (INSTANCE.locks.isEmpty()) {
+                return;
+            }
+
+            INSTANCE.locks.clear();
+
+            final RefQueueCleanerThread t = INSTANCE.refQCleaner;
+            INSTANCE.refQCleaner = null;
+            if (t != null) {
+                t.quit();
+            }
+        }
+    }
 }

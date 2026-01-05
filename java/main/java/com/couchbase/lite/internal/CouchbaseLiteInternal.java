@@ -32,6 +32,7 @@ import com.couchbase.lite.CouchbaseLiteError;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.core.C4;
+import com.couchbase.lite.internal.core.peers.LockManager;
 import com.couchbase.lite.internal.exec.ExecutionService;
 import com.couchbase.lite.internal.logging.Log;
 import com.couchbase.lite.internal.logging.LogSinksImpl;
@@ -165,11 +166,13 @@ public final class CouchbaseLiteInternal {
     }
 
     public static void shutdown() {
+        LockManager.shutdown();
         final ExecutionService executionService = EXECUTION_SERVICE.get();
         if (executionService instanceof JavaExecutionService) {
             ((JavaExecutionService) executionService).shutdown();
         }
 
         OkHttpSocket.shutdownHttpClient();
+        reset();
     }
 }
