@@ -76,6 +76,8 @@ public class LockManager {
     private final Map<Long, LockRef> locks = new HashMap<>();
 
     private final ReferenceQueue<Object> refQueue = new ReferenceQueue<>();
+
+    private volatile boolean isShutdown = false;
     @GuardedBy("locks")
     private RefQueueCleanerThread refQCleaner;
 
@@ -93,6 +95,9 @@ public class LockManager {
     @NonNull
     public Object getLock(long ref) {
         synchronized (locks) {
+            if(isShutdown) {
+                throw new IllegalStateException("LockManager is shutdown");
+            }
             Object lock;
 
             final LockRef r = locks.get(ref);
@@ -127,6 +132,11 @@ public class LockManager {
 
     public static void shutdown() {
         synchronized (INSTANCE.locks) {
+            if (INSTANCE.isShutdown) {
+                return;
+            }
+            INSTANCE.isShutdown = true;
+
             if (INSTANCE.locks.isEmpty()) {
                 return;
             }
