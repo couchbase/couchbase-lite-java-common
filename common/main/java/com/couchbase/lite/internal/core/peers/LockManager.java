@@ -106,6 +106,7 @@ public class LockManager {
 
             if (refQCleaner == null) {
                 final RefQueueCleanerThread t = new RefQueueCleanerThread("LockManager cleaner", refQueue);
+                t.setDaemon(true);
                 refQCleaner = t;
                 t.start();
             }
