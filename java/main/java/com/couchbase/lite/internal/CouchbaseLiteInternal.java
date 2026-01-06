@@ -166,13 +166,11 @@ public final class CouchbaseLiteInternal {
     }
 
     public static void shutdown() {
-        LockManager.shutdown();
         final ExecutionService executionService = EXECUTION_SERVICE.get();
         if (executionService instanceof JavaExecutionService) {
             ((JavaExecutionService) executionService).shutdown();
         }
 
         OkHttpSocket.shutdownHttpClient();
-        reset();
     }
 }

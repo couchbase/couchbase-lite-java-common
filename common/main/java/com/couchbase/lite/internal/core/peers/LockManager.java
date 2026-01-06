@@ -77,7 +77,6 @@ public class LockManager {
 
     private final ReferenceQueue<Object> refQueue = new ReferenceQueue<>();
 
-    private volatile boolean isShutdown = false;
     @GuardedBy("locks")
     private RefQueueCleanerThread refQCleaner;
 
@@ -95,9 +94,6 @@ public class LockManager {
     @NonNull
     public Object getLock(long ref) {
         synchronized (locks) {
-            if(isShutdown) {
-                throw new IllegalStateException("LockManager is shutdown");
-            }
             Object lock;
 
             final LockRef r = locks.get(ref);
@@ -111,6 +107,7 @@ public class LockManager {
 
             if (refQCleaner == null) {
                 final RefQueueCleanerThread t = new RefQueueCleanerThread("LockManager cleaner", refQueue);
+                t.setDaemon(true);
                 refQCleaner = t;
                 t.start();
             }
@@ -126,27 +123,6 @@ public class LockManager {
                 final RefQueueCleanerThread t = refQCleaner;
                 refQCleaner = null;
                 if (t != null) { t.quit(); }
-            }
-        }
-    }
-
-    public static void shutdown() {
-        synchronized (INSTANCE.locks) {
-            if (INSTANCE.isShutdown) {
-                return;
-            }
-            INSTANCE.isShutdown = true;
-
-            if (INSTANCE.locks.isEmpty()) {
-                return;
-            }
-
-            INSTANCE.locks.clear();
-
-            final RefQueueCleanerThread t = INSTANCE.refQCleaner;
-            INSTANCE.refQCleaner = null;
-            if (t != null) {
-                t.quit();
             }
         }
     }
