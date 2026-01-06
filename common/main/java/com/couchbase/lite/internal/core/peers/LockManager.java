@@ -76,7 +76,6 @@ public class LockManager {
     private final Map<Long, LockRef> locks = new HashMap<>();
 
     private final ReferenceQueue<Object> refQueue = new ReferenceQueue<>();
-
     @GuardedBy("locks")
     private RefQueueCleanerThread refQCleaner;
 
