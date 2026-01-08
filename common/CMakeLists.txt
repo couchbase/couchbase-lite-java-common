@@ -53,9 +53,9 @@ else()
     set(BUILD_ROOT "${PROJECT_SOURCE_DIR}/../../ce/android")
 endif()
 
-add_library( LiteCore SHARED IMPORTED )
+add_library( LiteCore STATIC IMPORTED )
 set_property( TARGET LiteCore PROPERTY
-    IMPORTED_LOCATION "${PROJECT_SOURCE_DIR}/../lite-core/android/${ANDROID_ABI}/lib/libLiteCore.so"
+    IMPORTED_LOCATION "${PROJECT_SOURCE_DIR}/../lite-core/android/${ANDROID_ABI}/lib/libLiteCoreFull.a"
 )
 
 add_library( LiteCoreJNI SHARED
@@ -85,9 +85,10 @@ target_include_directories( LiteCoreJNI PUBLIC
     "${PROJECT_SOURCE_DIR}/../lite-core/android/${ANDROID_ABI}/include"
 )
 
-set_target_properties(
-    LiteCoreJNI PROPERTIES LINK_FLAGS
-    "-Wl,-z,max-page-size=16384,--version-script=${BUILD_ROOT}/etc/ld/jni_android.ld"
+target_link_options(
+    LiteCoreJNI PRIVATE
+    -Wl,-z,max-page-size=16384,--version-script=${BUILD_ROOT}/etc/ld/jni_android.ld
+    -Wl,--undefined-version
 )
 
 target_link_libraries( LiteCoreJNI
