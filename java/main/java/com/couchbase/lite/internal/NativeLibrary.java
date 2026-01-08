@@ -57,7 +57,6 @@ final class NativeLibrary {
     private static final String ARCH_UNIVERSAL = "universal";
 
     private static final String LIB_JNI = "LiteCoreJNI";
-    private static final String LIB_LITE_CORE = "LiteCore";
 
     private static final String WINDOWS_OS_DIR = "windows";
     private static final String LINUX_OS_DIR = "linux";
@@ -83,8 +82,6 @@ final class NativeLibrary {
 
         final String os = System.getProperty("os.name");
         final String arch = System.getProperty("os.arch");
-
-        loadLibrary(LIB_LITE_CORE, getCoreArchDir(os, arch), os, arch, scratchDir);
 
         loadLibrary(LIB_JNI, getJniArchDir(os, arch), os, arch, scratchDir);
     }
