@@ -69,6 +69,7 @@ add_library( LiteCoreJNI SHARED
     ${JNI_SRC}/native_c4multipeerreplicator.cc
     ${JNI_SRC}/native_c4peerdiscoveryprovider.cc
     ${JNI_SRC}/native_bluetoothpeer.cc
+    ${JNI_SRC}/MetadataHelper.cc
     ${JNI_SRC}/native_c4observer.cc
     ${JNI_SRC}/native_c4prediction.cc
     ${JNI_SRC}/native_c4query.cc

@@ -8,6 +8,8 @@
 using namespace litecore;
 using namespace litecore::jni;
 
+#if defined(COUCHBASE_ENTERPRISE) && defined(__ANDROID__)
+
 // Helper to convert C4Peer* from jlong
 static C4Peer* getPeer(jlong peerPtr) {
     return reinterpret_cast<C4Peer*>(peerPtr);
@@ -88,3 +90,4 @@ extern "C++" {
         peer->resolvingUrl(url, kC4NoError);
     }
 }
+#endif
