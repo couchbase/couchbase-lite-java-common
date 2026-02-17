@@ -52,6 +52,7 @@ namespace litecore::jni {
 #ifdef __ANDROID__
 
     bool initC4MultipeerReplicator(JNIEnv *);  // Implemented in native_c4multipeerreplicator.cc
+    bool initC4PeerDiscoveryProvider(JNIEnv *);// Implemented in native_c4peerdiscoveryprovider.cc
 #endif
 #endif
 
@@ -164,5 +165,13 @@ namespace litecore::jni {
     jbyteArray fromC4Cert(JNIEnv *, C4Cert *);
 #endif // COUCHBASE_ENTERPRISE
 } // namespace litecore::jni
+
+namespace  litecore::p2p {
+#ifdef COUCHBASE_ENTERPRISE
+#ifdef __ANDROID__
+    bool initBleConstants(JNIEnv *);
+#endif
+#endif
+}
 
 #endif /* native_glue_hpp */

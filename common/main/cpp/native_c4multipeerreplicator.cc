@@ -412,8 +412,9 @@ namespace litecore::jni {
                 &statusChangedCallback,
                 &authenticateCallback,
                 &peerDiscoveredCallback,
-                &replicatorStatusChangedCallback,
-                &documentEndedCallback,
+                reinterpret_cast<C4PeerSync_DiscoveryOnProtocolCallback>(&replicatorStatusChangedCallback),
+                nullptr,
+                reinterpret_cast<C4PeerSync_DocsCallback>(documentEndedCallback),
                 nullptr,
                 nullptr,
                 nullptr,
@@ -525,9 +526,7 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4MultipeerReplicator_c
     params.peerGroupID = groupId;
 
     // Protocols:
-    C4String protocols[] = {kPeerSyncProtocol_DNS_SD};
-    params.protocols = protocols;
-    params.protocolsCount = sizeof(protocols) / sizeof(protocols[0]);
+    params.protocols = kPeerSyncProtocol_BluetoothLE;
 
     // Identity:
     bool failed;
@@ -688,7 +687,7 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4MultipeerReplicator_g
             m_C4MultipeerReplicator_createPeerInfo,
             jpeerId,
             certChain,
-            info->online ? JNI_TRUE : JNI_FALSE,
+            JNI_TRUE,
             neighborIds,
             replStatus);
 

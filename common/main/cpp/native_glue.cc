@@ -30,6 +30,7 @@
 using namespace std;
 using namespace litecore;
 using namespace litecore::jni;
+using namespace litecore::p2p;
 
 // Global reference to the Java VM
 static JavaVM *gJVM;
@@ -161,6 +162,8 @@ JNI_OnLoad(JavaVM *jvm, void *ignore) {
         && initC4Prediction(env)
         #ifdef __ANDROID__
         && initC4MultipeerReplicator(env)
+        && initC4PeerDiscoveryProvider(env)
+        && initBleConstants(env)
         #endif
         #endif
         && initC4Socket(env)) {
