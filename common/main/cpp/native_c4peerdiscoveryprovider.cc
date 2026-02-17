@@ -5,7 +5,6 @@
 #include "native_glue.hh"
 #include "socket_factory.h"
 #include "MetadataHelper.h"
-#include "native_bluetoothpeer_internal.h"
 #include "com_couchbase_lite_internal_core_impl_NativeC4PeerDiscoveryProvider.h"
 
 using namespace litecore;
@@ -13,6 +12,9 @@ using namespace litecore::jni;
 using namespace litecore::p2p;
 
 namespace litecore::jni {
+
+
+    // C4PeerDiscoveryProvider callbacks
     static jclass cls_C4PeerDiscoveryProvider;
 
     static jmethodID m_C4PeerDiscoveryProvider_startBrowsing;
@@ -26,7 +28,7 @@ namespace litecore::jni {
     static jmethodID m_C4PeerDiscoveryProvider_initBleProvider;
 
     bool initC4PeerDiscoveryProvider(JNIEnv *env) {
-        jclass localClass = env->FindClass("com/couchbase/lite/internal/core/BluetoothProvider");
+        jclass localClass = env->FindClass("com/couchbase/lite/internal/core/C4PeerDiscoveryProvider");
         if (localClass == nullptr) return false;
 
         cls_C4PeerDiscoveryProvider = reinterpret_cast<jclass>(env->NewGlobalRef(localClass));
@@ -131,6 +133,8 @@ namespace litecore::jni {
                     cls_C4PeerDiscoveryProvider,
                     m_C4PeerDiscoveryProvider_startBrowsing,
                     _contextToken);
+
+
             if (envState == JNI_EDETACHED) {
                 detachJVM("startBrowsing");
             }
@@ -192,6 +196,8 @@ namespace litecore::jni {
                 detachJVM("stopPublishing");
             }
         }
+
+
 
         virtual void monitorMetadata(C4Peer* peer, bool start) override {
             JNIEnv *env = nullptr;
@@ -281,8 +287,8 @@ namespace litecore::jni {
             }
         }
 
-        fleece::Ref<C4Peer> addDiscoveredPeer(C4Peer* peer, bool moreComing = false) {
-            return addPeer(peer, moreComing);
+        void addDiscoveredPeer(C4Peer* peer, bool moreComing = false) {
+            addPeer(peer, moreComing);
         }
 
         void removeDiscoveredPeer(std::string id, bool moreComing = false) {
@@ -291,6 +297,10 @@ namespace litecore::jni {
 
         void statusStateChange(Mode m, Status s) {
             statusChanged(m, s);
+        }
+
+        bool notifyIncomConnection(C4Peer* peer, C4Socket* s) {
+            return notifyIncomingConnection(peer, s);
         }
 
         void setContextToken(jlong token) {
@@ -341,6 +351,23 @@ namespace litecore::p2p {
         else if (strcmp(uuidStr, litecore::p2p::btle::kPeerGroupUUIDNamespace) == 0)
             env->SetStaticObjectField(cls, PEER_GROUP_NS_FIELD, uuidObj);
     }
+
+    bool initBleConstants(JNIEnv* env) {
+        jUuidClass = env->FindClass("java/util/UUID");
+        uuidFromString = env->GetStaticMethodID(jUuidClass, "fromString",
+                                                "(Ljava/lang/String;)Ljava/util/UUID;");
+
+        PORT_CHAR_FIELD = env->GetStaticFieldID(cls_BleP2pConstants,
+                                                "PORT_CHARACTERISTIC_ID", "Ljava/util/UUID;");
+        META_CHAR_FIELD = env->GetStaticFieldID(cls_BleP2pConstants,
+                                                "METADATA_CHARACTERISTIC_ID", "Ljava/util/UUID;");
+
+        setUuidConstant(env, cls_BleP2pConstants, litecore::p2p::btle::kPortCharacteristicID);
+        setUuidConstant(env, cls_BleP2pConstants, litecore::p2p::btle::kMetadataCharacteristicID);
+        setUuidConstant(env, cls_BleP2pConstants, litecore::p2p::btle::kPeerGroupUUIDNamespace);
+
+        return true;
+    }
 }
 
 
@@ -362,19 +389,21 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4PeerDiscoveryProvider_service
     return toJString(env, s);
 }
 
-JNIEXPORT jlong JNICALL
+JNIEXPORT void JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4PeerDiscoveryProvider_addPeer(
         JNIEnv *env, jclass thiz, jlong providerPtr, jstring peerId) {
-    auto* provider = reinterpret_cast<C4BLEProvider*>(providerPtr);
-    if (!provider || !peerId) { return 0; }
+    // Get the provider instance from the pointer
+    auto* provider = (C4BLEProvider*)providerPtr;
+    if (!provider) return;
 
-    std::string id = JstringToUTF8(env, peerId);
-    if (id.empty()) { return 0; }
+    const char* peerIdStr = env->GetStringUTFChars(peerId, nullptr);
+    if (!peerIdStr) return;
+    std::string id(peerIdStr);
+    env->ReleaseStringUTFChars(peerId, peerIdStr);
 
-    auto created = fleece::make_retained<BluetoothPeer>(provider, id);
-    fleece::Ref<C4Peer> peer = provider->addDiscoveredPeer(created.get());
 
-    return (jlong) reinterpret_cast<uintptr_t>(std::move(peer).detach());
+    auto* peer = new C4Peer(provider, id);
+    provider->addDiscoveredPeer(peer);
 }
 
 JNIEXPORT void JNICALL
@@ -393,23 +422,45 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4PeerDiscoveryProvider_removeP
     provider->removeDiscoveredPeer(id);
 }
 
-JNIEXPORT jlong JNICALL
+JNIEXPORT jobject JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4PeerDiscoveryProvider_peerWithID(
         JNIEnv *env, jclass thiz, jlong providerPtr, jstring peerId) {
 
-    auto *provider = reinterpret_cast<C4BLEProvider *>(providerPtr);
-    if (!provider || !peerId) { return 0; }
+    // Get provider instance
+    auto* provider = (C4BLEProvider*)providerPtr;
+    if (!provider) return nullptr;
 
-    std::string peerIdStr = JstringToUTF8(env, peerId);
-    if (peerIdStr.empty()) { return 0; }
+    // Convert Java String → C++ string
+    std::string peerIdStr;
+    if (peerId) {
+        const char* peerIdChars = env->GetStringUTFChars(peerId, nullptr);
+        if (peerIdChars) {
+            peerIdStr = std::string(peerIdChars);
+            env->ReleaseStringUTFChars(peerId, peerIdChars);
+        }
+    }
 
-    C4PeerDiscovery &discovery = provider->discovery();
+    // === CALL LIBRARY API ===
+    C4PeerDiscovery& discovery = provider->discovery();
     fleece::Retained<C4Peer> peer = discovery.peerWithID(peerIdStr);
-    if (!peer) { return 0; }
 
-    C4Peer *rawPeer = std::move(peer).detach();
+    // Convert C4Peer* → Java C4Peer object
+    if (peer) {
+        // Get the native peer pointer
+        jlong peerPtr = reinterpret_cast<long>(peer.get());
 
-    return static_cast<jlong>(reinterpret_cast<uintptr_t>(rawPeer));
+        // Create Java BluetoothPeer object
+        jclass bluetoothPeerClass = env->FindClass("com/couchbase/lite/internal/core/BluetoothPeer");
+        if (bluetoothPeerClass == nullptr) return nullptr;
+
+        jmethodID constructor = env->GetMethodID(bluetoothPeerClass, "<init>", "(J)V");
+        if (constructor == nullptr) return nullptr;
+
+        jobject javaPeer = env->NewObject(bluetoothPeerClass, constructor, peerPtr);
+
+        return env->NewGlobalRef(javaPeer);
+    }
+    return nullptr;
 }
 
 JNIEXPORT void JNICALL
@@ -427,13 +478,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4PeerDiscoveryProvider_peerDis
     // Use the utility function
     C4Peer::Metadata peerMetadata = javaMapToMetadata(env, metadata);
 
-    fleece::Retained<C4Peer> peer = provider->discovery().peerWithID(id);
-
-    if (!peer) {
-        auto created = fleece::make_retained<BluetoothPeer>(provider, id);
-        peer = provider->addDiscoveredPeer(created.get());
-    }
-    peer->setMetadata(std::move(peerMetadata));
+    auto* peer = new C4Peer(provider, id, peerMetadata);
+    provider->addDiscoveredPeer(peer);
 }
 
 JNIEXPORT void JNICALL
@@ -452,6 +498,42 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4PeerDiscoveryProvider_peerLos
     // Remove the peer from the discovery system
     // This will trigger notifications to observers about the peer going offline
     provider->removeDiscoveredPeer(id);
+}
+
+JNIEXPORT void JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4PeerDiscoveryProvider_onIncomingConnection(
+        JNIEnv *env, jclass thiz, jlong providerPtr, jbyteArray peerId, jlong socketPtr) {
+
+    // Get the provider instance from the pointer
+    auto provider = (C4BLEProvider*)providerPtr;
+    if (!provider) return;
+
+    // Convert peerId from Java byte array to C4PeerID
+    C4PeerID peerIdObj = {};
+    if (peerId) {
+        jbyte* bytes = env->GetByteArrayElements(peerId, nullptr);
+        if (bytes) {
+            memcpy(peerIdObj.bytes, bytes, 32);
+            env->ReleaseByteArrayElements(peerId, bytes, JNI_ABORT);
+        }
+    }
+
+    // Get the C4Socket from the pointer
+    C4Socket* socket = (C4Socket*)socketPtr;
+    if (!socket) return;
+
+    // Find the peer in the discovery system
+    auto peer = provider->discovery().peerWithID("peerIdObj");
+    if (peer) {
+        // Notify about the incoming connection
+        bool accepted = provider->notifyIncomConnection(peer.get(), socket);
+
+        // If not accepted, close the socket
+        if (!accepted) {
+            // Close the socket - implementation depends on your socket type
+            // For BLE, you might close the GATT connection
+        }
+    }
 }
 
 JNIEXPORT void JNICALL
