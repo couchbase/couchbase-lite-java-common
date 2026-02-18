@@ -12,9 +12,6 @@ using namespace litecore::jni;
 using namespace litecore::p2p;
 
 namespace litecore::jni {
-
-
-    // C4PeerDiscoveryProvider callbacks
     static jclass cls_C4PeerDiscoveryProvider;
 
     static jmethodID m_C4PeerDiscoveryProvider_startBrowsing;
