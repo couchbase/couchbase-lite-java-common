@@ -1,10 +1,11 @@
+#if defined(COUCHBASE_ENTERPRISE) && defined(__ANDROID__)
 #include <jni.h>
 #include "c4PeerDiscovery.hh"
 #include "native_glue.hh"
 
 namespace litecore::jni {
 // Helper to convert Java Map to Metadata
-    static C4Peer::Metadata javaMapToMetadata(JNIEnv* env, jobject map) {
+    C4Peer::Metadata javaMapToMetadata(JNIEnv* env, jobject map) {
         C4Peer::Metadata metadata;
 
         if (!map) return metadata;
@@ -76,5 +77,5 @@ namespace litecore::jni {
         env->DeleteLocalRef(hashMapClass);
         return hashMap;
     }
-
 }
+#endif

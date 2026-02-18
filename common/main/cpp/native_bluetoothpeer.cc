@@ -1,3 +1,4 @@
+#if defined(COUCHBASE_ENTERPRISE) && defined(__ANDROID__)
 #include "com_couchbase_lite_internal_core_impl_NativeBluetoothPeer.h"
 #include "native_glue.hh"
 #include "c4PeerDiscovery.hh"
@@ -7,8 +8,6 @@
 
 using namespace litecore;
 using namespace litecore::jni;
-
-#if defined(COUCHBASE_ENTERPRISE) && defined(__ANDROID__)
 
 // Helper to convert C4Peer* from jlong
 static C4Peer* getPeer(jlong peerPtr) {
