@@ -348,6 +348,7 @@ namespace litecore::jni {
     static void replicatorStatusChangedCallback(
             C4PeerSync *ignored,
             const C4PeerID *peerId,
+            C4PeerSyncProtocol protocol,
             bool outbound,
             const C4ReplicatorStatus *status,
             void *context) {
@@ -377,6 +378,7 @@ namespace litecore::jni {
     static void documentEndedCallback(
             C4PeerSync *ignored,
             const C4PeerID *peerId,
+            C4PeerSyncProtocol protocol,
             bool pushing,
             size_t numDocs,
             const C4DocumentEnded *documentEnded[],
@@ -412,9 +414,9 @@ namespace litecore::jni {
                 &statusChangedCallback,
                 &authenticateCallback,
                 &peerDiscoveredCallback,
-                reinterpret_cast<C4PeerSync_DiscoveryOnProtocolCallback>(&replicatorStatusChangedCallback),
                 nullptr,
-                reinterpret_cast<C4PeerSync_DocsCallback>(documentEndedCallback),
+                &replicatorStatusChangedCallback,
+                &documentEndedCallback,
                 nullptr,
                 nullptr,
                 nullptr,
