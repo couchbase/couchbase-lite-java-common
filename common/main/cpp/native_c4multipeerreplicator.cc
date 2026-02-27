@@ -528,7 +528,7 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4MultipeerReplicator_c
     params.peerGroupID = groupId;
 
     // Protocols:
-    params.protocols = kPeerSyncProtocol_BluetoothLE;
+    params.protocols = kPeerSyncProtocol_DNS_SD | kPeerSyncProtocol_BluetoothLE;
 
     // Identity:
     bool failed;
@@ -689,7 +689,7 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4MultipeerReplicator_g
             m_C4MultipeerReplicator_createPeerInfo,
             jpeerId,
             certChain,
-            JNI_TRUE,
+            info->onlineProtocols > 0 ? JNI_TRUE : JNI_FALSE,
             neighborIds,
             replStatus);
 

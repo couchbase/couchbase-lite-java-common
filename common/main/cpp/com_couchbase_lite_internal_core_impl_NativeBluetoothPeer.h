@@ -59,6 +59,15 @@ JNIEXPORT void JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeBluetoothPeer_resolvedURL(
         JNIEnv *env, jclass clazz, jlong peerPtr, jstring jurl);
 
+/*
+ * Class:     com_couchbase_lite_internal_core_impl_NativeBluetoothPeer
+ * Method:    release
+ * Signature: (JZ)V
+ */
+JNIEXPORT void JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeBluetoothPeer_release(
+        JNIEnv *env, jclass clazz, jlong peerPtr);
+
 #ifdef __cplusplus
 }
 #endif

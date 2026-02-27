@@ -3,6 +3,7 @@
 #include "native_glue.hh"
 #include "c4PeerDiscovery.hh"
 #include "c4Error.h"
+#include "fleece/RefCounted.hh"
 #include "fleece/FLExpert.h"
 #include "MetadataHelper.h"
 
@@ -87,6 +88,12 @@ extern "C++" {
         if (!peer) return;
 
         peer->resolvingUrl(url, kC4NoError);
+    }
+
+    JNIEXPORT void JNICALL
+    Java_com_couchbase_lite_internal_core_impl_NativeBluetoothPeer_release(
+            JNIEnv *env, jclass clazz, jlong peerPtr) {
+        fleece::release(reinterpret_cast<const fleece::RefCounted*>(peerPtr));
     }
 }
 #endif
