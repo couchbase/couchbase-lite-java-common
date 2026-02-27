@@ -25,7 +25,7 @@ namespace litecore::jni {
     static jmethodID m_C4PeerDiscoveryProvider_initBleProvider;
 
     bool initC4PeerDiscoveryProvider(JNIEnv *env) {
-        jclass localClass = env->FindClass("com/couchbase/lite/internal/core/C4PeerDiscoveryProvider");
+        jclass localClass = env->FindClass("com/couchbase/lite/internal/core/BluetoothProvider");
         if (localClass == nullptr) return false;
 
         cls_C4PeerDiscoveryProvider = reinterpret_cast<jclass>(env->NewGlobalRef(localClass));
@@ -130,8 +130,6 @@ namespace litecore::jni {
                     cls_C4PeerDiscoveryProvider,
                     m_C4PeerDiscoveryProvider_startBrowsing,
                     _contextToken);
-
-
             if (envState == JNI_EDETACHED) {
                 detachJVM("startBrowsing");
             }
@@ -193,8 +191,6 @@ namespace litecore::jni {
                 detachJVM("stopPublishing");
             }
         }
-
-
 
         virtual void monitorMetadata(C4Peer* peer, bool start) override {
             JNIEnv *env = nullptr;
@@ -296,10 +292,6 @@ namespace litecore::jni {
             statusChanged(m, s);
         }
 
-        bool notifyIncomConnection(C4Peer* peer, C4Socket* s) {
-            return notifyIncomingConnection(peer, s);
-        }
-
         void setContextToken(jlong token) {
             _contextToken = token;
         }
@@ -350,6 +342,10 @@ namespace litecore::p2p {
     }
 
     bool initBleConstants(JNIEnv* env) {
+        jclass localClass = env->FindClass("com/couchbase/lite/internal/p2p/ble/BleP2pConstants");
+        if (localClass == nullptr) return false;
+
+        cls_BleP2pConstants = reinterpret_cast<jclass>(env->NewGlobalRef(localClass));
         jUuidClass = env->FindClass("java/util/UUID");
         uuidFromString = env->GetStaticMethodID(jUuidClass, "fromString",
                                                 "(Ljava/lang/String;)Ljava/util/UUID;");
@@ -437,14 +433,14 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4PeerDiscoveryProvider_peerWit
         }
     }
 
-    // === CALL LIBRARY API ===
     C4PeerDiscovery& discovery = provider->discovery();
     fleece::Retained<C4Peer> peer = discovery.peerWithID(peerIdStr);
 
     // Convert C4Peer* → Java C4Peer object
     if (peer) {
         // Get the native peer pointer
-        jlong peerPtr = reinterpret_cast<long>(peer.get());
+        C4Peer* rawPeer = std::move(peer).detach();
+        jlong peerPtr = reinterpret_cast<long>(rawPeer);
 
         // Create Java BluetoothPeer object
         jclass bluetoothPeerClass = env->FindClass("com/couchbase/lite/internal/core/BluetoothPeer");
@@ -495,42 +491,6 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4PeerDiscoveryProvider_peerLos
     // Remove the peer from the discovery system
     // This will trigger notifications to observers about the peer going offline
     provider->removeDiscoveredPeer(id);
-}
-
-JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4PeerDiscoveryProvider_onIncomingConnection(
-        JNIEnv *env, jclass thiz, jlong providerPtr, jbyteArray peerId, jlong socketPtr) {
-
-    // Get the provider instance from the pointer
-    auto provider = (C4BLEProvider*)providerPtr;
-    if (!provider) return;
-
-    // Convert peerId from Java byte array to C4PeerID
-    C4PeerID peerIdObj = {};
-    if (peerId) {
-        jbyte* bytes = env->GetByteArrayElements(peerId, nullptr);
-        if (bytes) {
-            memcpy(peerIdObj.bytes, bytes, 32);
-            env->ReleaseByteArrayElements(peerId, bytes, JNI_ABORT);
-        }
-    }
-
-    // Get the C4Socket from the pointer
-    C4Socket* socket = (C4Socket*)socketPtr;
-    if (!socket) return;
-
-    // Find the peer in the discovery system
-    auto peer = provider->discovery().peerWithID("peerIdObj");
-    if (peer) {
-        // Notify about the incoming connection
-        bool accepted = provider->notifyIncomConnection(peer.get(), socket);
-
-        // If not accepted, close the socket
-        if (!accepted) {
-            // Close the socket - implementation depends on your socket type
-            // For BLE, you might close the GATT connection
-        }
-    }
 }
 
 JNIEXPORT void JNICALL
