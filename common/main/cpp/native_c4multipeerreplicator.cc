@@ -101,7 +101,7 @@ namespace litecore::jni {
             m_C4MultipeerReplicator_createPeerInfo = env->GetStaticMethodID(
                     cls_C4MultipeerReplicator,
                     "createPeerInfo",
-                    "([B[BZ[[BLcom/couchbase/lite/internal/core/C4ReplicatorStatus;)Lcom/couchbase/lite/PeerInfo;");
+                    "([B[BZ[[BLjava/util/Set;Lcom/couchbase/lite/internal/core/C4ReplicatorStatus;)Lcom/couchbase/lite/PeerInfo;");
 
             if (m_C4MultipeerReplicator_createPeerInfo == nullptr)
                 return false;
@@ -125,7 +125,7 @@ namespace litecore::jni {
             m_C4MultipeerReplicator_onPeerDiscovered = env->GetStaticMethodID(
                     cls_C4MultipeerReplicator,
                     "onPeerDiscovered",
-                    "(J[BZ)V");
+                    "(J[BLcom/couchbase/lite/MultipeerTransport;Z)V");
 
             if (m_C4MultipeerReplicator_onPeerDiscovered == nullptr)
                 return false;
@@ -133,7 +133,7 @@ namespace litecore::jni {
             m_C4MultipeerReplicator_onReplicatorStatusChanged = env->GetStaticMethodID(
                     cls_C4MultipeerReplicator,
                     "onReplicatorStatusChanged",
-                    "(J[BZLcom/couchbase/lite/internal/core/C4ReplicatorStatus;)V");
+                    "(J[BLcom/couchbase/lite/MultipeerTransport;ZLcom/couchbase/lite/internal/core/C4ReplicatorStatus;)V");
 
             if (m_C4MultipeerReplicator_onReplicatorStatusChanged == nullptr)
                 return false;
@@ -141,7 +141,7 @@ namespace litecore::jni {
             m_C4MultipeerReplicator_onDocumentEnded = env->GetStaticMethodID(
                     cls_C4MultipeerReplicator,
                     "onDocumentEnded",
-                    "(J[BZ[Lcom/couchbase/lite/internal/core/C4DocumentEnded;)V");
+                    "(J[BLcom/couchbase/lite/MultipeerTransport;Z[Lcom/couchbase/lite/internal/core/C4DocumentEnded;)V");
 
             if (m_C4MultipeerReplicator_onDocumentEnded == nullptr)
                 return false;
@@ -216,6 +216,89 @@ namespace litecore::jni {
             env->DeleteLocalRef(neighborId);
         }
         return neighborIds;
+    }
+
+    static jobject toJavaMultipeerTransport(JNIEnv* env, C4PeerSyncProtocol p) {
+        jclass clsTransport = env->FindClass("com/couchbase/lite/MultipeerTransport");
+        if (!clsTransport) { return nullptr; }
+
+        const char* fieldName;
+        switch (p) {
+            case kPeerSyncProtocol_DNS_SD:
+                fieldName = "WIFI";
+                break;
+            case kPeerSyncProtocol_BluetoothLE:
+                fieldName = "BLUETOOTH";
+                break;
+            default:
+                return nullptr; // or choose a default (e.g., WIFI) if your API requires non-null
+        }
+
+        jfieldID fid = env->GetStaticFieldID(
+                clsTransport,
+                fieldName,
+                "Lcom/couchbase/lite/MultipeerTransport;");
+        if (!fid) { return nullptr; }
+
+        return env->GetStaticObjectField(clsTransport, fid);
+    }
+
+    static jobject toJavaTransportSet(JNIEnv* env, C4PeerSyncProtocols protos) {
+        jclass clsEnumSet = env->FindClass("java/util/EnumSet");
+        jclass clsTransport = env->FindClass("com/couchbase/lite/MultipeerTransport");
+        if (!clsEnumSet || !clsTransport) { return nullptr; }
+
+        jmethodID midNoneOf = env->GetStaticMethodID(
+                clsEnumSet, "noneOf", "(Ljava/lang/Class;)Ljava/util/EnumSet;");
+        if (!midNoneOf) { return nullptr; }
+
+        jobject setObj = env->CallStaticObjectMethod(clsEnumSet, midNoneOf, clsTransport);
+        if (!setObj) { return nullptr; }
+
+        jmethodID midAdd = env->GetMethodID(clsEnumSet, "add", "(Ljava/lang/Object;)Z");
+        if (!midAdd) { return setObj; } // empty set (best effort)
+
+        auto addIfPresent = [&](C4PeerSyncProtocol proto) {
+            if (!(protos & proto)) { return; }
+            jobject jTransport = toJavaMultipeerTransport(env, proto);
+            if (!jTransport) { return; }
+            env->CallBooleanMethod(setObj, midAdd, jTransport);
+            env->DeleteLocalRef(jTransport);
+        };
+
+        addIfPresent(kPeerSyncProtocol_DNS_SD);
+        addIfPresent(kPeerSyncProtocol_BluetoothLE);
+
+        return setObj;
+    }
+
+    static C4PeerSyncProtocols toC4PeerSyncProtocols(JNIEnv* env, jobject enumSetTransports) {
+        if (!enumSetTransports) { return 0; }
+
+        jclass clsSet = env->FindClass("java/util/Set");
+        jmethodID midContains = env->GetMethodID(clsSet, "contains", "(Ljava/lang/Object;)Z");
+
+        jclass clsTransport = env->FindClass("com/couchbase/lite/MultipeerTransport");
+        jfieldID fidWifi = env->GetStaticFieldID(
+                clsTransport, "WIFI", "Lcom/couchbase/lite/MultipeerTransport;");
+        jfieldID fidBt = env->GetStaticFieldID(
+                clsTransport, "BLUETOOTH", "Lcom/couchbase/lite/MultipeerTransport;");
+
+        jobject jWifi = env->GetStaticObjectField(clsTransport, fidWifi);
+        jobject jBt = env->GetStaticObjectField(clsTransport, fidBt);
+
+        C4PeerSyncProtocols protos = 0;
+
+        if (env->CallBooleanMethod(enumSetTransports, midContains, jWifi)) {
+            protos |= kPeerSyncProtocol_DNS_SD;
+        }
+        if (env->CallBooleanMethod(enumSetTransports, midContains, jBt)) {
+            protos |= kPeerSyncProtocol_BluetoothLE;
+        }
+
+        env->DeleteLocalRef(jWifi);
+        env->DeleteLocalRef(jBt);
+        return protos;
     }
 
     // The comment over in native_c4replicator.cc applies here as well.
@@ -324,18 +407,21 @@ namespace litecore::jni {
         return ok != JNI_FALSE;
     }
 
-    static void peerDiscoveredCallback(C4PeerSync *ignored, const C4PeerID *peerId, bool online, void *context) {
+    static void peerDiscoveredCallback(C4PeerSync *ignored, const C4PeerID *peerId,
+                                       C4PeerSyncProtocol protocol, bool online, void *context) {
         JNIEnv *env = nullptr;
         jint envState = attachJVM(&env, "p2pPeerDiscovered");
         if ((envState != JNI_OK) && (envState != JNI_EDETACHED))
             return;
 
         jbyteArray _peerId = toJByteArray(env, peerId->bytes, 32);
+        jobject transport = toJavaMultipeerTransport(env, protocol);
         env->CallStaticVoidMethod(
                 cls_C4MultipeerReplicator,
                 m_C4MultipeerReplicator_onPeerDiscovered,
                 (jlong) context,
                 _peerId,
+                transport,
                 online ? JNI_TRUE : JNI_FALSE);
 
         if (envState == JNI_EDETACHED) {
@@ -359,11 +445,13 @@ namespace litecore::jni {
 
         jbyteArray _peerId = toJByteArray(env, peerId->bytes, 32);
         jobject _status = toJavaReplStatus(env, *status);
+        jobject _protocol = toJavaMultipeerTransport(env, protocol);
         env->CallStaticVoidMethod(
                 cls_C4MultipeerReplicator,
                 m_C4MultipeerReplicator_onReplicatorStatusChanged,
                 (jlong) context,
                 _peerId,
+                _protocol,
                 outbound ? JNI_TRUE : JNI_FALSE,
                 _status);
 
@@ -393,11 +481,13 @@ namespace litecore::jni {
 
         jbyteArray _peerId = toJByteArray(env, peerId->bytes, 32);
         jobjectArray _docs = toJavaDocumentEndedArray(env, nDocs, documentEnded);
+        jobject _protocol = toJavaMultipeerTransport(env, protocol);
         env->CallStaticVoidMethod(
                 cls_C4MultipeerReplicator,
                 m_C4MultipeerReplicator_onDocumentEnded,
                 (jlong) context,
                 _peerId,
+                _protocol,
                 pushing ? JNI_TRUE : JNI_FALSE,
                 _docs);
 
@@ -413,8 +503,8 @@ namespace litecore::jni {
         return {
                 &statusChangedCallback,
                 &authenticateCallback,
-                &peerDiscoveredCallback,
                 nullptr,
+                peerDiscoveredCallback,
                 &replicatorStatusChangedCallback,
                 &documentEndedCallback,
                 nullptr,
@@ -514,6 +604,7 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4MultipeerReplicator_c
         jclass ignore,
         jlong token,
         jstring jgroupId,
+        jobject transports,
         jlong keyPair,
         jbyteArray cert,
         jlong c4db,
@@ -528,7 +619,7 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4MultipeerReplicator_c
     params.peerGroupID = groupId;
 
     // Protocols:
-    params.protocols = kPeerSyncProtocol_DNS_SD | kPeerSyncProtocol_BluetoothLE;
+    params.protocols = toC4PeerSyncProtocols(env, transports);
 
     // Identity:
     bool failed;
@@ -683,6 +774,7 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4MultipeerReplicator_g
 
     jobject replStatus = toJavaReplStatus(env, info->replicatorStatus);
     jobjectArray neighborIds = fromC4PeerID(env, info->neighbors, info->neighborCount);
+    jobject transports = toJavaTransportSet(env, info->onlineProtocols);
 
     jobject peerInfo = env->CallStaticObjectMethod(
             cls_C4MultipeerReplicator,
@@ -690,6 +782,7 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4MultipeerReplicator_g
             jpeerId,
             certChain,
             info->onlineProtocols > 0 ? JNI_TRUE : JNI_FALSE,
+            transports,
             neighborIds,
             replStatus);
 
