@@ -340,27 +340,6 @@ namespace litecore::p2p {
         else if (strcmp(uuidStr, litecore::p2p::btle::kPeerGroupUUIDNamespace) == 0)
             env->SetStaticObjectField(cls, PEER_GROUP_NS_FIELD, uuidObj);
     }
-
-    bool initBleConstants(JNIEnv* env) {
-        jclass localClass = env->FindClass("com/couchbase/lite/internal/p2p/ble/BleP2pConstants");
-        if (localClass == nullptr) return false;
-
-        cls_BleP2pConstants = reinterpret_cast<jclass>(env->NewGlobalRef(localClass));
-        jUuidClass = env->FindClass("java/util/UUID");
-        uuidFromString = env->GetStaticMethodID(jUuidClass, "fromString",
-                                                "(Ljava/lang/String;)Ljava/util/UUID;");
-
-        PORT_CHAR_FIELD = env->GetStaticFieldID(cls_BleP2pConstants,
-                                                "PORT_CHARACTERISTIC_ID", "Ljava/util/UUID;");
-        META_CHAR_FIELD = env->GetStaticFieldID(cls_BleP2pConstants,
-                                                "METADATA_CHARACTERISTIC_ID", "Ljava/util/UUID;");
-
-        setUuidConstant(env, cls_BleP2pConstants, litecore::p2p::btle::kPortCharacteristicID);
-        setUuidConstant(env, cls_BleP2pConstants, litecore::p2p::btle::kMetadataCharacteristicID);
-        setUuidConstant(env, cls_BleP2pConstants, litecore::p2p::btle::kPeerGroupUUIDNamespace);
-
-        return true;
-    }
 }
 
 
