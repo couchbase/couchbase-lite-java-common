@@ -394,45 +394,23 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4PeerDiscoveryProvider_removeP
     provider->removeDiscoveredPeer(id);
 }
 
-JNIEXPORT jobject JNICALL
+JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4PeerDiscoveryProvider_peerWithID(
         JNIEnv *env, jclass thiz, jlong providerPtr, jstring peerId) {
 
-    // Get provider instance
-    auto* provider = (C4BLEProvider*)providerPtr;
-    if (!provider) return nullptr;
+    auto *provider = reinterpret_cast<C4BLEProvider *>(providerPtr);
+    if (!provider || !peerId) { return 0; }
 
-    // Convert Java String → C++ string
-    std::string peerIdStr;
-    if (peerId) {
-        const char* peerIdChars = env->GetStringUTFChars(peerId, nullptr);
-        if (peerIdChars) {
-            peerIdStr = std::string(peerIdChars);
-            env->ReleaseStringUTFChars(peerId, peerIdChars);
-        }
-    }
+    std::string peerIdStr = JstringToUTF8(env, peerId);
+    if (peerIdStr.empty()) { return 0; }
 
-    C4PeerDiscovery& discovery = provider->discovery();
+    C4PeerDiscovery &discovery = provider->discovery();
     fleece::Retained<C4Peer> peer = discovery.peerWithID(peerIdStr);
+    if (!peer) { return 0; }
 
-    // Convert C4Peer* → Java C4Peer object
-    if (peer) {
-        // Get the native peer pointer
-        C4Peer* rawPeer = std::move(peer).detach();
-        jlong peerPtr = reinterpret_cast<long>(rawPeer);
+    C4Peer *rawPeer = std::move(peer).detach();
 
-        // Create Java BluetoothPeer object
-        jclass bluetoothPeerClass = env->FindClass("com/couchbase/lite/internal/core/BluetoothPeer");
-        if (bluetoothPeerClass == nullptr) return nullptr;
-
-        jmethodID constructor = env->GetMethodID(bluetoothPeerClass, "<init>", "(J)V");
-        if (constructor == nullptr) return nullptr;
-
-        jobject javaPeer = env->NewObject(bluetoothPeerClass, constructor, peerPtr);
-
-        return env->NewGlobalRef(javaPeer);
-    }
-    return nullptr;
+    return static_cast<jlong>(reinterpret_cast<uintptr_t>(rawPeer));
 }
 
 JNIEXPORT void JNICALL

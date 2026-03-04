@@ -68,6 +68,10 @@ JNIEXPORT void JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeBluetoothPeer_release(
         JNIEnv *env, jclass clazz, jlong peerPtr);
 
+JNIEXPORT jlong JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeBluetoothPeer_createC4Peer(
+        JNIEnv* env, jclass /*clazz*/, jlong providerPtr, jstring jPeerId);
+
 #ifdef __cplusplus
 }
 #endif

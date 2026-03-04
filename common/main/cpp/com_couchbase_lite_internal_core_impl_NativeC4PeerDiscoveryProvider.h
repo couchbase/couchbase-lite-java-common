@@ -37,7 +37,7 @@ JNIEXPORT void JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4PeerDiscoveryProvider_removePeer(
         JNIEnv *env, jclass thiz, jlong providerPtr, jstring peerId);
 
-JNIEXPORT jobject JNICALL
+JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4PeerDiscoveryProvider_peerWithID(
         JNIEnv *env, jclass thiz, jlong providerPtr, jstring peerId);
 
