@@ -272,35 +272,6 @@ namespace litecore::jni {
         return setObj;
     }
 
-    static C4PeerSyncProtocols toC4PeerSyncProtocols(JNIEnv* env, jobject enumSetTransports) {
-        if (!enumSetTransports) { return 0; }
-
-        jclass clsSet = env->FindClass("java/util/Set");
-        jmethodID midContains = env->GetMethodID(clsSet, "contains", "(Ljava/lang/Object;)Z");
-
-        jclass clsTransport = env->FindClass("com/couchbase/lite/MultipeerTransport");
-        jfieldID fidWifi = env->GetStaticFieldID(
-                clsTransport, "WIFI", "Lcom/couchbase/lite/MultipeerTransport;");
-        jfieldID fidBt = env->GetStaticFieldID(
-                clsTransport, "BLUETOOTH", "Lcom/couchbase/lite/MultipeerTransport;");
-
-        jobject jWifi = env->GetStaticObjectField(clsTransport, fidWifi);
-        jobject jBt = env->GetStaticObjectField(clsTransport, fidBt);
-
-        C4PeerSyncProtocols protos = 0;
-
-        if (env->CallBooleanMethod(enumSetTransports, midContains, jWifi)) {
-            protos |= kPeerSyncProtocol_DNS_SD;
-        }
-        if (env->CallBooleanMethod(enumSetTransports, midContains, jBt)) {
-            protos |= kPeerSyncProtocol_BluetoothLE;
-        }
-
-        env->DeleteLocalRef(jWifi);
-        env->DeleteLocalRef(jBt);
-        return protos;
-    }
-
     // The comment over in native_c4replicator.cc applies here as well.
     // I'm even sorrier that I have to duplicate this mess.
     static int fromJavaReplColls(
@@ -604,7 +575,7 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4MultipeerReplicator_c
         jclass ignore,
         jlong token,
         jstring jgroupId,
-        jobject transports,
+        jint protocols,
         jlong keyPair,
         jbyteArray cert,
         jlong c4db,
@@ -619,7 +590,7 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4MultipeerReplicator_c
     params.peerGroupID = groupId;
 
     // Protocols:
-    params.protocols = toC4PeerSyncProtocols(env, transports);
+    params.protocols = (C4PeerSyncProtocols) protocols;
 
     // Identity:
     bool failed;

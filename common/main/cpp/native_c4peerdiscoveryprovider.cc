@@ -5,6 +5,7 @@
 #include "native_glue.hh"
 #include "socket_factory.h"
 #include "MetadataHelper.h"
+#include "native_bluetoothpeer_internal.h"
 #include "com_couchbase_lite_internal_core_impl_NativeC4PeerDiscoveryProvider.h"
 
 using namespace litecore;
@@ -280,8 +281,8 @@ namespace litecore::jni {
             }
         }
 
-        void addDiscoveredPeer(C4Peer* peer, bool moreComing = false) {
-            addPeer(peer, moreComing);
+        fleece::Ref<C4Peer> addDiscoveredPeer(C4Peer* peer, bool moreComing = false) {
+            return addPeer(peer, moreComing);
         }
 
         void removeDiscoveredPeer(std::string id, bool moreComing = false) {
@@ -361,21 +362,19 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4PeerDiscoveryProvider_service
     return toJString(env, s);
 }
 
-JNIEXPORT void JNICALL
+JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4PeerDiscoveryProvider_addPeer(
         JNIEnv *env, jclass thiz, jlong providerPtr, jstring peerId) {
-    // Get the provider instance from the pointer
-    auto* provider = (C4BLEProvider*)providerPtr;
-    if (!provider) return;
+    auto* provider = reinterpret_cast<C4BLEProvider*>(providerPtr);
+    if (!provider || !peerId) { return 0; }
 
-    const char* peerIdStr = env->GetStringUTFChars(peerId, nullptr);
-    if (!peerIdStr) return;
-    std::string id(peerIdStr);
-    env->ReleaseStringUTFChars(peerId, peerIdStr);
+    std::string id = JstringToUTF8(env, peerId);
+    if (id.empty()) { return 0; }
 
+    auto created = fleece::make_retained<BluetoothPeer>(provider, id);
+    fleece::Ref<C4Peer> peer = provider->addDiscoveredPeer(created.get());
 
-    auto* peer = new C4Peer(provider, id);
-    provider->addDiscoveredPeer(peer);
+    return (jlong) reinterpret_cast<uintptr_t>(std::move(peer).detach());
 }
 
 JNIEXPORT void JNICALL
@@ -428,8 +427,13 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4PeerDiscoveryProvider_peerDis
     // Use the utility function
     C4Peer::Metadata peerMetadata = javaMapToMetadata(env, metadata);
 
-    auto* peer = new C4Peer(provider, id, peerMetadata);
-    provider->addDiscoveredPeer(peer);
+    fleece::Retained<C4Peer> peer = provider->discovery().peerWithID(id);
+
+    if (!peer) {
+        auto created = fleece::make_retained<BluetoothPeer>(provider, id);
+        peer = provider->addDiscoveredPeer(created.get());
+    }
+    peer->setMetadata(std::move(peerMetadata));
 }
 
 JNIEXPORT void JNICALL

@@ -6,6 +6,7 @@
 #include "fleece/RefCounted.hh"
 #include "fleece/FLExpert.h"
 #include "MetadataHelper.h"
+#include "native_bluetoothpeer_internal.h"
 
 using namespace litecore;
 using namespace litecore::jni;
@@ -14,16 +15,6 @@ using namespace litecore::jni;
 static C4Peer* getPeer(jlong peerPtr) {
     return reinterpret_cast<C4Peer*>(peerPtr);
 }
-
-class BluetoothPeer : public C4Peer {
-    using C4Peer::C4Peer;
-
-public:
-    void resolvingUrl(std::string s, C4Error err) {
-        resolvedURL(s, err);
-    }
-};
-
 
 extern "C++" {
     JNIEXPORT jstring JNICALL
@@ -94,20 +85,6 @@ extern "C++" {
     Java_com_couchbase_lite_internal_core_impl_NativeBluetoothPeer_release(
             JNIEnv *env, jclass clazz, jlong peerPtr) {
         fleece::release(reinterpret_cast<const fleece::RefCounted*>(peerPtr));
-    }
-
-    JNIEXPORT jlong JNICALL
-    Java_com_couchbase_lite_internal_core_impl_NativeBluetoothPeer_createC4Peer(
-            JNIEnv* env, jclass /*clazz*/, jlong providerPtr, jstring jPeerId) {
-
-        auto* provider = reinterpret_cast<C4PeerDiscoveryProvider*>(providerPtr);
-        if (!provider || !jPeerId) { return 0; }
-
-        std::string peerId = JstringToUTF8(env, jPeerId);
-        if (peerId.empty()) { return 0; }
-
-        auto* peer = new C4Peer(provider, peerId);
-        return (jlong) reinterpret_cast<uintptr_t>(peer);
     }
 }
 #endif

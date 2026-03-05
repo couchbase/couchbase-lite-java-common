@@ -29,7 +29,7 @@ JNIEXPORT void JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4PeerDiscoveryProvider_onIncomingConnection(
         JNIEnv *env, jclass thiz, jlong providerPtr, jbyteArray peerId, jlong socketPtr);
 
-JNIEXPORT void JNICALL
+JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4PeerDiscoveryProvider_addPeer(
         JNIEnv *env, jclass thiz, jlong providerPtr, jstring peerId);
 
