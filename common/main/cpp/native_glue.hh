@@ -53,6 +53,7 @@ namespace litecore::jni {
 
     bool initC4MultipeerReplicator(JNIEnv *);  // Implemented in native_c4multipeerreplicator.cc
     bool initC4PeerDiscoveryProvider(JNIEnv *);// Implemented in native_c4peerdiscoveryprovider.cc
+    bool initC4BTSocketFactory(JNIEnv *);      // Implemented in native_c4btsocketfactory.cc
 #endif
 #endif
 
