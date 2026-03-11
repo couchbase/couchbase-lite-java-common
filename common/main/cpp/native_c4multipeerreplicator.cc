@@ -101,7 +101,7 @@ namespace litecore::jni {
             m_C4MultipeerReplicator_createPeerInfo = env->GetStaticMethodID(
                     cls_C4MultipeerReplicator,
                     "createPeerInfo",
-                    "([B[BZ[[BILcom/couchbase/lite/internal/core/C4ReplicatorStatus;)Lcom/couchbase/lite/PeerInfo;");
+                    "([B[BZ[[BIILcom/couchbase/lite/internal/core/C4ReplicatorStatus;)Lcom/couchbase/lite/PeerInfo;");
 
             if (m_C4MultipeerReplicator_createPeerInfo == nullptr)
                 return false;
@@ -695,7 +695,8 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4MultipeerReplicator_g
             jpeerId,
             certChain,
             info->onlineProtocols > 0 ? JNI_TRUE : JNI_FALSE,
-            info->onlineProtocols,
+            (int) info->onlineProtocols,
+            (int) info->replicatorProtocol,
             neighborIds,
             replStatus);
 
