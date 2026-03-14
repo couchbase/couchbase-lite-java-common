@@ -144,6 +144,20 @@ public final class C4Socket extends C4Peer implements SocketToCore {
         return socket;
     }
 
+    @NonNull
+    public static C4Socket wrapNativePeer(long peer) {
+        return createSocket(NATIVE_IMPL, peer);
+    }
+
+    @Nullable
+    public static C4Socket getSocket(long peer) {
+        return BOUND_SOCKETS.getBinding(peer);
+    }
+
+    public long getPeerPtr() {
+        return withPeerOrDefault(0L, ptr -> ptr);
+    }
+
     //-------------------------------------------------------------------------
     // JNI callback methods
     //-------------------------------------------------------------------------

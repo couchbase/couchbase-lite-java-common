@@ -54,6 +54,19 @@ JNIEXPORT jstring JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4PeerDiscoveryProvider_serviceUuidFromPeerGroup(
         JNIEnv* env, jclass, jstring peerGroup);
 
+JNIEXPORT void JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4PeerDiscoveryProvider_createIncomingSocket(
+        JNIEnv* env, jclass,
+        jlong providerPtr,
+        jlong peerPtr,
+        jlong btSocketHandle,
+        jstring jUrl);
+
+JNIEXPORT jlong JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4PeerDiscoveryProvider_getSocketFactory(
+        JNIEnv* env, jclass,
+        jlong providerPtr);
+
 #ifdef __cplusplus
 }
 #endif

@@ -5,7 +5,10 @@
 #include "native_glue.hh"
 #include "socket_factory.h"
 #include "MetadataHelper.h"
+#include "TLSCodec.hh"
+#include "c4Socket.hh"
 #include "native_bluetoothpeer_internal.h"
+#include "com_couchbase_lite_internal_core_impl_NativeC4BTSocketFactory.h"
 #include "com_couchbase_lite_internal_core_impl_NativeC4PeerDiscoveryProvider.h"
 
 using namespace litecore;
@@ -88,13 +91,11 @@ namespace litecore::jni {
     }
 
 
-
     class C4BLEProvider : public C4PeerDiscoveryProvider {
     public:
         C4BLEProvider(C4PeerDiscovery& discovery, std::string_view peerGroupID)
                 : C4PeerDiscoveryProvider(discovery, kPeerSyncProtocol_BluetoothLE, peerGroupID) {
             std::string pg(peerGroupID);
-
             JNIEnv* env = nullptr;
             jint envState = attachJVM(&env, "initBleProvider");
             if ((envState != JNI_OK) && (envState != JNI_EDETACHED)) return;
@@ -113,8 +114,9 @@ namespace litecore::jni {
                 env->ExceptionClear();
                 token = 0;
             }
-
             _contextToken = token;
+            _socket = litecore::jni::kBTSocketFactory;
+            _socket.context = this;
 
             if (envState == JNI_EDETACHED) detachJVM("initBleProvider");
             if (jPeerGroup) env->DeleteLocalRef(jPeerGroup);
@@ -297,8 +299,21 @@ namespace litecore::jni {
             _contextToken = token;
         }
 
+        std::optional<C4SocketFactory> getSocketFactory() const override {
+            return net::wrapSocketFactoryInTLS(_socket);
+        }
+
+        bool notifyIncomingConn(C4Peer* peer, C4Socket* socket) {
+            return notifyIncomingConnection(peer, socket);
+        }
+
+        fleece::Ref<C4Socket> createIncomingSockWithTLS(C4SocketFactory& factory, void* ctx, C4Address address) {
+            return createIncomingSocketWithTLS(factory, ctx, address);
+        }
+
     private:
         jlong _contextToken{};
+        C4SocketFactory _socket;
     };
 
     // Factory function for creating BLE provider
@@ -497,6 +512,71 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4PeerDiscoveryProvider_peersWi
     env->SetLongArrayRegion(arr, 0, (jsize)handles.size(), handles.data());
     return arr;
 }
+
+JNIEXPORT void JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4PeerDiscoveryProvider_createIncomingSocket(
+        JNIEnv* env, jclass,
+        jlong providerPtr,
+        jlong peerPtr,
+        jlong btSocketHandle,
+        jstring jUrl)
+{
+    auto* provider = reinterpret_cast<C4BLEProvider*>(providerPtr);
+    auto* peer     = reinterpret_cast<C4Peer*>(peerPtr);
+    if (!provider || !peer) return;
+
+    // Parse URL → C4Address
+    jstringSlice urlSlice(env, jUrl);
+    C4Address address{};
+    if (!c4address_fromURL(urlSlice, &address, nullptr)) {
+        C4Warn("nCreateIncomingSocket: failed to parse URL");
+        return;
+    }
+
+    auto* ctx = new BTNativeHandle {
+            btSocketHandle,
+            peer->id
+    };
+
+    std::optional<C4SocketFactory> factory = provider->getSocketFactory();
+    if (!factory.has_value()) {
+        C4Warn("nCreateIncomingSocket: no socket factory");
+        delete ctx;
+        return;
+    }
+
+    fleece::Ref<C4Socket> socket = provider->createIncomingSockWithTLS(
+            *factory,
+            reinterpret_cast<void*>(ctx),
+            address);
+
+    if (!socket) {
+        C4Warn("nCreateIncomingSocket: createIncomingSocketWithTLS failed");
+        delete ctx;
+        return;
+    }
+
+    if (!provider->notifyIncomingConn(peer, socket)) {
+        socket->getFactory().close(socket);
+    }
+}
+
+JNIEXPORT jlong JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4PeerDiscoveryProvider_getSocketFactory(
+        JNIEnv* env, jclass,
+        jlong providerPtr)
+{
+    auto* provider = reinterpret_cast<C4BLEProvider*>(providerPtr);
+    if (!provider) return 0L;
+
+    std::optional<C4SocketFactory> factory = provider->getSocketFactory();
+
+    if (!factory.has_value()) return 0L;
+
+    auto* factoryPtr = new C4SocketFactory(factory.value());
+    return reinterpret_cast<jlong>(factoryPtr);
+}
+
 
 #ifdef __cplusplus
 }

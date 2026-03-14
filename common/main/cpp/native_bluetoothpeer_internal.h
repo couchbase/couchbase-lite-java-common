@@ -5,6 +5,18 @@
 
 #include "c4PeerDiscovery.hh"
 #include "c4Error.h"
+#include "c4Socket.h"
+
+namespace litecore::jni {
+    /// The BT C4SocketFactory — defined in native_c4btsocketfactory.cc
+    extern const C4SocketFactory kBTSocketFactory;
+}
+
+struct BTNativeHandle {
+    jlong       btSocketHandle;   // key into Java's sSocketHandles map
+    std::string peerID;           // BT MAC address / CBL peer ID
+};
+
 
 class BluetoothPeer final : public C4Peer {
     using C4Peer::C4Peer;
