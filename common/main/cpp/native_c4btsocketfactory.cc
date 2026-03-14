@@ -26,7 +26,7 @@ static jmethodID m_attached;
 
 bool litecore::jni::initC4BTSocketFactory(JNIEnv* env) {
     jclass localCls = env->FindClass(
-            "com/couchbase/lite/internal/BluetoothSocketFactory");
+            "com/couchbase/lite/internal/p2p/ble/BluetoothSocketFactory");
     if (!localCls) return false;
 
     cls_C4BTSocketFactory = reinterpret_cast<jclass>(env->NewGlobalRef(localCls));
