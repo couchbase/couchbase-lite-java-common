@@ -68,6 +68,7 @@ public abstract class C4Replicator extends C4Peer {
 
     /// ///// Most of these are defined in c4Replicator.h and must agree with those definitions.
 
+    public static final String BT_URL_SCHEME = "l2cap";
     public static final String WEBSOCKET_SCHEME = "ws";
     public static final String WEBSOCKET_SECURE_CONNECTION_SCHEME = "wss";
     public static final String MESSAGE_SCHEME = "x-msg-endpt";

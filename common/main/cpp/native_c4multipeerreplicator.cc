@@ -101,7 +101,7 @@ namespace litecore::jni {
             m_C4MultipeerReplicator_createPeerInfo = env->GetStaticMethodID(
                     cls_C4MultipeerReplicator,
                     "createPeerInfo",
-                    "([B[BZ[[BLcom/couchbase/lite/internal/core/C4ReplicatorStatus;)Lcom/couchbase/lite/PeerInfo;");
+                    "([B[BZ[[BIILcom/couchbase/lite/internal/core/C4ReplicatorStatus;)Lcom/couchbase/lite/PeerInfo;");
 
             if (m_C4MultipeerReplicator_createPeerInfo == nullptr)
                 return false;
@@ -125,7 +125,7 @@ namespace litecore::jni {
             m_C4MultipeerReplicator_onPeerDiscovered = env->GetStaticMethodID(
                     cls_C4MultipeerReplicator,
                     "onPeerDiscovered",
-                    "(J[BZ)V");
+                    "(J[BIZ)V");
 
             if (m_C4MultipeerReplicator_onPeerDiscovered == nullptr)
                 return false;
@@ -133,7 +133,7 @@ namespace litecore::jni {
             m_C4MultipeerReplicator_onReplicatorStatusChanged = env->GetStaticMethodID(
                     cls_C4MultipeerReplicator,
                     "onReplicatorStatusChanged",
-                    "(J[BZLcom/couchbase/lite/internal/core/C4ReplicatorStatus;)V");
+                    "(J[BIZLcom/couchbase/lite/internal/core/C4ReplicatorStatus;)V");
 
             if (m_C4MultipeerReplicator_onReplicatorStatusChanged == nullptr)
                 return false;
@@ -141,7 +141,7 @@ namespace litecore::jni {
             m_C4MultipeerReplicator_onDocumentEnded = env->GetStaticMethodID(
                     cls_C4MultipeerReplicator,
                     "onDocumentEnded",
-                    "(J[BZ[Lcom/couchbase/lite/internal/core/C4DocumentEnded;)V");
+                    "(J[BIZ[Lcom/couchbase/lite/internal/core/C4DocumentEnded;)V");
 
             if (m_C4MultipeerReplicator_onDocumentEnded == nullptr)
                 return false;
@@ -324,7 +324,8 @@ namespace litecore::jni {
         return ok != JNI_FALSE;
     }
 
-    static void peerDiscoveredCallback(C4PeerSync *ignored, const C4PeerID *peerId, bool online, void *context) {
+    static void peerDiscoveredCallback(C4PeerSync *ignored, const C4PeerID *peerId,
+                                       C4PeerSyncProtocol protocol, bool online, void *context) {
         JNIEnv *env = nullptr;
         jint envState = attachJVM(&env, "p2pPeerDiscovered");
         if ((envState != JNI_OK) && (envState != JNI_EDETACHED))
@@ -336,6 +337,7 @@ namespace litecore::jni {
                 m_C4MultipeerReplicator_onPeerDiscovered,
                 (jlong) context,
                 _peerId,
+                (jint) protocol,
                 online ? JNI_TRUE : JNI_FALSE);
 
         if (envState == JNI_EDETACHED) {
@@ -348,6 +350,7 @@ namespace litecore::jni {
     static void replicatorStatusChangedCallback(
             C4PeerSync *ignored,
             const C4PeerID *peerId,
+            C4PeerSyncProtocol protocol,
             bool outbound,
             const C4ReplicatorStatus *status,
             void *context) {
@@ -363,6 +366,7 @@ namespace litecore::jni {
                 m_C4MultipeerReplicator_onReplicatorStatusChanged,
                 (jlong) context,
                 _peerId,
+                (jint) protocol,
                 outbound ? JNI_TRUE : JNI_FALSE,
                 _status);
 
@@ -377,6 +381,7 @@ namespace litecore::jni {
     static void documentEndedCallback(
             C4PeerSync *ignored,
             const C4PeerID *peerId,
+            C4PeerSyncProtocol protocol,
             bool pushing,
             size_t numDocs,
             const C4DocumentEnded *documentEnded[],
@@ -396,6 +401,7 @@ namespace litecore::jni {
                 m_C4MultipeerReplicator_onDocumentEnded,
                 (jlong) context,
                 _peerId,
+                (jint) protocol,
                 pushing ? JNI_TRUE : JNI_FALSE,
                 _docs);
 
@@ -411,6 +417,7 @@ namespace litecore::jni {
         return {
                 &statusChangedCallback,
                 &authenticateCallback,
+                nullptr,
                 &peerDiscoveredCallback,
                 &replicatorStatusChangedCallback,
                 &documentEndedCallback,
@@ -511,6 +518,7 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4MultipeerReplicator_c
         jclass ignore,
         jlong token,
         jstring jgroupId,
+        jint protocols,
         jlong keyPair,
         jbyteArray cert,
         jlong c4db,
@@ -525,9 +533,7 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4MultipeerReplicator_c
     params.peerGroupID = groupId;
 
     // Protocols:
-    C4String protocols[] = {kPeerSyncProtocol_DNS_SD};
-    params.protocols = protocols;
-    params.protocolsCount = sizeof(protocols) / sizeof(protocols[0]);
+    params.protocols = (C4PeerSyncProtocols) protocols;
 
     // Identity:
     bool failed;
@@ -688,7 +694,9 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4MultipeerReplicator_g
             m_C4MultipeerReplicator_createPeerInfo,
             jpeerId,
             certChain,
-            info->online ? JNI_TRUE : JNI_FALSE,
+            info->onlineProtocols > 0 ? JNI_TRUE : JNI_FALSE,
+            (int) info->onlineProtocols,
+            (int) info->replicatorProtocol,
             neighborIds,
             replStatus);
 

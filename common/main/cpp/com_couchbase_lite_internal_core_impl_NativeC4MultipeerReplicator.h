@@ -20,6 +20,7 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4MultipeerReplicator_c
         jclass,
         jlong,
         jstring,
+        jint,
         jlong,
         jbyteArray,
         jlong,

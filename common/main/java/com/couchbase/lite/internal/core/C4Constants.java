@@ -318,4 +318,12 @@ public final class C4Constants {
         public static final int USER_TRANSIENT = 4001;         // User-defined transient error
         public static final int USER_PERMANENT = 4002;         // User-defined permanent error
     }
+
+    ////////////////////////////////////
+    // c4PeerSyncTypes.h
+    ////////////////////////////////////
+    public static final class PeerSyncProtocols {
+        public static final int DNS_SD = 0x01;
+        public static final int BLUETOOTH_LE = 0x02;
+    }
 }
