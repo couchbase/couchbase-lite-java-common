@@ -163,6 +163,7 @@ JNI_OnLoad(JavaVM *jvm, void *ignore) {
         #ifdef __ANDROID__
         && initC4MultipeerReplicator(env)
         && initC4PeerDiscoveryProvider(env)
+        && initC4BTSocketFactory(env)
         #endif
         #endif
         && initC4Socket(env)) {

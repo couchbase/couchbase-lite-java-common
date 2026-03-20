@@ -127,6 +127,7 @@ namespace litecore::jni {
             jint envState = attachJVM(&env, "startBrowsing");
             if ((envState != JNI_OK) && (envState != JNI_EDETACHED))
                 return;
+            jniLog("Start Browsing");
 
             // Call Java BLE service to start scanning
             env->CallStaticVoidMethod(
@@ -162,6 +163,7 @@ namespace litecore::jni {
                 return;
 
             jstring jDisplayName = UTF8ToJstring(env, displayName.data(), displayName.size());
+            jniLog("Start Publishing");
             jobject jMetadata = metadataToJavaMap(env, metadata);
 
             env->CallStaticVoidMethod(
@@ -253,6 +255,7 @@ namespace litecore::jni {
             if ((envState != JNI_OK) && (envState != JNI_EDETACHED))
                 return;
 
+            jniLog("Update Metadata");
             jobject jMetadata = metadataToJavaMap(env, metadata);
 
             env->CallStaticVoidMethod(
@@ -360,7 +363,7 @@ namespace litecore::p2p {
 
 
 #ifdef __cplusplus
-extern "C++" {
+extern "C" {
 #endif
 
 //-------------------------------------------------------------------------
@@ -368,13 +371,13 @@ extern "C++" {
 //-------------------------------------------------------------------------
 
 
-JNIEXPORT jstring JNICALL
+JNIEXPORT jbyteArray JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4PeerDiscoveryProvider_serviceUuidFromPeerGroup(
         JNIEnv* env, jclass, jstring peerGroup) {
     std::string pg = JstringToUTF8(env, peerGroup);
     auto uuid = litecore::p2p::btle::ServiceUUIDFromPeerGroup(pg);
     C4Slice s = {&uuid, sizeof(uuid)};
-    return toJString(env, s);
+    return toJByteArray(env, s);
 }
 
 JNIEXPORT jlong JNICALL
