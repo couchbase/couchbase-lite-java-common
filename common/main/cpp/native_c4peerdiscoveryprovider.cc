@@ -7,15 +7,27 @@
 #include "MetadataHelper.h"
 #include "TLSCodec.hh"
 #include "c4Socket.hh"
+#include "c4Error.h"
 #include "native_bluetoothpeer_internal.h"
 #include "com_couchbase_lite_internal_core_impl_NativeC4BTSocketFactory.h"
 #include "com_couchbase_lite_internal_core_impl_NativeC4PeerDiscoveryProvider.h"
+#include <android/api-level.h>
 
 using namespace litecore;
 using namespace litecore::jni;
 using namespace litecore::p2p;
+using namespace std;
 
 namespace litecore::jni {
+    static void assertAndroidLevel() {
+        constexpr int MIN_LEVEL = __ANDROID_API_Q__;
+        if (android_get_device_api_level() < MIN_LEVEL) {
+            C4Error::raise(LiteCoreDomain, kC4ErrorUnsupported,
+                           "Bluetooth peer discovery requires Android API %d or higher",
+                           MIN_LEVEL);
+        }
+    }
+
     static jclass cls_C4PeerDiscoveryProvider;
 
     static jmethodID m_C4PeerDiscoveryProvider_startBrowsing;
@@ -94,7 +106,8 @@ namespace litecore::jni {
     class C4BLEProvider : public C4PeerDiscoveryProvider {
     public:
         C4BLEProvider(C4PeerDiscovery& discovery, std::string_view peerGroupID)
-                : C4PeerDiscoveryProvider(discovery, kPeerSyncProtocol_BluetoothLE, peerGroupID) {
+                : C4PeerDiscoveryProvider(discovery, kPeerSyncProtocol_BluetoothLE, peerGroupID)
+                , _socket(litecore::jni::kBTSocketFactory){
             std::string pg(peerGroupID);
             JNIEnv* env = nullptr;
             jint envState = attachJVM(&env, "initBleProvider");
@@ -102,7 +115,7 @@ namespace litecore::jni {
 
             jstring jPeerGroup = UTF8ToJstring(env, pg.data(), pg.size());
 
-            jlong providerPtr = reinterpret_cast<jlong>(this);
+            auto providerPtr = reinterpret_cast<jlong>(this);
             jlong token = env->CallStaticLongMethod(
                     cls_C4PeerDiscoveryProvider,
                     m_C4PeerDiscoveryProvider_initBleProvider,
@@ -115,14 +128,14 @@ namespace litecore::jni {
                 token = 0;
             }
             _contextToken = token;
-            _socket = litecore::jni::kBTSocketFactory;
             _socket.context = this;
 
             if (envState == JNI_EDETACHED) detachJVM("initBleProvider");
             if (jPeerGroup) env->DeleteLocalRef(jPeerGroup);
         }
 
-        virtual void startBrowsing() override {
+        void startBrowsing() override {
+            assertAndroidLevel();
             JNIEnv *env = nullptr;
             jint envState = attachJVM(&env, "startBrowsing");
             if ((envState != JNI_OK) && (envState != JNI_EDETACHED))
@@ -155,8 +168,9 @@ namespace litecore::jni {
             }
         }
 
-        virtual void startPublishing(std::string_view displayName, uint16_t port,
-                                     C4Peer::Metadata const& metadata) override {
+        void startPublishing(std::string_view displayName, uint16_t port,
+                             C4Peer::Metadata const& metadata) override {
+            assertAndroidLevel();
             JNIEnv *env = nullptr;
             jint envState = attachJVM(&env, "startPublishing");
             if ((envState != JNI_OK) && (envState != JNI_EDETACHED))
@@ -197,14 +211,14 @@ namespace litecore::jni {
             }
         }
 
-        virtual void monitorMetadata(C4Peer* peer, bool start) override {
+        void monitorMetadata(C4Peer* peer, bool start) override {
             JNIEnv *env = nullptr;
             jint envState = attachJVM(&env, "monitorMetadata");
             if ((envState != JNI_OK) && (envState != JNI_EDETACHED))
                 return;
 
             jbyteArray peerId = toJByteArray(env, (const uint8_t*)peer->id.data(), peer->id.size());
-            jlong peerPtr = reinterpret_cast<jlong>(peer);
+            auto peerPtr = reinterpret_cast<jlong>(peer);
 
 
             if (start) {
@@ -230,13 +244,13 @@ namespace litecore::jni {
             }
         }
 
-        virtual void resolveURL(C4Peer* peer) override {
+        void resolveURL(C4Peer* peer) override {
             JNIEnv *env = nullptr;
             jint envState = attachJVM(&env, "resolveURL");
             if ((envState != JNI_OK) && (envState != JNI_EDETACHED))
                 return;
 
-            jlong peerPtr = reinterpret_cast<jlong>(peer);
+            auto peerPtr = reinterpret_cast<jlong>(peer);
 
             env->CallStaticVoidMethod(
                     cls_C4PeerDiscoveryProvider,
@@ -249,7 +263,7 @@ namespace litecore::jni {
             }
         }
 
-        virtual void updateMetadata(C4Peer::Metadata const& metadata) override {
+        void updateMetadata(C4Peer::Metadata const& metadata) override {
             JNIEnv *env = nullptr;
             jint envState = attachJVM(&env, "updateMetadata");
             if ((envState != JNI_OK) && (envState != JNI_EDETACHED))
@@ -271,13 +285,13 @@ namespace litecore::jni {
             }
         }
 
-        virtual void shutdown(std::function<void()> onComplete) override {
+        void shutdown(std::function<void()> onComplete) override {
             stopBrowsing();
             stopPublishing();
             onComplete();
         }
 
-        virtual void stop(Mode mode) override {
+        void stop(Mode mode) override {
             if (mode == C4PeerDiscovery::Mode::browse) {
                 stopBrowsing();
             }
@@ -290,16 +304,12 @@ namespace litecore::jni {
             return addPeer(peer, moreComing);
         }
 
-        void removeDiscoveredPeer(std::string id, bool moreComing = false) {
+        void removeDiscoveredPeer(const string &id, bool moreComing = false) {
             removePeer(id, moreComing);
         }
 
         void statusStateChange(Mode m, Status s) {
             statusChanged(m, s);
-        }
-
-        void setContextToken(jlong token) {
-            _contextToken = token;
         }
 
         std::optional<C4SocketFactory> getSocketFactory() const override {
@@ -316,17 +326,17 @@ namespace litecore::jni {
 
     private:
         jlong _contextToken{};
-        C4SocketFactory _socket;
+        C4SocketFactory _socket{};
     };
 
     // Factory function for creating BLE provider
     static std::unique_ptr<C4PeerDiscoveryProvider, C4PeerDiscovery::ProviderDeleter>
     createBLEProvider(C4PeerDiscovery& discovery,
                       std::string_view peerGroupID) {
-        C4BLEProvider* provider = new C4BLEProvider(discovery, peerGroupID);
-        return C4PeerDiscovery::ProviderRef(provider, [](C4PeerDiscoveryProvider* ptr) {
+        auto* provider = new C4BLEProvider(discovery, peerGroupID);
+        return {provider, [](C4PeerDiscoveryProvider* ptr) {
             delete ptr;
-        });
+        }};
     }
 
     // Register the BLE provider
@@ -336,29 +346,6 @@ namespace litecore::jni {
     }
 
     static bool bleProviderRegistered = registerBleProvider();
-}
-
-namespace litecore::p2p {
-
-    // BleP2pConstants
-    static jclass cls_BleP2pConstants;
-
-    static jclass jUuidClass;
-    static jmethodID uuidFromString;
-    static jfieldID PORT_CHAR_FIELD, META_CHAR_FIELD, PEER_GROUP_NS_FIELD;
-
-
-    void setUuidConstant(JNIEnv* env, jclass cls, const char* uuidStr) {
-        jstring str = env->NewStringUTF(uuidStr);
-        jobject uuidObj = env->CallStaticObjectMethod(jUuidClass, uuidFromString, str);
-
-        if (strcmp(uuidStr, litecore::p2p::btle::kPortCharacteristicID) == 0)
-            env->SetStaticObjectField(cls, PORT_CHAR_FIELD, uuidObj);
-        else if (strcmp(uuidStr, litecore::p2p::btle::kMetadataCharacteristicID) == 0)
-            env->SetStaticObjectField(cls, META_CHAR_FIELD, uuidObj);
-        else if (strcmp(uuidStr, litecore::p2p::btle::kPeerGroupUUIDNamespace) == 0)
-            env->SetStaticObjectField(cls, PEER_GROUP_NS_FIELD, uuidObj);
-    }
 }
 
 

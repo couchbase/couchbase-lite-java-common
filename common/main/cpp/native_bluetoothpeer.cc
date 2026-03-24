@@ -75,7 +75,7 @@ extern "C++" {
             JNIEnv *env, jclass clazz, jlong peerPtr, jstring jurl) {
         std::string url = JstringToUTF8(env, jurl);
 
-        BluetoothPeer *peer = static_cast<BluetoothPeer*>(getPeer(peerPtr));
+        auto *peer = dynamic_cast<BluetoothPeer*>(getPeer(peerPtr));
         if (!peer) return;
 
         peer->resolvingUrl(url, kC4NoError);

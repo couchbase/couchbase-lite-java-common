@@ -97,6 +97,9 @@ target_link_options(
 
 target_link_libraries( LiteCoreJNI
     LiteCore
+    # Below are needed on Android.  If this gets moved to Java as well this will need
+    # to be changed
     "log"
+    c++_static
+    c++abi
 )
-
