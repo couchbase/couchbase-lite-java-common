@@ -29,10 +29,12 @@ namespace litecore::jni {
             jstring jKey = (jstring)env->CallObjectMethod(entry, getKeyMethod);
             jbyteArray jValue = (jbyteArray)env->CallObjectMethod(entry, getValueMethod);
 
-            std::string key = JstringToUTF8(env, jKey);
-            jbyteArraySlice value(env, jValue);
+            {
+                std::string key = JstringToUTF8(env, jKey);
+                jbyteArraySlice value(env, jValue);
 
-            metadata[std::string(key)] = fleece::alloc_slice(value);
+                metadata[std::string(key)] = fleece::alloc_slice(value);
+            }
 
             env->DeleteLocalRef(entry);
             env->DeleteLocalRef(jKey);
