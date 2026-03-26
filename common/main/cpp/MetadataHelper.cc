@@ -41,6 +41,9 @@ namespace litecore::jni {
 
         env->DeleteLocalRef(entrySet);
         env->DeleteLocalRef(entries);
+        env->DeleteLocalRef(mapClass);
+        env->DeleteLocalRef(setClass);
+        env->DeleteLocalRef(entryClass);
 
         return metadata;
     }
