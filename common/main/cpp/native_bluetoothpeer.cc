@@ -16,7 +16,7 @@ static C4Peer* getPeer(jlong peerPtr) {
     return reinterpret_cast<C4Peer*>(peerPtr);
 }
 
-extern "C++" {
+extern "C" {
     JNIEXPORT jstring JNICALL
     Java_com_couchbase_lite_internal_core_impl_NativeBluetoothPeer_getId(
             JNIEnv *env, jclass clazz, jlong peerPtr) {
