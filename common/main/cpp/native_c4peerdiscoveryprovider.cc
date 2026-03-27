@@ -108,12 +108,11 @@ namespace litecore::jni {
         C4BLEProvider(C4PeerDiscovery& discovery, std::string_view peerGroupID)
                 : C4PeerDiscoveryProvider(discovery, kPeerSyncProtocol_BluetoothLE, peerGroupID)
                 , _socket(litecore::jni::kBTSocketFactory){
-            std::string pg(peerGroupID);
             JNIEnv* env = nullptr;
             jint envState = attachJVM(&env, "initBleProvider");
             if ((envState != JNI_OK) && (envState != JNI_EDETACHED)) return;
 
-            jstring jPeerGroup = UTF8ToJstring(env, pg.data(), pg.size());
+            jstring jPeerGroup = UTF8ToJstring(env, peerGroupID.data(), peerGroupID.size());
 
             auto providerPtr = reinterpret_cast<jlong>(this);
             jlong token = env->CallStaticLongMethod(
@@ -128,7 +127,7 @@ namespace litecore::jni {
                 token = 0;
             }
             _contextToken = token;
-            _socket.context = this;
+            _socket.context = reinterpret_cast<void *>(_contextToken);
 
             if (envState == JNI_EDETACHED) detachJVM("initBleProvider");
             if (jPeerGroup) env->DeleteLocalRef(jPeerGroup);
