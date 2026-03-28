@@ -23,7 +23,15 @@
 #include "native_glue.hh"
 #include "native_c4replutils.hh"
 #include "socket_factory.h"
+#include "c4Certificate.hh"
 #include "com_couchbase_lite_internal_core_impl_NativeC4MultipeerReplicator.h"
+
+namespace litecore::net {
+    class TLSContext {
+    public:
+        static void registerPrivateKey(fleece::slice certData, crypto::PrivateKey* C4NULLABLE);
+    };
+}
 
 using namespace litecore;
 using namespace litecore::jni;
@@ -544,6 +552,10 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4MultipeerReplicator_c
         return 0;
     }
     params.tlsKeyPair = (keyPair == 0L) ? nullptr : (C4KeyPair *) keyPair;
+    if (params.protocols & kPeerSyncProtocol_BluetoothLE) {
+        jbyteArraySlice fleeceCert(env, cert);
+        litecore::net::TLSContext::registerPrivateKey((fleece::slice)fleeceCert, ((C4KeyPair *)keyPair)->getPrivateKey());
+    }
 
     // Database and Collections:
     params.database = (C4Database *) c4db;
