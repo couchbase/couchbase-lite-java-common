@@ -107,7 +107,7 @@ namespace litecore::jni {
     public:
         C4BLEProvider(C4PeerDiscovery& discovery, std::string_view peerGroupID)
                 : C4PeerDiscoveryProvider(discovery, kPeerSyncProtocol_BluetoothLE, peerGroupID)
-                , _socket(litecore::jni::kBTSocketFactory){
+                , _socketFactory(litecore::jni::kBTSocketFactory){
             JNIEnv* env = nullptr;
             jint envState = attachJVM(&env, "initBleProvider");
             if ((envState != JNI_OK) && (envState != JNI_EDETACHED)) return;
@@ -127,7 +127,7 @@ namespace litecore::jni {
                 token = 0;
             }
             _contextToken = token;
-            _socket.context = reinterpret_cast<void *>(_contextToken);
+            _socketFactory.context = reinterpret_cast<void *>(_contextToken);
 
             if (envState == JNI_EDETACHED) detachJVM("initBleProvider");
             if (jPeerGroup) env->DeleteLocalRef(jPeerGroup);
@@ -312,8 +312,10 @@ namespace litecore::jni {
         }
 
         std::optional<C4SocketFactory> getSocketFactory() const override {
-            return net::wrapSocketFactoryInTLS(_socket);
+            return net::wrapSocketFactoryInTLS(_socketFactory);
         }
+
+        C4SocketFactory& unwrappedSocketFactory() { return _socketFactory; }
 
         bool notifyIncomingConn(C4Peer* peer, C4Socket* socket) {
             return notifyIncomingConnection(peer, socket);
@@ -323,9 +325,11 @@ namespace litecore::jni {
             return createIncomingSocketWithTLS(factory, ctx, address);
         }
 
+
+
     private:
         jlong _contextToken{};
-        C4SocketFactory _socket{};
+        C4SocketFactory _socketFactory{};
     };
 
     // Factory function for creating BLE provider
@@ -527,15 +531,10 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4PeerDiscoveryProvider_createI
             peer->id
     };
 
-    std::optional<C4SocketFactory> factory = provider->getSocketFactory();
-    if (!factory.has_value()) {
-        C4Warn("nCreateIncomingSocket: no socket factory");
-        delete ctx;
-        return;
-    }
-
+    // Use the raw BT socket factory, not getSocketFactory() which wraps in TLS.
+    // createIncomingSockWithTLS will wrap it in TLS itself.
     fleece::Ref<C4Socket> socket = provider->createIncomingSockWithTLS(
-            *factory,
+            provider->unwrappedSocketFactory(),
             reinterpret_cast<void*>(ctx),
             address);
 
