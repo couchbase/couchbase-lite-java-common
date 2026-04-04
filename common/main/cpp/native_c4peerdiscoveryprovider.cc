@@ -510,13 +510,11 @@ JNIEXPORT void JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4PeerDiscoveryProvider_createIncomingSocket(
         JNIEnv* env, jclass,
         jlong providerPtr,
-        jlong peerPtr,
         jlong btSocketHandle,
         jstring jUrl)
 {
     auto* provider = reinterpret_cast<C4BLEProvider*>(providerPtr);
-    auto* peer     = reinterpret_cast<C4Peer*>(peerPtr);
-    if (!provider || !peer) return;
+    if (!provider) return;
 
     // Parse URL → C4Address
     jstringSlice urlSlice(env, jUrl);
@@ -528,7 +526,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4PeerDiscoveryProvider_createI
 
     auto* ctx = new BTNativeHandle {
             btSocketHandle,
-            peer->id
+            fleece::alloc_slice(urlSlice)
     };
 
     // Use the raw BT socket factory, not getSocketFactory() which wraps in TLS.
@@ -544,7 +542,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4PeerDiscoveryProvider_createI
         return;
     }
 
-    if (!provider->notifyIncomingConn(peer, socket)) {
+    if (!provider->notifyIncomingConn(nullptr, socket)) {
         socket->getFactory().close(socket);
     }
 }

@@ -176,7 +176,7 @@ static void btAttached(C4Socket* socket) {
         return;
     }
 
-    jstring jPeerID = env->NewStringUTF((ctx->peerID).c_str());
+    jstring jPeerID = env->NewStringUTF((const char *)ctx->peerID.buf);
 
     env->CallStaticVoidMethod(
             cls_C4BTSocketFactory, m_attached,
