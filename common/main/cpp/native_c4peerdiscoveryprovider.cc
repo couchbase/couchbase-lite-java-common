@@ -8,6 +8,7 @@
 #include "TLSCodec.hh"
 #include "c4Socket.hh"
 #include "c4Error.h"
+#include "serial_queue.hh"
 #include "native_bluetoothpeer_internal.h"
 #include "com_couchbase_lite_internal_core_impl_NativeC4BTSocketFactory.h"
 #include "com_couchbase_lite_internal_core_impl_NativeC4PeerDiscoveryProvider.h"
@@ -135,66 +136,50 @@ namespace litecore::jni {
 
         void startBrowsing() override {
             assertAndroidLevel();
-            JNIEnv *env = nullptr;
-            jint envState = attachJVM(&env, "startBrowsing");
-            if ((envState != JNI_OK) && (envState != JNI_EDETACHED))
-                return;
-            jniLog("Start Browsing");
 
-            // Call Java BLE service to start scanning
-            env->CallStaticVoidMethod(
-                    cls_C4PeerDiscoveryProvider,
-                    m_C4PeerDiscoveryProvider_startBrowsing,
-                    _contextToken);
-            if (envState == JNI_EDETACHED) {
-                detachJVM("startBrowsing");
-            }
+            _queue.dispatchJava([this](JNIEnv* env, bool wasDetached) {
+                jniLog("Start Browsing");
+
+                // Call Java BLE service to start scanning
+                env->CallStaticVoidMethod(
+                        cls_C4PeerDiscoveryProvider,
+                        m_C4PeerDiscoveryProvider_startBrowsing,
+                        _contextToken);
+            }, "startBrowsing");
         }
 
-        virtual void stopBrowsing() {
-            JNIEnv *env = nullptr;
-            jint envState = attachJVM(&env, "stopBrowsing");
-            if ((envState != JNI_OK) && (envState != JNI_EDETACHED))
-                return;
-
+        void stopBrowsing(JNIEnv* env) {
             env->CallStaticVoidMethod(
                     cls_C4PeerDiscoveryProvider,
                     m_C4PeerDiscoveryProvider_stopBrowsing,
                     _contextToken);
-
-            if (envState == JNI_EDETACHED) {
-                detachJVM("stopBrowsing");
-            }
         }
 
         void startPublishing(std::string_view displayName, uint16_t port,
                              C4Peer::Metadata const& metadata) override {
             assertAndroidLevel();
-            JNIEnv *env = nullptr;
-            jint envState = attachJVM(&env, "startPublishing");
-            if ((envState != JNI_OK) && (envState != JNI_EDETACHED))
-                return;
 
-            jstring jDisplayName = UTF8ToJstring(env, displayName.data(), displayName.size());
-            jniLog("Start Publishing");
-            jobject jMetadata = metadataToJavaMap(env, metadata);
+            _queue.dispatchJava([this, displayName, port, metadata](JNIEnv* env, bool wasDetached) {
+                jstring jDisplayName = UTF8ToJstring(env, displayName.data(), displayName.size());
+                jniLog("Start Publishing");
+                jobject jMetadata = metadataToJavaMap(env, metadata);
 
-            env->CallStaticVoidMethod(
-                    cls_C4PeerDiscoveryProvider,
-                    m_C4PeerDiscoveryProvider_startPublishing,
-                    _contextToken,
-                    jDisplayName,
-                    (jint)port,
-                    jMetadata);
-            if (envState == JNI_EDETACHED) {
-                detachJVM("startPublishing");
-            } else {
-                if (jDisplayName != nullptr) env->DeleteLocalRef(jDisplayName);
-                if (jMetadata != nullptr) env->DeleteLocalRef(jMetadata);
-            }
+                env->CallStaticVoidMethod(
+                        cls_C4PeerDiscoveryProvider,
+                        m_C4PeerDiscoveryProvider_startPublishing,
+                        _contextToken,
+                        jDisplayName,
+                        (jint)port,
+                        jMetadata);
+
+                if (!wasDetached) {
+                    if (jDisplayName != nullptr) env->DeleteLocalRef(jDisplayName);
+                    if (jMetadata != nullptr) env->DeleteLocalRef(jMetadata);
+                }
+            }, "startPublishing");
         }
 
-        virtual void stopPublishing() {
+        void stopPublishing() {
             JNIEnv *env = nullptr;
             jint envState = attachJVM(&env, "stopPublishing");
             if ((envState != JNI_OK) && (envState != JNI_EDETACHED))
@@ -211,92 +196,91 @@ namespace litecore::jni {
         }
 
         void monitorMetadata(C4Peer* peer, bool start) override {
-            JNIEnv *env = nullptr;
-            jint envState = attachJVM(&env, "monitorMetadata");
-            if ((envState != JNI_OK) && (envState != JNI_EDETACHED))
-                return;
+            _queue.dispatchJava([this, peer, start](JNIEnv* env, bool wasDetached) {
+                jbyteArray peerId = toJByteArray(env, (const uint8_t*)peer->id.data(), peer->id.size());
+                auto peerPtr = reinterpret_cast<jlong>(peer);
 
-            jbyteArray peerId = toJByteArray(env, (const uint8_t*)peer->id.data(), peer->id.size());
-            auto peerPtr = reinterpret_cast<jlong>(peer);
+                if (start) {
+                    // Start monitoring metadata characteristic
+                    env->CallStaticVoidMethod(
+                            cls_C4PeerDiscoveryProvider,
+                            m_C4PeerDiscoveryProvider_startMetadataMonitoring,
+                            _contextToken,
+                            peerPtr);
+                } else {
+                    // Stop monitoring metadata characteristic
+                    env->CallStaticVoidMethod(
+                            cls_C4PeerDiscoveryProvider,
+                            m_C4PeerDiscoveryProvider_stopMetadataMonitoring,
+                            _contextToken,
+                            peerPtr);
+                }
 
-
-            if (start) {
-                // Start monitoring metadata characteristic
-                env->CallStaticVoidMethod(
-                        cls_C4PeerDiscoveryProvider,
-                        m_C4PeerDiscoveryProvider_startMetadataMonitoring,
-                        _contextToken,
-                        peerPtr);
-            } else {
-                // Stop monitoring metadata characteristic
-                env->CallStaticVoidMethod(
-                        cls_C4PeerDiscoveryProvider,
-                        m_C4PeerDiscoveryProvider_stopMetadataMonitoring,
-                        _contextToken,
-                        peerPtr);
-            }
-
-            if (envState == JNI_EDETACHED) {
-                detachJVM("monitorMetadata");
-            } else {
-                if (peerId != nullptr) env->DeleteLocalRef(peerId);
-            }
+                if (!wasDetached && peerId != nullptr) {
+                    env->DeleteLocalRef(peerId);
+                }
+            }, "monitorMetadata");
         }
 
         void resolveURL(C4Peer* peer) override {
-            JNIEnv *env = nullptr;
-            jint envState = attachJVM(&env, "resolveURL");
-            if ((envState != JNI_OK) && (envState != JNI_EDETACHED))
-                return;
+            _queue.dispatchJava([this, peer](JNIEnv* env, bool wasDetached) {
+                auto peerPtr = reinterpret_cast<jlong>(peer);
 
-            auto peerPtr = reinterpret_cast<jlong>(peer);
-
-            env->CallStaticVoidMethod(
-                    cls_C4PeerDiscoveryProvider,
-                    m_C4PeerDiscoveryProvider_resolveURL,
-                    _contextToken,
-                    peerPtr);
-
-            if (envState == JNI_EDETACHED) {
-                detachJVM("resolveURL");
-            }
+                env->CallStaticVoidMethod(
+                        cls_C4PeerDiscoveryProvider,
+                        m_C4PeerDiscoveryProvider_resolveURL,
+                        _contextToken,
+                        peerPtr);
+            }, "resolveUrl");
         }
 
         void updateMetadata(C4Peer::Metadata const& metadata) override {
-            JNIEnv *env = nullptr;
-            jint envState = attachJVM(&env, "updateMetadata");
-            if ((envState != JNI_OK) && (envState != JNI_EDETACHED))
-                return;
+            _queue.dispatchJava([this, metadata](JNIEnv* env, bool wasDetached) {
+                jniLog("Update Metadata");
+                jobject jMetadata = metadataToJavaMap(env, metadata);
 
-            jniLog("Update Metadata");
-            jobject jMetadata = metadataToJavaMap(env, metadata);
+                env->CallStaticVoidMethod(
+                        cls_C4PeerDiscoveryProvider,
+                        m_C4PeerDiscoveryProvider_updateMetadata,
+                        _contextToken,
+                        jMetadata);
 
-            env->CallStaticVoidMethod(
-                    cls_C4PeerDiscoveryProvider,
-                    m_C4PeerDiscoveryProvider_updateMetadata,
-                    _contextToken,
-                    jMetadata);
-
-            if (envState == JNI_EDETACHED) {
-                detachJVM("updateMetadata");
-            } else {
-                if (jMetadata != nullptr) env->DeleteLocalRef(jMetadata);
-            }
+                if (!wasDetached && jMetadata != nullptr) {
+                    env->DeleteLocalRef(jMetadata);
+                }
+            }, "updateMetadata");
         }
 
         void shutdown(std::function<void()> onComplete) override {
-            stopBrowsing();
-            stopPublishing();
-            onComplete();
+            _queue.dispatchJava([this](JNIEnv* env, bool wasDetached) {
+                env->CallStaticVoidMethod(
+                        cls_C4PeerDiscoveryProvider,
+                        m_C4PeerDiscoveryProvider_stopBrowsing,
+                        _contextToken);
+
+                env->CallStaticVoidMethod(
+                        cls_C4PeerDiscoveryProvider,
+                        m_C4PeerDiscoveryProvider_stopPublishing,
+                        _contextToken);
+            }, "shutdown");
+
+            _queue.dispatch(onComplete);
         }
 
         void stop(Mode mode) override {
-            if (mode == C4PeerDiscovery::Mode::browse) {
-                stopBrowsing();
-            }
-            else if (mode == C4PeerDiscovery::Mode::publish) {
-                stopPublishing();
-            }
+            _queue.dispatchJava([this, mode](JNIEnv* env, bool wasDetached) {
+                if (mode == C4PeerDiscovery::Mode::browse) {
+                    env->CallStaticVoidMethod(
+                            cls_C4PeerDiscoveryProvider,
+                            m_C4PeerDiscoveryProvider_stopBrowsing,
+                            _contextToken);
+                } else if (mode == C4PeerDiscovery::Mode::publish) {
+                    env->CallStaticVoidMethod(
+                            cls_C4PeerDiscoveryProvider,
+                            m_C4PeerDiscoveryProvider_stopPublishing,
+                            _contextToken);
+                }
+            }, "stop");
         }
 
         fleece::Ref<C4Peer> addDiscoveredPeer(C4Peer* peer, bool moreComing = false) {
@@ -330,6 +314,7 @@ namespace litecore::jni {
     private:
         jlong _contextToken{};
         C4SocketFactory _socketFactory{};
+        serial_queue _queue;
     };
 
     // Factory function for creating BLE provider
