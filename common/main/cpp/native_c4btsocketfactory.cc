@@ -12,6 +12,15 @@
 using namespace litecore;
 using namespace litecore::jni;
 
+// Set to 1 to use new bluetooth/BTSocketFactory; 0 for old ble/BluetoothSocketFactory
+#define USE_NEW_BT_SOCKET_FACTORY 1
+
+#if USE_NEW_BT_SOCKET_FACTORY
+#define BT_SOCKET_FACTORY_CLASS "com/couchbase/lite/internal/p2p/bluetooth/BTSocketFactory"
+#else
+#define BT_SOCKET_FACTORY_CLASS "com/couchbase/lite/internal/p2p/ble/BluetoothSocketFactory"
+#endif
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Java class / method cache
 // ─────────────────────────────────────────────────────────────────────────────
@@ -26,7 +35,7 @@ static jmethodID m_attached;
 
 bool litecore::jni::initC4BTSocketFactory(JNIEnv* env) {
     jclass localCls = env->FindClass(
-            "com/couchbase/lite/internal/p2p/ble/BluetoothSocketFactory");
+            BT_SOCKET_FACTORY_CLASS);
     if (!localCls) return false;
 
     cls_C4BTSocketFactory = reinterpret_cast<jclass>(env->NewGlobalRef(localCls));
