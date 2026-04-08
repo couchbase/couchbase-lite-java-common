@@ -55,6 +55,8 @@ class SerialExecutor implements ExecutionService.CloseableExecutor {
     @Nullable
     private CountDownLatch stopLatch;
 
+    private long currentThread = -1;
+
     SerialExecutor(@NonNull ThreadPoolExecutor executor) {
         Preconditions.assertNotNull(executor, "executor");
         this.executor = executor;
@@ -116,6 +118,11 @@ class SerialExecutor implements ExecutionService.CloseableExecutor {
         return false;
     }
 
+    @Override
+    public boolean isInsideExecutor() {
+        return Thread.currentThread().getId() == currentThread;
+    }
+
     @NonNull
     @Override
     public String toString() { return "CBL serial executor"; }
@@ -156,7 +163,11 @@ class SerialExecutor implements ExecutionService.CloseableExecutor {
         final InstrumentedTask nextTask = pendingTasks.peek();
         if (nextTask == null) { return; }
 
-        try { executor.execute(nextTask); }
+        try { executor.execute(() -> {
+            currentThread = Thread.currentThread().getId();
+            nextTask.run();
+            currentThread = -1;
+        }); }
         catch (RuntimeException e) {
             Log.w(LogDomain.DATABASE, "Catastrophic executor failure (Serial Executor)!", e);
             if (!AbstractExecutionService.throttled()) { dumpState(prevTask); }

@@ -49,6 +49,8 @@ class ConcurrentExecutor implements ExecutionService.CloseableExecutor {
     @GuardedBy("this")
     private int running;
 
+    private long currentThread = -1;
+
     ConcurrentExecutor(@NonNull ThreadPoolExecutor executor) {
         Preconditions.assertNotNull(executor, "executor");
         this.executor = executor;
@@ -104,6 +106,11 @@ class ConcurrentExecutor implements ExecutionService.CloseableExecutor {
         return false;
     }
 
+    @Override
+    public boolean isInsideExecutor() {
+        return Thread.currentThread().getId() == currentThread;
+    }
+
     @NonNull
     @Override
     public String toString() { return "CBL concurrent executor"; }
@@ -133,7 +140,11 @@ class ConcurrentExecutor implements ExecutionService.CloseableExecutor {
     @GuardedBy("this")
     private void executeTask(@NonNull InstrumentedTask newTask) {
         try {
-            executor.execute(newTask);
+            executor.execute(() -> {
+                currentThread = Thread.currentThread().getId();
+                newTask.run();
+                currentThread = -1;
+            });
             running++;
         }
         catch (RuntimeException e) {

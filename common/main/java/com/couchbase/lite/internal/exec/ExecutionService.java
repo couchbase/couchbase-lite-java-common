@@ -57,6 +57,13 @@ public interface ExecutionService {
          * @return the number of tasks awaiting execution.
          */
         int getPending();
+
+        /**
+         * Returns whether or not the current code is executing in
+         * the executor context
+         * @return True or false depending on the above
+         */
+        boolean isInsideExecutor();
     }
 
     /**
