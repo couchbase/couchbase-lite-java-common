@@ -22,6 +22,7 @@
 #include <jni.h>
 #include <cerrno>
 #include <string>
+#include <functional>
 #include "c4.h"
 #include "fleece/Fleece.h"
 #include "fleece/FLExpert.h"
@@ -63,6 +64,8 @@ namespace litecore::jni {
     int attachJVM(JNIEnv **env, const char *caller);
 
     int detachJVM(const char *caller);
+
+    void callJVM(std::function<void(JNIEnv*, bool)> task, const char* caller);
 
     // Sets a Java exception based on the LiteCore error.
     void throwError(JNIEnv *env, C4Error);

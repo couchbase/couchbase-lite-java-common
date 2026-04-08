@@ -8,7 +8,6 @@
 #include "TLSCodec.hh"
 #include "c4Socket.hh"
 #include "c4Error.h"
-#include "serial_queue.hh"
 #include "native_bluetoothpeer_internal.h"
 #include "com_couchbase_lite_internal_core_impl_NativeC4BTSocketFactory.h"
 #include "com_couchbase_lite_internal_core_impl_NativeC4PeerDiscoveryProvider.h"
@@ -30,16 +29,20 @@ namespace litecore::jni {
     }
 
     static jclass cls_C4PeerDiscoveryProvider;
+    static jclass cls_NativeCallback;
 
     static jmethodID m_C4PeerDiscoveryProvider_startBrowsing;
     static jmethodID m_C4PeerDiscoveryProvider_stopBrowsing;
     static jmethodID m_C4PeerDiscoveryProvider_startPublishing;
     static jmethodID m_C4PeerDiscoveryProvider_stopPublishing;
+    static jmethodID m_C4PeerDiscoveryProvider_shutdown;
     static jmethodID m_C4PeerDiscoveryProvider_resolveURL;
     static jmethodID m_C4PeerDiscoveryProvider_updateMetadata;
     static jmethodID m_C4PeerDiscoveryProvider_startMetadataMonitoring;
     static jmethodID m_C4PeerDiscoveryProvider_stopMetadataMonitoring;
     static jmethodID m_C4PeerDiscoveryProvider_initBleProvider;
+
+    static jmethodID m_NativeCallback_ctor;
 
     bool initC4PeerDiscoveryProvider(JNIEnv *env) {
         jclass localClass = env->FindClass("com/couchbase/lite/internal/core/BluetoothProvider");
@@ -47,6 +50,12 @@ namespace litecore::jni {
 
         cls_C4PeerDiscoveryProvider = reinterpret_cast<jclass>(env->NewGlobalRef(localClass));
         if (cls_C4PeerDiscoveryProvider == nullptr) return false;
+
+        localClass = env->FindClass("com/couchbase/lite/internal/core/impl/NativeCallback");
+        if (localClass == nullptr) return false;
+
+        cls_NativeCallback = reinterpret_cast<jclass>(env->NewGlobalRef(localClass));
+        if (cls_NativeCallback == nullptr) return false;
 
         m_C4PeerDiscoveryProvider_startBrowsing = env->GetStaticMethodID(
                 cls_C4PeerDiscoveryProvider,
@@ -67,6 +76,12 @@ namespace litecore::jni {
                 cls_C4PeerDiscoveryProvider,
                 "stopPublishing",
                 "(J)V");
+
+        m_C4PeerDiscoveryProvider_shutdown = env->GetStaticMethodID(
+                cls_C4PeerDiscoveryProvider,
+                "shutdown",
+                "(JLjava/lang/Runnable;)V"
+        );
 
         m_C4PeerDiscoveryProvider_resolveURL = env->GetStaticMethodID(
                 cls_C4PeerDiscoveryProvider,
@@ -94,13 +109,17 @@ namespace litecore::jni {
                 "(JLjava/lang/String;)J"
                 );
 
+        m_NativeCallback_ctor = env->GetMethodID(cls_NativeCallback, "<init>", "(J)V");
+
         return (m_C4PeerDiscoveryProvider_startBrowsing != nullptr)
                && (m_C4PeerDiscoveryProvider_stopBrowsing != nullptr)
                && (m_C4PeerDiscoveryProvider_startPublishing != nullptr)
                && (m_C4PeerDiscoveryProvider_stopPublishing != nullptr)
+               && (m_C4PeerDiscoveryProvider_shutdown != nullptr)
                && (m_C4PeerDiscoveryProvider_resolveURL != nullptr)
                && (m_C4PeerDiscoveryProvider_updateMetadata != nullptr)
-               && (m_C4PeerDiscoveryProvider_initBleProvider != nullptr);
+               && (m_C4PeerDiscoveryProvider_initBleProvider != nullptr
+               && m_NativeCallback_ctor != nullptr);
     }
 
 
@@ -137,7 +156,7 @@ namespace litecore::jni {
         void startBrowsing() override {
             assertAndroidLevel();
 
-            _queue.dispatchJava([this](JNIEnv* env, bool wasDetached) {
+            callJVM([this](JNIEnv* env, bool wasDetached) {
                 jniLog("Start Browsing");
 
                 // Call Java BLE service to start scanning
@@ -148,18 +167,11 @@ namespace litecore::jni {
             }, "startBrowsing");
         }
 
-        void stopBrowsing(JNIEnv* env) {
-            env->CallStaticVoidMethod(
-                    cls_C4PeerDiscoveryProvider,
-                    m_C4PeerDiscoveryProvider_stopBrowsing,
-                    _contextToken);
-        }
-
         void startPublishing(std::string_view displayName, uint16_t port,
                              C4Peer::Metadata const& metadata) override {
             assertAndroidLevel();
 
-            _queue.dispatchJava([this, displayName, port, metadata](JNIEnv* env, bool wasDetached) {
+            callJVM([this, displayName, port, metadata](JNIEnv* env, bool wasDetached) {
                 jstring jDisplayName = UTF8ToJstring(env, displayName.data(), displayName.size());
                 jniLog("Start Publishing");
                 jobject jMetadata = metadataToJavaMap(env, metadata);
@@ -179,24 +191,8 @@ namespace litecore::jni {
             }, "startPublishing");
         }
 
-        void stopPublishing() {
-            JNIEnv *env = nullptr;
-            jint envState = attachJVM(&env, "stopPublishing");
-            if ((envState != JNI_OK) && (envState != JNI_EDETACHED))
-                return;
-
-            env->CallStaticVoidMethod(
-                    cls_C4PeerDiscoveryProvider,
-                    m_C4PeerDiscoveryProvider_stopPublishing,
-                    _contextToken);
-
-            if (envState == JNI_EDETACHED) {
-                detachJVM("stopPublishing");
-            }
-        }
-
         void monitorMetadata(C4Peer* peer, bool start) override {
-            _queue.dispatchJava([this, peer, start](JNIEnv* env, bool wasDetached) {
+            callJVM([this, peer, start](JNIEnv* env, bool wasDetached) {
                 jbyteArray peerId = toJByteArray(env, (const uint8_t*)peer->id.data(), peer->id.size());
                 auto peerPtr = reinterpret_cast<jlong>(peer);
 
@@ -223,7 +219,7 @@ namespace litecore::jni {
         }
 
         void resolveURL(C4Peer* peer) override {
-            _queue.dispatchJava([this, peer](JNIEnv* env, bool wasDetached) {
+            callJVM([this, peer](JNIEnv* env, bool wasDetached) {
                 auto peerPtr = reinterpret_cast<jlong>(peer);
 
                 env->CallStaticVoidMethod(
@@ -235,7 +231,7 @@ namespace litecore::jni {
         }
 
         void updateMetadata(C4Peer::Metadata const& metadata) override {
-            _queue.dispatchJava([this, metadata](JNIEnv* env, bool wasDetached) {
+            callJVM([this, metadata](JNIEnv* env, bool wasDetached) {
                 jniLog("Update Metadata");
                 jobject jMetadata = metadataToJavaMap(env, metadata);
 
@@ -252,23 +248,20 @@ namespace litecore::jni {
         }
 
         void shutdown(std::function<void()> onComplete) override {
-            _queue.dispatchJava([this](JNIEnv* env, bool wasDetached) {
+            callJVM([this, &onComplete](JNIEnv* env, bool wasDetached) {
+                auto* callback = new std::function<void()>(onComplete);
+                jobject runnable = env->NewObject(cls_NativeCallback, m_NativeCallback_ctor, reinterpret_cast<jlong>(callback));
                 env->CallStaticVoidMethod(
                         cls_C4PeerDiscoveryProvider,
-                        m_C4PeerDiscoveryProvider_stopBrowsing,
-                        _contextToken);
-
-                env->CallStaticVoidMethod(
-                        cls_C4PeerDiscoveryProvider,
-                        m_C4PeerDiscoveryProvider_stopPublishing,
-                        _contextToken);
+                        m_C4PeerDiscoveryProvider_shutdown,
+                        _contextToken,
+                        runnable);
+                env->DeleteLocalRef(runnable);
             }, "shutdown");
-
-            _queue.dispatch(onComplete);
         }
 
         void stop(Mode mode) override {
-            _queue.dispatchJava([this, mode](JNIEnv* env, bool wasDetached) {
+            callJVM([this, mode](JNIEnv* env, bool wasDetached) {
                 if (mode == C4PeerDiscovery::Mode::browse) {
                     env->CallStaticVoidMethod(
                             cls_C4PeerDiscoveryProvider,
@@ -314,7 +307,6 @@ namespace litecore::jni {
     private:
         jlong _contextToken{};
         C4SocketFactory _socketFactory{};
-        serial_queue _queue;
     };
 
     // Factory function for creating BLE provider

@@ -219,6 +219,19 @@ namespace litecore::jni {
         return ret;
     }
 
+    void callJVM(function<void(JNIEnv*, bool)> task, const char *caller) {
+        JNIEnv *env = nullptr;
+        jint envState = attachJVM(&env, caller);
+        if ((envState != JNI_OK) && (envState != JNI_EDETACHED))
+            return;
+
+        task(env, envState == JNI_EDETACHED);
+
+        if (envState == JNI_EDETACHED) {
+            detachJVM(caller);
+        }
+    }
+
     // ----------------------------------------------------------------------------
     // Exception Handling
     // ----------------------------------------------------------------------------
