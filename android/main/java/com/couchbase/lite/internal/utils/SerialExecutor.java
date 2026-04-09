@@ -2,12 +2,8 @@ package com.couchbase.lite.internal.utils;
 
 import androidx.annotation.NonNull;
 
-import com.couchbase.lite.internal.p2p.ble.BleService;
-
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Deque;
-import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
