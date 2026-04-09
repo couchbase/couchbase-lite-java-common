@@ -524,23 +524,6 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4PeerDiscoveryProvider_createI
     }
 }
 
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4PeerDiscoveryProvider_getSocketFactory(
-        JNIEnv* env, jclass,
-        jlong providerPtr)
-{
-    auto* provider = reinterpret_cast<C4BLEProvider*>(providerPtr);
-    if (!provider) return 0L;
-
-    std::optional<C4SocketFactory> factory = provider->getSocketFactory();
-
-    if (!factory.has_value()) return 0L;
-
-    auto* factoryPtr = new C4SocketFactory(factory.value());
-    return reinterpret_cast<jlong>(factoryPtr);
-}
-
-
 #ifdef __cplusplus
 }
 #endif

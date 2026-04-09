@@ -61,11 +61,6 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4PeerDiscoveryProvider_createI
         jlong btSocketHandle,
         jstring jUrl);
 
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4PeerDiscoveryProvider_getSocketFactory(
-        JNIEnv* env, jclass,
-        jlong providerPtr);
-
 #ifdef __cplusplus
 }
 #endif

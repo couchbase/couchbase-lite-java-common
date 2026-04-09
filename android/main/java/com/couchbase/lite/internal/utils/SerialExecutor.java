@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class SerialExecutor implements Executor {
     private static final ExecutorService POOL = Executors.newCachedThreadPool(r -> {
-         Thread t = new Thread(r, "serial-executor");
+         final Thread t = new Thread(r, "serial-executor");
          t.setDaemon(true);
          return t;
     });
@@ -33,7 +33,7 @@ public class SerialExecutor implements Executor {
     }
 
     public synchronized void taskComplete() {
-        BlockingTask t = blockingTasks.pollFirst();
+        final BlockingTask t = blockingTasks.pollFirst();
         if (t != null) {
             t.done();
         }
@@ -64,7 +64,7 @@ public class SerialExecutor implements Executor {
     private synchronized void scheduleNext() {
         active = tasks.poll();
         if (active != null) {
-            if(active instanceof BlockingTask) {
+            if (active instanceof BlockingTask) {
                 try {
                     POOL.execute(active);
                 } catch (RuntimeException e) {
