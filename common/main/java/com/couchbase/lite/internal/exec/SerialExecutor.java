@@ -15,6 +15,8 @@
 //
 package com.couchbase.lite.internal.exec;
 
+import android.os.Build;
+
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -164,7 +166,11 @@ class SerialExecutor implements ExecutionService.CloseableExecutor {
         if (nextTask == null) { return; }
 
         try { executor.execute(() -> {
-            currentThread = Thread.currentThread().getId();
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
+                currentThread = Thread.currentThread().threadId();
+            } else {
+                currentThread = Thread.currentThread().getId();
+            }
             nextTask.run();
             currentThread = -1;
         }); }
