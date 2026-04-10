@@ -707,9 +707,9 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4MultipeerReplicator_g
             jpeerId,
             certChain,
             info->onlineProtocols > 0 ? JNI_TRUE : JNI_FALSE,
+            neighborIds,
             (int) info->onlineProtocols,
             (int) info->replicatorProtocol,
-            neighborIds,
             replStatus);
 
     c4peerinfo_free(info);
