@@ -46,6 +46,10 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_STANDARD 11)
 
+if(NOT CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE STREQUAL "Debug")
+    add_definitions(-DDEBUG)
+endif()
+
 if(BUILD_ENTERPRISE)
     add_definitions(-DCOUCHBASE_ENTERPRISE)
     set(BUILD_ROOT "${PROJECT_SOURCE_DIR}/../../ee/android")
@@ -68,7 +72,9 @@ add_library( LiteCoreJNI SHARED
     ${JNI_SRC}/native_c4listener.cc
     ${JNI_SRC}/native_c4multipeerreplicator.cc
     ${JNI_SRC}/native_c4peerdiscoveryprovider.cc
+    ${JNI_SRC}/native_c4btsocketfactory.cc
     ${JNI_SRC}/native_bluetoothpeer.cc
+    ${JNI_SRC}/native_callback.cc
     ${JNI_SRC}/MetadataHelper.cc
     ${JNI_SRC}/native_c4observer.cc
     ${JNI_SRC}/native_c4prediction.cc
@@ -96,6 +102,9 @@ target_link_options(
 
 target_link_libraries( LiteCoreJNI
     LiteCore
+    # Below are needed on Android.  If this gets moved to Java as well this will need
+    # to be changed
     "log"
+    c++_static
+    c++abi
 )
-

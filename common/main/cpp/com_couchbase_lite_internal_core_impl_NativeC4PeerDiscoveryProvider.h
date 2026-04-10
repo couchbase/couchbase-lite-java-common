@@ -4,7 +4,7 @@
 #define COUCHBASE_LITE_JAVA_EE_ROOT_COM_COUCHBASE_LITE_INTERNAL_CORE_IMPL_NATIVEC4PEERDISCOVERYPROVIDER_H
 
 #ifdef __cplusplus
-extern "C++" {
+extern "C" {
 #endif
 
 JNIEXPORT jlong JNICALL
@@ -50,9 +50,16 @@ JNIEXPORT jlongArray JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4PeerDiscoveryProvider_peersWithProvider(
         JNIEnv *env, jclass thiz, jlong providerPtr);
 
-JNIEXPORT jstring JNICALL
+JNIEXPORT jbyteArray JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4PeerDiscoveryProvider_serviceUuidFromPeerGroup(
         JNIEnv* env, jclass, jstring peerGroup);
+
+JNIEXPORT void JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4PeerDiscoveryProvider_createIncomingSocket(
+        JNIEnv* env, jclass,
+        jlong providerPtr,
+        jlong btSocketHandle,
+        jstring jUrl);
 
 #ifdef __cplusplus
 }

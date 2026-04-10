@@ -15,6 +15,8 @@
 //
 package com.couchbase.lite.internal.exec;
 
+import android.os.Build;
+
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -48,6 +50,8 @@ class ConcurrentExecutor implements ExecutionService.CloseableExecutor {
     // but are enqueued to run on the underlying executor
     @GuardedBy("this")
     private int running;
+
+    private long currentThread = -1;
 
     ConcurrentExecutor(@NonNull ThreadPoolExecutor executor) {
         Preconditions.assertNotNull(executor, "executor");
@@ -104,6 +108,11 @@ class ConcurrentExecutor implements ExecutionService.CloseableExecutor {
         return false;
     }
 
+    @Override
+    public boolean isInsideExecutor() {
+        return Thread.currentThread().getId() == currentThread;
+    }
+
     @NonNull
     @Override
     public String toString() { return "CBL concurrent executor"; }
@@ -133,7 +142,15 @@ class ConcurrentExecutor implements ExecutionService.CloseableExecutor {
     @GuardedBy("this")
     private void executeTask(@NonNull InstrumentedTask newTask) {
         try {
-            executor.execute(newTask);
+            executor.execute(() -> {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
+                    currentThread = Thread.currentThread().threadId();
+                } else {
+                    currentThread = Thread.currentThread().getId();
+                }
+                newTask.run();
+                currentThread = -1;
+            });
             running++;
         }
         catch (RuntimeException e) {

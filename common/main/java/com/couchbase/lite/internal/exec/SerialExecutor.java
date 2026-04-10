@@ -15,6 +15,8 @@
 //
 package com.couchbase.lite.internal.exec;
 
+import android.os.Build;
+
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -54,6 +56,8 @@ class SerialExecutor implements ExecutionService.CloseableExecutor {
     @GuardedBy("this")
     @Nullable
     private CountDownLatch stopLatch;
+
+    private long currentThread = -1;
 
     SerialExecutor(@NonNull ThreadPoolExecutor executor) {
         Preconditions.assertNotNull(executor, "executor");
@@ -116,6 +120,11 @@ class SerialExecutor implements ExecutionService.CloseableExecutor {
         return false;
     }
 
+    @Override
+    public boolean isInsideExecutor() {
+        return Thread.currentThread().getId() == currentThread;
+    }
+
     @NonNull
     @Override
     public String toString() { return "CBL serial executor"; }
@@ -156,7 +165,15 @@ class SerialExecutor implements ExecutionService.CloseableExecutor {
         final InstrumentedTask nextTask = pendingTasks.peek();
         if (nextTask == null) { return; }
 
-        try { executor.execute(nextTask); }
+        try { executor.execute(() -> {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
+                currentThread = Thread.currentThread().threadId();
+            } else {
+                currentThread = Thread.currentThread().getId();
+            }
+            nextTask.run();
+            currentThread = -1;
+        }); }
         catch (RuntimeException e) {
             Log.w(LogDomain.DATABASE, "Catastrophic executor failure (Serial Executor)!", e);
             if (!AbstractExecutionService.throttled()) { dumpState(prevTask); }

@@ -5,25 +5,44 @@
 #include "native_glue.hh"
 #include "socket_factory.h"
 #include "MetadataHelper.h"
+#include "TLSCodec.hh"
+#include "c4Socket.hh"
+#include "c4Error.h"
 #include "native_bluetoothpeer_internal.h"
+#include "com_couchbase_lite_internal_core_impl_NativeC4BTSocketFactory.h"
 #include "com_couchbase_lite_internal_core_impl_NativeC4PeerDiscoveryProvider.h"
+#include <android/api-level.h>
 
 using namespace litecore;
 using namespace litecore::jni;
 using namespace litecore::p2p;
+using namespace std;
 
 namespace litecore::jni {
+    static void assertAndroidLevel() {
+        constexpr int MIN_LEVEL = __ANDROID_API_Q__;
+        if (android_get_device_api_level() < MIN_LEVEL) {
+            C4Error::raise(LiteCoreDomain, kC4ErrorUnsupported,
+                           "Bluetooth peer discovery requires Android API %d or higher",
+                           MIN_LEVEL);
+        }
+    }
+
     static jclass cls_C4PeerDiscoveryProvider;
+    static jclass cls_NativeCallback;
 
     static jmethodID m_C4PeerDiscoveryProvider_startBrowsing;
     static jmethodID m_C4PeerDiscoveryProvider_stopBrowsing;
     static jmethodID m_C4PeerDiscoveryProvider_startPublishing;
     static jmethodID m_C4PeerDiscoveryProvider_stopPublishing;
+    static jmethodID m_C4PeerDiscoveryProvider_shutdown;
     static jmethodID m_C4PeerDiscoveryProvider_resolveURL;
     static jmethodID m_C4PeerDiscoveryProvider_updateMetadata;
     static jmethodID m_C4PeerDiscoveryProvider_startMetadataMonitoring;
     static jmethodID m_C4PeerDiscoveryProvider_stopMetadataMonitoring;
     static jmethodID m_C4PeerDiscoveryProvider_initBleProvider;
+
+    static jmethodID m_NativeCallback_ctor;
 
     bool initC4PeerDiscoveryProvider(JNIEnv *env) {
         jclass localClass = env->FindClass("com/couchbase/lite/internal/core/BluetoothProvider");
@@ -31,6 +50,12 @@ namespace litecore::jni {
 
         cls_C4PeerDiscoveryProvider = reinterpret_cast<jclass>(env->NewGlobalRef(localClass));
         if (cls_C4PeerDiscoveryProvider == nullptr) return false;
+
+        localClass = env->FindClass("com/couchbase/lite/internal/core/impl/NativeCallback");
+        if (localClass == nullptr) return false;
+
+        cls_NativeCallback = reinterpret_cast<jclass>(env->NewGlobalRef(localClass));
+        if (cls_NativeCallback == nullptr) return false;
 
         m_C4PeerDiscoveryProvider_startBrowsing = env->GetStaticMethodID(
                 cls_C4PeerDiscoveryProvider,
@@ -51,6 +76,12 @@ namespace litecore::jni {
                 cls_C4PeerDiscoveryProvider,
                 "stopPublishing",
                 "(J)V");
+
+        m_C4PeerDiscoveryProvider_shutdown = env->GetStaticMethodID(
+                cls_C4PeerDiscoveryProvider,
+                "shutdown",
+                "(JLjava/lang/Runnable;)V"
+        );
 
         m_C4PeerDiscoveryProvider_resolveURL = env->GetStaticMethodID(
                 cls_C4PeerDiscoveryProvider,
@@ -78,30 +109,32 @@ namespace litecore::jni {
                 "(JLjava/lang/String;)J"
                 );
 
+        m_NativeCallback_ctor = env->GetMethodID(cls_NativeCallback, "<init>", "(J)V");
+
         return (m_C4PeerDiscoveryProvider_startBrowsing != nullptr)
                && (m_C4PeerDiscoveryProvider_stopBrowsing != nullptr)
                && (m_C4PeerDiscoveryProvider_startPublishing != nullptr)
                && (m_C4PeerDiscoveryProvider_stopPublishing != nullptr)
+               && (m_C4PeerDiscoveryProvider_shutdown != nullptr)
                && (m_C4PeerDiscoveryProvider_resolveURL != nullptr)
                && (m_C4PeerDiscoveryProvider_updateMetadata != nullptr)
-               && (m_C4PeerDiscoveryProvider_initBleProvider != nullptr);
+               && (m_C4PeerDiscoveryProvider_initBleProvider != nullptr
+               && m_NativeCallback_ctor != nullptr);
     }
-
 
 
     class C4BLEProvider : public C4PeerDiscoveryProvider {
     public:
         C4BLEProvider(C4PeerDiscovery& discovery, std::string_view peerGroupID)
-                : C4PeerDiscoveryProvider(discovery, kPeerSyncProtocol_BluetoothLE, peerGroupID) {
-            std::string pg(peerGroupID);
-
+                : C4PeerDiscoveryProvider(discovery, kPeerSyncProtocol_BluetoothLE, peerGroupID)
+                , _socketFactory(litecore::jni::kBTSocketFactory){
             JNIEnv* env = nullptr;
             jint envState = attachJVM(&env, "initBleProvider");
             if ((envState != JNI_OK) && (envState != JNI_EDETACHED)) return;
 
-            jstring jPeerGroup = UTF8ToJstring(env, pg.data(), pg.size());
+            jstring jPeerGroup = UTF8ToJstring(env, peerGroupID.data(), peerGroupID.size());
 
-            jlong providerPtr = reinterpret_cast<jlong>(this);
+            auto providerPtr = reinterpret_cast<jlong>(this);
             jlong token = env->CallStaticLongMethod(
                     cls_C4PeerDiscoveryProvider,
                     m_C4PeerDiscoveryProvider_initBleProvider,
@@ -113,179 +146,141 @@ namespace litecore::jni {
                 env->ExceptionClear();
                 token = 0;
             }
-
             _contextToken = token;
+            _socketFactory.context = reinterpret_cast<void *>(_contextToken);
 
             if (envState == JNI_EDETACHED) detachJVM("initBleProvider");
             if (jPeerGroup) env->DeleteLocalRef(jPeerGroup);
         }
 
-        virtual void startBrowsing() override {
-            JNIEnv *env = nullptr;
-            jint envState = attachJVM(&env, "startBrowsing");
-            if ((envState != JNI_OK) && (envState != JNI_EDETACHED))
-                return;
+        void startBrowsing() override {
+            assertAndroidLevel();
 
-            // Call Java BLE service to start scanning
-            env->CallStaticVoidMethod(
-                    cls_C4PeerDiscoveryProvider,
-                    m_C4PeerDiscoveryProvider_startBrowsing,
-                    _contextToken);
-            if (envState == JNI_EDETACHED) {
-                detachJVM("startBrowsing");
-            }
-        }
+            callJVM([this](JNIEnv* env, bool wasDetached) {
+                jniLog("Start Browsing");
 
-        virtual void stopBrowsing() {
-            JNIEnv *env = nullptr;
-            jint envState = attachJVM(&env, "stopBrowsing");
-            if ((envState != JNI_OK) && (envState != JNI_EDETACHED))
-                return;
-
-            env->CallStaticVoidMethod(
-                    cls_C4PeerDiscoveryProvider,
-                    m_C4PeerDiscoveryProvider_stopBrowsing,
-                    _contextToken);
-
-            if (envState == JNI_EDETACHED) {
-                detachJVM("stopBrowsing");
-            }
-        }
-
-        virtual void startPublishing(std::string_view displayName, uint16_t port,
-                                     C4Peer::Metadata const& metadata) override {
-            JNIEnv *env = nullptr;
-            jint envState = attachJVM(&env, "startPublishing");
-            if ((envState != JNI_OK) && (envState != JNI_EDETACHED))
-                return;
-
-            jstring jDisplayName = UTF8ToJstring(env, displayName.data(), displayName.size());
-            jobject jMetadata = metadataToJavaMap(env, metadata);
-
-            env->CallStaticVoidMethod(
-                    cls_C4PeerDiscoveryProvider,
-                    m_C4PeerDiscoveryProvider_startPublishing,
-                    _contextToken,
-                    jDisplayName,
-                    (jint)port,
-                    jMetadata);
-            if (envState == JNI_EDETACHED) {
-                detachJVM("startPublishing");
-            } else {
-                if (jDisplayName != nullptr) env->DeleteLocalRef(jDisplayName);
-                if (jMetadata != nullptr) env->DeleteLocalRef(jMetadata);
-            }
-        }
-
-        virtual void stopPublishing() {
-            JNIEnv *env = nullptr;
-            jint envState = attachJVM(&env, "stopPublishing");
-            if ((envState != JNI_OK) && (envState != JNI_EDETACHED))
-                return;
-
-            env->CallStaticVoidMethod(
-                    cls_C4PeerDiscoveryProvider,
-                    m_C4PeerDiscoveryProvider_stopPublishing,
-                    _contextToken);
-
-            if (envState == JNI_EDETACHED) {
-                detachJVM("stopPublishing");
-            }
-        }
-
-        virtual void monitorMetadata(C4Peer* peer, bool start) override {
-            JNIEnv *env = nullptr;
-            jint envState = attachJVM(&env, "monitorMetadata");
-            if ((envState != JNI_OK) && (envState != JNI_EDETACHED))
-                return;
-
-            jbyteArray peerId = toJByteArray(env, (const uint8_t*)peer->id.data(), peer->id.size());
-            jlong peerPtr = reinterpret_cast<jlong>(peer);
-
-
-            if (start) {
-                // Start monitoring metadata characteristic
+                // Call Java BLE service to start scanning
                 env->CallStaticVoidMethod(
                         cls_C4PeerDiscoveryProvider,
-                        m_C4PeerDiscoveryProvider_startMetadataMonitoring,
-                        _contextToken,
-                        peerPtr);
-            } else {
-                // Stop monitoring metadata characteristic
+                        m_C4PeerDiscoveryProvider_startBrowsing,
+                        _contextToken);
+            }, "startBrowsing");
+        }
+
+        void startPublishing(std::string_view displayName, uint16_t port,
+                             C4Peer::Metadata const& metadata) override {
+            assertAndroidLevel();
+
+            callJVM([this, displayName, port, metadata](JNIEnv* env, bool wasDetached) {
+                jstring jDisplayName = UTF8ToJstring(env, displayName.data(), displayName.size());
+                jniLog("Start Publishing");
+                jobject jMetadata = metadataToJavaMap(env, metadata);
+
                 env->CallStaticVoidMethod(
                         cls_C4PeerDiscoveryProvider,
-                        m_C4PeerDiscoveryProvider_stopMetadataMonitoring,
+                        m_C4PeerDiscoveryProvider_startPublishing,
+                        _contextToken,
+                        jDisplayName,
+                        (jint)port,
+                        jMetadata);
+
+                if (!wasDetached) {
+                    if (jDisplayName != nullptr) env->DeleteLocalRef(jDisplayName);
+                    if (jMetadata != nullptr) env->DeleteLocalRef(jMetadata);
+                }
+            }, "startPublishing");
+        }
+
+        void monitorMetadata(C4Peer* peer, bool start) override {
+            callJVM([this, peer, start](JNIEnv* env, bool wasDetached) {
+                jbyteArray peerId = toJByteArray(env, (const uint8_t*)peer->id.data(), peer->id.size());
+                auto peerPtr = reinterpret_cast<jlong>(peer);
+
+                if (start) {
+                    // Start monitoring metadata characteristic
+                    env->CallStaticVoidMethod(
+                            cls_C4PeerDiscoveryProvider,
+                            m_C4PeerDiscoveryProvider_startMetadataMonitoring,
+                            _contextToken,
+                            peerPtr);
+                } else {
+                    // Stop monitoring metadata characteristic
+                    env->CallStaticVoidMethod(
+                            cls_C4PeerDiscoveryProvider,
+                            m_C4PeerDiscoveryProvider_stopMetadataMonitoring,
+                            _contextToken,
+                            peerPtr);
+                }
+
+                if (!wasDetached && peerId != nullptr) {
+                    env->DeleteLocalRef(peerId);
+                }
+            }, "monitorMetadata");
+        }
+
+        void resolveURL(C4Peer* peer) override {
+            callJVM([this, peer](JNIEnv* env, bool wasDetached) {
+                auto peerPtr = reinterpret_cast<jlong>(peer);
+
+                env->CallStaticVoidMethod(
+                        cls_C4PeerDiscoveryProvider,
+                        m_C4PeerDiscoveryProvider_resolveURL,
                         _contextToken,
                         peerPtr);
-            }
-
-            if (envState == JNI_EDETACHED) {
-                detachJVM("monitorMetadata");
-            } else {
-                if (peerId != nullptr) env->DeleteLocalRef(peerId);
-            }
+            }, "resolveUrl");
         }
 
-        virtual void resolveURL(C4Peer* peer) override {
-            JNIEnv *env = nullptr;
-            jint envState = attachJVM(&env, "resolveURL");
-            if ((envState != JNI_OK) && (envState != JNI_EDETACHED))
-                return;
+        void updateMetadata(C4Peer::Metadata const& metadata) override {
+            callJVM([this, metadata](JNIEnv* env, bool wasDetached) {
+                jniLog("Update Metadata");
+                jobject jMetadata = metadataToJavaMap(env, metadata);
 
-            jlong peerPtr = reinterpret_cast<jlong>(peer);
+                env->CallStaticVoidMethod(
+                        cls_C4PeerDiscoveryProvider,
+                        m_C4PeerDiscoveryProvider_updateMetadata,
+                        _contextToken,
+                        jMetadata);
 
-            env->CallStaticVoidMethod(
-                    cls_C4PeerDiscoveryProvider,
-                    m_C4PeerDiscoveryProvider_resolveURL,
-                    _contextToken,
-                    peerPtr);
-
-            if (envState == JNI_EDETACHED) {
-                detachJVM("resolveURL");
-            }
+                if (!wasDetached && jMetadata != nullptr) {
+                    env->DeleteLocalRef(jMetadata);
+                }
+            }, "updateMetadata");
         }
 
-        virtual void updateMetadata(C4Peer::Metadata const& metadata) override {
-            JNIEnv *env = nullptr;
-            jint envState = attachJVM(&env, "updateMetadata");
-            if ((envState != JNI_OK) && (envState != JNI_EDETACHED))
-                return;
-
-            jobject jMetadata = metadataToJavaMap(env, metadata);
-
-            env->CallStaticVoidMethod(
-                    cls_C4PeerDiscoveryProvider,
-                    m_C4PeerDiscoveryProvider_updateMetadata,
-                    _contextToken,
-                    jMetadata);
-
-            if (envState == JNI_EDETACHED) {
-                detachJVM("updateMetadata");
-            } else {
-                if (jMetadata != nullptr) env->DeleteLocalRef(jMetadata);
-            }
+        void shutdown(std::function<void()> onComplete) override {
+            callJVM([this, &onComplete](JNIEnv* env, bool wasDetached) {
+                auto* callback = new std::function<void()>(onComplete);
+                jobject runnable = env->NewObject(cls_NativeCallback, m_NativeCallback_ctor, reinterpret_cast<jlong>(callback));
+                env->CallStaticVoidMethod(
+                        cls_C4PeerDiscoveryProvider,
+                        m_C4PeerDiscoveryProvider_shutdown,
+                        _contextToken,
+                        runnable);
+                env->DeleteLocalRef(runnable);
+            }, "shutdown");
         }
 
-        virtual void shutdown(std::function<void()> onComplete) override {
-            stopBrowsing();
-            stopPublishing();
-            onComplete();
-        }
-
-        virtual void stop(Mode mode) override {
-            if (mode == C4PeerDiscovery::Mode::browse) {
-                stopBrowsing();
-            }
-            else if (mode == C4PeerDiscovery::Mode::publish) {
-                stopPublishing();
-            }
+        void stop(Mode mode) override {
+            callJVM([this, mode](JNIEnv* env, bool wasDetached) {
+                if (mode == C4PeerDiscovery::Mode::browse) {
+                    env->CallStaticVoidMethod(
+                            cls_C4PeerDiscoveryProvider,
+                            m_C4PeerDiscoveryProvider_stopBrowsing,
+                            _contextToken);
+                } else if (mode == C4PeerDiscovery::Mode::publish) {
+                    env->CallStaticVoidMethod(
+                            cls_C4PeerDiscoveryProvider,
+                            m_C4PeerDiscoveryProvider_stopPublishing,
+                            _contextToken);
+                }
+            }, "stop");
         }
 
         fleece::Ref<C4Peer> addDiscoveredPeer(C4Peer* peer, bool moreComing = false) {
             return addPeer(peer, moreComing);
         }
 
-        void removeDiscoveredPeer(std::string id, bool moreComing = false) {
+        void removeDiscoveredPeer(const string &id, bool moreComing = false) {
             removePeer(id, moreComing);
         }
 
@@ -293,22 +288,35 @@ namespace litecore::jni {
             statusChanged(m, s);
         }
 
-        void setContextToken(jlong token) {
-            _contextToken = token;
+        std::optional<C4SocketFactory> getSocketFactory() const override {
+            return net::wrapSocketFactoryInTLS(_socketFactory);
         }
+
+        C4SocketFactory& unwrappedSocketFactory() { return _socketFactory; }
+
+        bool notifyIncomingConn(C4Peer* peer, C4Socket* socket) {
+            return notifyIncomingConnection(peer, socket);
+        }
+
+        fleece::Ref<C4Socket> createIncomingSockWithTLS(C4SocketFactory& factory, void* ctx, C4Address address) {
+            return createIncomingSocketWithTLS(factory, ctx, address);
+        }
+
+
 
     private:
         jlong _contextToken{};
+        C4SocketFactory _socketFactory{};
     };
 
     // Factory function for creating BLE provider
     static std::unique_ptr<C4PeerDiscoveryProvider, C4PeerDiscovery::ProviderDeleter>
     createBLEProvider(C4PeerDiscovery& discovery,
                       std::string_view peerGroupID) {
-        C4BLEProvider* provider = new C4BLEProvider(discovery, peerGroupID);
-        return C4PeerDiscovery::ProviderRef(provider, [](C4PeerDiscoveryProvider* ptr) {
+        auto* provider = new C4BLEProvider(discovery, peerGroupID);
+        return {provider, [](C4PeerDiscoveryProvider* ptr) {
             delete ptr;
-        });
+        }};
     }
 
     // Register the BLE provider
@@ -320,32 +328,9 @@ namespace litecore::jni {
     static bool bleProviderRegistered = registerBleProvider();
 }
 
-namespace litecore::p2p {
-
-    // BleP2pConstants
-    static jclass cls_BleP2pConstants;
-
-    static jclass jUuidClass;
-    static jmethodID uuidFromString;
-    static jfieldID PORT_CHAR_FIELD, META_CHAR_FIELD, PEER_GROUP_NS_FIELD;
-
-
-    void setUuidConstant(JNIEnv* env, jclass cls, const char* uuidStr) {
-        jstring str = env->NewStringUTF(uuidStr);
-        jobject uuidObj = env->CallStaticObjectMethod(jUuidClass, uuidFromString, str);
-
-        if (strcmp(uuidStr, litecore::p2p::btle::kPortCharacteristicID) == 0)
-            env->SetStaticObjectField(cls, PORT_CHAR_FIELD, uuidObj);
-        else if (strcmp(uuidStr, litecore::p2p::btle::kMetadataCharacteristicID) == 0)
-            env->SetStaticObjectField(cls, META_CHAR_FIELD, uuidObj);
-        else if (strcmp(uuidStr, litecore::p2p::btle::kPeerGroupUUIDNamespace) == 0)
-            env->SetStaticObjectField(cls, PEER_GROUP_NS_FIELD, uuidObj);
-    }
-}
-
 
 #ifdef __cplusplus
-extern "C++" {
+extern "C" {
 #endif
 
 //-------------------------------------------------------------------------
@@ -353,13 +338,13 @@ extern "C++" {
 //-------------------------------------------------------------------------
 
 
-JNIEXPORT jstring JNICALL
+JNIEXPORT jbyteArray JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4PeerDiscoveryProvider_serviceUuidFromPeerGroup(
         JNIEnv* env, jclass, jstring peerGroup) {
     std::string pg = JstringToUTF8(env, peerGroup);
     auto uuid = litecore::p2p::btle::ServiceUUIDFromPeerGroup(pg);
     C4Slice s = {&uuid, sizeof(uuid)};
-    return toJString(env, s);
+    return toJByteArray(env, s);
 }
 
 JNIEXPORT jlong JNICALL
@@ -496,6 +481,47 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4PeerDiscoveryProvider_peersWi
 
     env->SetLongArrayRegion(arr, 0, (jsize)handles.size(), handles.data());
     return arr;
+}
+
+JNIEXPORT void JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4PeerDiscoveryProvider_createIncomingSocket(
+        JNIEnv* env, jclass,
+        jlong providerPtr,
+        jlong btSocketHandle,
+        jstring jUrl)
+{
+    auto* provider = reinterpret_cast<C4BLEProvider*>(providerPtr);
+    if (!provider) return;
+
+    // Parse URL → C4Address
+    jstringSlice urlSlice(env, jUrl);
+    C4Address address{};
+    if (!c4address_fromURL(urlSlice, &address, nullptr)) {
+        C4Warn("nCreateIncomingSocket: failed to parse URL");
+        return;
+    }
+
+    auto* ctx = new BTNativeHandle {
+            btSocketHandle,
+            fleece::alloc_slice(urlSlice)
+    };
+
+    // Use the raw BT socket factory, not getSocketFactory() which wraps in TLS.
+    // createIncomingSockWithTLS will wrap it in TLS itself.
+    fleece::Ref<C4Socket> socket = provider->createIncomingSockWithTLS(
+            provider->unwrappedSocketFactory(),
+            reinterpret_cast<void*>(ctx),
+            address);
+
+    if (!socket) {
+        C4Warn("nCreateIncomingSocket: createIncomingSocketWithTLS failed");
+        delete ctx;
+        return;
+    }
+
+    if (!provider->notifyIncomingConn(nullptr, socket)) {
+        socket->getFactory().close(socket);
+    }
 }
 
 #ifdef __cplusplus

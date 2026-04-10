@@ -16,7 +16,7 @@ static C4Peer* getPeer(jlong peerPtr) {
     return reinterpret_cast<C4Peer*>(peerPtr);
 }
 
-extern "C++" {
+extern "C" {
     JNIEXPORT jstring JNICALL
     Java_com_couchbase_lite_internal_core_impl_NativeBluetoothPeer_getId(
             JNIEnv *env, jclass clazz, jlong peerPtr) {
@@ -75,7 +75,7 @@ extern "C++" {
             JNIEnv *env, jclass clazz, jlong peerPtr, jstring jurl) {
         std::string url = JstringToUTF8(env, jurl);
 
-        BluetoothPeer *peer = static_cast<BluetoothPeer*>(getPeer(peerPtr));
+        auto *peer = dynamic_cast<BluetoothPeer*>(getPeer(peerPtr));
         if (!peer) return;
 
         peer->resolvingUrl(url, kC4NoError);

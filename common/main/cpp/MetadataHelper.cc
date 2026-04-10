@@ -29,10 +29,12 @@ namespace litecore::jni {
             jstring jKey = (jstring)env->CallObjectMethod(entry, getKeyMethod);
             jbyteArray jValue = (jbyteArray)env->CallObjectMethod(entry, getValueMethod);
 
-            std::string key = JstringToUTF8(env, jKey);
-            jbyteArraySlice value(env, jValue);
+            {
+                std::string key = JstringToUTF8(env, jKey);
+                jbyteArraySlice value(env, jValue);
 
-            metadata[std::string(key)] = fleece::alloc_slice(value);
+                metadata[std::string(key)] = fleece::alloc_slice(value);
+            }
 
             env->DeleteLocalRef(entry);
             env->DeleteLocalRef(jKey);
@@ -41,6 +43,9 @@ namespace litecore::jni {
 
         env->DeleteLocalRef(entrySet);
         env->DeleteLocalRef(entries);
+        env->DeleteLocalRef(mapClass);
+        env->DeleteLocalRef(setClass);
+        env->DeleteLocalRef(entryClass);
 
         return metadata;
     }
@@ -50,7 +55,16 @@ namespace litecore::jni {
         // Create HashMap
         jclass hashMapClass = env->FindClass("java/util/HashMap");
         jmethodID hashMapInit = env->GetMethodID(hashMapClass, "<init>", "(I)V");
-        jobject hashMap = env->NewObject(hashMapClass, hashMapInit);
+
+
+        size_t rawSize = metadata.size();
+        jint size = (rawSize > 10000) ? 0 : static_cast<jint>(rawSize);
+
+        jobject hashMap = env->NewObject(hashMapClass, hashMapInit, size);
+        if (env->ExceptionCheck()) {
+            env->ExceptionClear();
+            return env->NewObject(hashMapClass, hashMapInit, 0);
+        }
 
         // Put method for HashMap
         jmethodID hashMapPut = env->GetMethodID(

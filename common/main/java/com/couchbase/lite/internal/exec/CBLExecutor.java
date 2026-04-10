@@ -97,7 +97,7 @@ public class CBLExecutor extends ThreadPoolExecutor {
     private float m2;
 
     // A fixed sized pool backed by a very large queue.
-    public CBLExecutor(@NonNull String name) { this(name, POOL_SIZE, POOL_SIZE, new LinkedBlockingQueue<>()); }
+    public CBLExecutor(@NonNull String name) { this(name, 0, POOL_SIZE, new LinkedBlockingQueue<>()); }
 
     public CBLExecutor(@NonNull String name, int min, int max, @NonNull BlockingQueue<Runnable> workQueue) {
         this(name, min, max, 30, workQueue);  // unused threads die after 30 sec

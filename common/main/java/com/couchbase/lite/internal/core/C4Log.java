@@ -127,7 +127,7 @@ public final class C4Log {
         m.put(C4Constants.LogDomain.SQL, LogDomain.DATABASE);
         m.put(C4Constants.LogDomain.SYNC, LogDomain.REPLICATOR);
         m.put(C4Constants.LogDomain.SYNC_BUSY, LogDomain.REPLICATOR);
-        m.put(C4Constants.LogDomain.TLS, LogDomain.NETWORK);
+        // m.put(C4Constants.LogDomain.TLS, LogDomain.NETWORK);
         m.put(C4Constants.LogDomain.WEB_SOCKET, LogDomain.NETWORK);
         m.put(C4Constants.LogDomain.ZIP, LogDomain.NETWORK);
         LOGGING_DOMAIN_FROM_C4 = Collections.unmodifiableMap(m);

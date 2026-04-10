@@ -163,6 +163,7 @@ JNI_OnLoad(JavaVM *jvm, void *ignore) {
         #ifdef __ANDROID__
         && initC4MultipeerReplicator(env)
         && initC4PeerDiscoveryProvider(env)
+        && initC4BTSocketFactory(env)
         #endif
         #endif
         && initC4Socket(env)) {
@@ -216,6 +217,19 @@ namespace litecore::jni {
         if (ret != JNI_OK)
             jniLog("%s: Failed to detach the current thread from a Java VM: %d", caller, ret);
         return ret;
+    }
+
+    void callJVM(function<void(JNIEnv*, bool)> task, const char *caller) {
+        JNIEnv *env = nullptr;
+        jint envState = attachJVM(&env, caller);
+        if ((envState != JNI_OK) && (envState != JNI_EDETACHED))
+            return;
+
+        task(env, envState == JNI_EDETACHED);
+
+        if (envState == JNI_EDETACHED) {
+            detachJVM(caller);
+        }
     }
 
     // ----------------------------------------------------------------------------
