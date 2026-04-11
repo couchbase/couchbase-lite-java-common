@@ -19,6 +19,7 @@
 
 #elif defined(__linux__) || defined(__APPLE__)
 #include <sys/time.h>
+#include <time.h>
 #endif
 
 #include <unordered_set>
