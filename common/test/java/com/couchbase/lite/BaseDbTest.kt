@@ -171,6 +171,7 @@ abstract class BaseDbTest : BaseTest() {
         testTg = getUniqueName("db_test_tag")
 
         testExec = object : CloseableExecutor {
+            var currentThread: Long = -1
             val executor: ThreadPoolExecutor = ThreadPoolExecutor(
                 1, 1,
                 30, TimeUnit.SECONDS,
@@ -196,13 +197,19 @@ abstract class BaseDbTest : BaseTest() {
             override fun execute(task: Runnable) {
                 Report.log("task enqueued: %s", task)
                 executor.execute {
+                    currentThread = Thread.currentThread().id
                     Report.log("Test task started: %s", task)
                     try {
                         task.run()
                     } finally {
+                        currentThread = -1
                         Report.log("Test task finished: %s", task)
                     }
                 }
+            }
+
+            override fun isInsideExecutor(): Boolean {
+                return Thread.currentThread().id == currentThread;
             }
 
             override fun getPending(): Int {

@@ -15,8 +15,6 @@
 //
 package com.couchbase.lite.internal.exec;
 
-import android.os.Build;
-
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -143,11 +141,7 @@ class ConcurrentExecutor implements ExecutionService.CloseableExecutor {
     private void executeTask(@NonNull InstrumentedTask newTask) {
         try {
             executor.execute(() -> {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
-                    currentThread = Thread.currentThread().threadId();
-                } else {
-                    currentThread = Thread.currentThread().getId();
-                }
+                currentThread = Thread.currentThread().getId();
                 newTask.run();
                 currentThread = -1;
             });
