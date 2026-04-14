@@ -27,7 +27,6 @@ import androidx.annotation.RequiresApi;
  * Listener for API 24 - 28: use a ConnectivityCallback registered to the Default Network for updates
  * and ActiveNetworkInfo for current status
  */
-@RequiresApi(api = Build.VERSION_CODES.N)
 final class ConnectivityListener24to28 extends CallbackConnectivityWatcher {
     ConnectivityListener24to28(@NonNull AndroidConnectivityManager mgr) { super("24-28", mgr); }
 

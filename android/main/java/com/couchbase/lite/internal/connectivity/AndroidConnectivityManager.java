@@ -116,10 +116,7 @@ public class AndroidConnectivityManager implements NetworkConnectivityManager {
         ConnectivityWatcher connectivityListener = listener.get();
         if (connectivityListener != null) { return; }
 
-        if (androidVersion < Build.VERSION_CODES.N) {
-            connectivityListener = new ConnectivityListener21to23(this);
-        }
-        else if (androidVersion < Build.VERSION_CODES.Q) {
+        if (androidVersion < Build.VERSION_CODES.Q) {
             connectivityListener = new ConnectivityListener24to28(this);
         }
         else {
