@@ -16,12 +16,10 @@
 package com.couchbase.lite.internal.replicator;
 
 import android.annotation.SuppressLint;
-import android.os.Build;
 import android.system.ErrnoException;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 
 import java.net.URI;
 import java.security.cert.Certificate;

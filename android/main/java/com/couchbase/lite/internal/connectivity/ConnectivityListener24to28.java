@@ -17,10 +17,8 @@ package com.couchbase.lite.internal.connectivity;
 
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.os.Build;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 
 
 /**
