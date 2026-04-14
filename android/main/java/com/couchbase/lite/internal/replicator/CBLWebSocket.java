@@ -65,11 +65,6 @@ public final class CBLWebSocket extends AbstractCBLWebSocket {
     @SuppressLint("NewApi")
     @Override
     protected int handleCloseCause(@NonNull Throwable cause) {
-        return (Build.VERSION.SDK_INT < 24) ? 0 : handleCloseCausePostAPI23(cause);
-    }
-
-    @RequiresApi(api = Build.VERSION_CODES.N)
-    private int handleCloseCausePostAPI23(Throwable cause) {
         return (!(cause instanceof CertificateRevokedException)) ? 0 : C4Constants.NetworkError.TLS_CERT_EXPIRED;
     }
 }

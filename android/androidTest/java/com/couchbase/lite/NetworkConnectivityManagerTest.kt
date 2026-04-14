@@ -52,15 +52,6 @@ class NetworkConnectivityManagerTest : BaseTest() {
         }
     }
 
-    // Pre-22 Android  no longer supported
-    fun testStartStopPre21() = testStartStop(AndroidConnectivityManager(19) { r -> r.run() })
-
-    @Test
-    fun testStartStop21to23() {
-        Assume.assumeTrue("StartStop 21-23 can't be tested on SDK " + Build.VERSION.SDK_INT, vmVersion > 20)
-        testStartStop(AndroidConnectivityManager(22) { r -> r.run() })
-    }
-
     @Test
     fun testStartStop24to28() {
         Assume.assumeTrue("StartStop 24-28 can't be tested on SDK " + Build.VERSION.SDK_INT, vmVersion > 23)
