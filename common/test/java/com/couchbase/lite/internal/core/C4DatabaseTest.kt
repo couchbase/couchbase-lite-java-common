@@ -137,12 +137,12 @@ class C4DatabaseTest : C4BaseTest() {
 
         //Weird requirements of UUIDs according to the spec
         Assert.assertEquals(0x40.toByte(), (publicUUID[6] and 0xF0.toByte()))
-        Assert.assertEquals(0x80.toUByte(), (publicUUID[8].toUByte() and 0xC0.toUByte()))
+        Assert.assertEquals(0x80u.toUByte(), (publicUUID[8].toUByte() and 0xC0u.toUByte()))
         val privateUUID = C4TestUtils.privateUUIDForDb(c4Database)
         Assert.assertNotNull(privateUUID)
         Assert.assertTrue(privateUUID.isNotEmpty())
         Assert.assertEquals(0x40.toByte(), (privateUUID[6] and 0xF0.toByte()))
-        Assert.assertEquals(0x80.toUByte(), (privateUUID[8].toUByte() and 0xC0.toUByte()))
+        Assert.assertEquals(0x80u.toUByte(), (privateUUID[8].toUByte() and 0xC0u.toUByte()))
         Assert.assertFalse(publicUUID.contentEquals(privateUUID))
 
         reopenDB()
