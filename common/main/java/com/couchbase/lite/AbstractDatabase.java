@@ -91,8 +91,13 @@ abstract class AbstractDatabase extends BaseDatabase
 
     private static final LogDomain DOMAIN = LogDomain.DATABASE;
 
-    private static final int DB_CLOSE_WAIT_SECS = 6; // > Core replicator timeout
-    private static final int DB_CLOSE_MAX_RETRIES = 5; // random choice: wait for 5 replicators
+    // Max time to wait for active processes to finish.
+    private static final int DB_CLOSE_PROCESS_TIMEOUT_SECS = 10;
+    // Backoff between BUSY retries on close.
+    private static final int DB_CLOSE_RETRY_DELAY_SECS = 2;
+    // Max number of BUSY retries before giving up.
+    private static final int DB_CLOSE_MAX_RETRIES = 5;
+    // Max time to wait for executors to drain.
     private static final int EXECUTOR_CLOSE_MAX_WAIT_SECS = 5;
 
     static class ActiveProcess<T> {
@@ -1224,7 +1229,6 @@ abstract class AbstractDatabase extends BaseDatabase
         for (ActiveProcess<?> process: processes) { Log.d(DOMAIN, " processes: %s", process); }
     }
 
-    @SuppressWarnings("PMD.NPathComplexity")
     private void shutdown(boolean failIfClosed, Fn.ConsumerThrows<C4Database, LiteCoreException> onShut)
         throws CouchbaseLiteException {
         final C4Database c4Db;
@@ -1251,33 +1255,24 @@ abstract class AbstractDatabase extends BaseDatabase
         }
 
         try {
+            verifyActiveProcesses();
+            if (!closeLatch.await(DB_CLOSE_PROCESS_TIMEOUT_SECS, TimeUnit.SECONDS)) {
+                throw new CouchbaseLiteException("Shutdown failed", CBLError.Domain.CBLITE, CBLError.Code.BUSY);
+            }
+
             for (int i = 0; ; i++) {
-                verifyActiveProcesses();
-
-                if ((i >= DB_CLOSE_MAX_RETRIES) && (closeLatch.getCount() > 0)) {
-                    throw new CouchbaseLiteException("Shutdown failed", CBLError.Domain.CBLITE, CBLError.Code.BUSY);
+                try {
+                    synchronized (getDbLock()) { onShut.accept(c4Db); }
+                    break;
                 }
-
-                if (closeLatch.await(DB_CLOSE_WAIT_SECS, TimeUnit.SECONDS)) {
-                    try {
-                        synchronized (getDbLock()) { onShut.accept(c4Db); }
-                        break;
+                catch (LiteCoreException e) {
+                    if (i >= DB_CLOSE_MAX_RETRIES
+                        || e.getDomain() != C4Constants.ErrorDomain.LITE_CORE
+                        || e.getCode() != C4Constants.LiteCoreError.BUSY) {
+                        throw CouchbaseLiteException.convertException(e);
                     }
-                    catch (LiteCoreException e) {
-                        if ((e.getDomain() != C4Constants.ErrorDomain.LITE_CORE)
-                            || (e.getCode() != C4Constants.LiteCoreError.BUSY)) {
-                            throw CouchbaseLiteException.convertException(e);
-                        }
-                    }
+                    Thread.sleep(TimeUnit.SECONDS.toMillis(DB_CLOSE_RETRY_DELAY_SECS));
                 }
-
-                // If we get here then, despite the fact that it appears to us that all
-                // active processes have been stopped, LiteCore has other ideas.
-                // We have no way of finding out what LiteCore thinks, other than waiting
-                // a bit and trying the again.  Since verifyActiveProcess will count down
-                // the latch, we need a new one with a count of at least 2 in order to force
-                // a wait
-                closeLatch = new CountDownLatch(2);
             }
         }
         catch (InterruptedException ignore) { }
