@@ -286,7 +286,8 @@ namespace litecore::jni {
     // Callbacks
     //-------------------------------------------------------------------------
 
-    static void statusChangedCallback(C4PeerSync *ignored, bool started, C4Error error, void *context) {
+    static void statusChangedCallback(C4PeerSync *ignored, C4PeerSyncProtocol protocol, bool started, C4Error error, void *context) {
+        // TODO: Use protocol
         JNIEnv *env = nullptr;
         jint envState = attachJVM(&env, "p2pStatusChanged");
         if ((envState != JNI_OK) && (envState != JNI_EDETACHED))
