@@ -50,7 +50,7 @@ namespace litecore::jni {
     //-------------------------------------------------------------------------
 
     // C4MultipeerReplicator
-    static jclass cls_C4MultipeerReplicator;               // global reference
+    static jclass cls_C4MultipeerReplicator;                // global reference
     static jmethodID m_C4MultipeerReplicator_createPeerInfo;
     static jmethodID m_C4MultipeerReplicator_onSyncStatusChanged;
     static jmethodID m_C4MultipeerReplicator_onAuthenticate;
@@ -58,15 +58,19 @@ namespace litecore::jni {
     static jmethodID m_C4MultipeerReplicator_onReplicatorStatusChanged;
     static jmethodID m_C4MultipeerReplicator_onDocumentEnded;
 
+    // C4PeerSyncStatus
+    static jclass cls_C4PeerSyncStatus;                     // global reference
+    static jmethodID m_C4PeerSyncStatus_init;
+
     // ReplicationCollection
-    static jclass cls_MultipeerReplColl;                             // global reference
+    static jclass cls_MultipeerReplColl;                    // global reference
     static jfieldID f_MultipeerReplColl_token;
     static jfieldID f_MultipeerReplColl_scope;
     static jfieldID f_MultipeerReplColl_name;
     static jfieldID f_MultipeerReplColl_options;
     static jfieldID f_MultipeerReplColl_pushFilter;
     static jfieldID f_MultipeerReplColl_pullFilter;
-    static jmethodID m_MultipeerReplColl_filterCallback;             // validationFunction method
+    static jmethodID m_MultipeerReplColl_filterCallback;    // validationFunction method
 
     static bool pullFilterCallback(
             C4PeerSync *,
@@ -117,7 +121,7 @@ namespace litecore::jni {
             m_C4MultipeerReplicator_onSyncStatusChanged = env->GetStaticMethodID(
                     cls_C4MultipeerReplicator,
                     "onSyncStatusChanged",
-                    "(JZIJ)V");
+                    "(JLcom/couchbase/lite/internal/core/C4PeerSyncStatus;)V");
 
             if (m_C4MultipeerReplicator_onSyncStatusChanged == nullptr)
                 return false;
@@ -199,6 +203,21 @@ namespace litecore::jni {
                     "filterCallback",
                     "(J[BLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;IJZ)Z");
             if (m_MultipeerReplColl_filterCallback == nullptr)
+                return false;
+        }
+
+        // C4PeerSyncStatus, constructor
+        {
+            jclass localClass = env->FindClass("com/couchbase/lite/internal/core/C4PeerSyncStatus");
+            if (localClass == nullptr)
+                return false;
+
+            cls_C4PeerSyncStatus = reinterpret_cast<jclass>(env->NewGlobalRef(localClass));
+            if (cls_C4PeerSyncStatus == nullptr)
+                return false;
+
+            m_C4PeerSyncStatus_init = env->GetMethodID(cls_C4PeerSyncStatus, "<init>", "(IZII)V");
+            if (m_C4PeerSyncStatus_init == nullptr)
                 return false;
         }
 
@@ -286,23 +305,32 @@ namespace litecore::jni {
     // Callbacks
     //-------------------------------------------------------------------------
 
-    static void statusChangedCallback(C4PeerSync *ignored, C4PeerSyncProtocol protocol, bool started, C4Error error, void *context) {
-        // TODO: Use protocol
+    static void statusChangedCallback(C4PeerSync *ignored, C4PeerSyncProtocol protocol,
+                                      bool started, C4Error error, void *context) {
         JNIEnv *env = nullptr;
         jint envState = attachJVM(&env, "p2pStatusChanged");
         if ((envState != JNI_OK) && (envState != JNI_EDETACHED))
             return;
 
+        jobject _status = env->NewObject(
+                cls_C4PeerSyncStatus,
+                m_C4PeerSyncStatus_init,
+                (jint) protocol,
+                started ? JNI_TRUE : JNI_FALSE,
+                (jint) error.domain,
+                (jint) error.code);
+
         env->CallStaticVoidMethod(
                 cls_C4MultipeerReplicator,
                 m_C4MultipeerReplicator_onSyncStatusChanged,
                 (jlong) context,
-                started ? JNI_TRUE : JNI_FALSE,
-                (jint) error.domain,
-                (jlong) error.code);
+                _status);
 
-        if (envState == JNI_EDETACHED)
+        if (envState == JNI_EDETACHED) {
             detachJVM("p2pStatusChanged");
+        } else {
+            if (_status != nullptr) env->DeleteLocalRef(_status);
+        }
     }
 
     static bool authenticateCallback(C4PeerSync *ignored, const C4PeerID *peerId, C4Cert *certChain, void *context) {
@@ -649,6 +677,32 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4MultipeerReplicator_g
         jlong peer) {
     C4PeerID peerId = c4peersync_getMyID((C4PeerSync *) peer);
     return toJByteArray(env, peerId.bytes, 32);
+}
+
+/*
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4MultipeerReplicator
+ * Method:    getStatus
+ * Signature: (JI)Lcom/couchbase/lite/internal/core/C4PeerSyncStatus;
+ */
+JNIEXPORT jobject
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4MultipeerReplicator_getStatus(
+        JNIEnv *env,
+        jclass clazz,
+        jlong peer,
+        jint protocol)  {
+    C4Error error{};
+    C4PeerSyncStatus status = c4peersync_getStatus((C4PeerSync *) peer, protocol, &error);
+    if (error.code > 0) {
+        throwError(env, error);
+        return nullptr;
+    }
+    return env->NewObject(
+            cls_C4PeerSyncStatus,
+            m_C4PeerSyncStatus_init,
+            (jint) protocol,
+            status.online ? JNI_TRUE : JNI_FALSE,
+            (jint) status.error.domain,
+            (jint) status.error.code);
 }
 
 /*

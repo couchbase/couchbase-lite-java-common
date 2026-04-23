@@ -323,7 +323,8 @@ public final class C4Constants {
     // c4PeerSyncTypes.h
     ////////////////////////////////////
     public static final class PeerSyncProtocols {
-        public static final int DNS_SD = 0x01;
-        public static final int BLUETOOTH_LE = 0x02;
+        public static final int NONE = 0x00;                    // No protocol, or aggregate of all protocols
+        public static final int DNS_SD = 0x01;                  // DNS-SD ("Bonjour") protocol with TCP sockets.
+        public static final int BLUETOOTH_LE = 0x02;            // Bluetooth LE protocol with L2CAP sockets.
     }
 }
