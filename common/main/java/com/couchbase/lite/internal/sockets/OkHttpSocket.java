@@ -74,6 +74,7 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
 
         .build();
 
+    @SuppressWarnings("PMD.CloseResource")
     public static void shutdownHttpClient() {
         final ExecutorService dispatcher = BASE_HTTP_CLIENT.dispatcher().executorService();
         ExecutorUtils.shutdownAndAwaitTermination(dispatcher, 5, LogDomain.NETWORK);

@@ -20,8 +20,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 import com.couchbase.lite.internal.core.C4BlobStore;
 import com.couchbase.lite.internal.core.C4Database;
 import com.couchbase.lite.internal.logging.Log;
@@ -104,7 +102,6 @@ public abstract class BaseDatabase {
     }
 
     @VisibleForTesting
-    @SuppressFBWarnings("NP_NONNULL_RETURN_VIOLATION")
     @NonNull
     C4Database getOpenC4Database() {
         synchronized (getDbLock()) { return getOpenC4DbLocked(); }

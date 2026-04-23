@@ -655,7 +655,6 @@ public final class Blob implements FleeceEncodable, JSONEncodable {
         throw new CouchbaseLiteError(Log.lookupStandardMessage("BlobContentNull"));
     }
 
-    @SuppressFBWarnings("DE_MIGHT_IGNORE")
     private void readContentFromInitStream() {
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
         try (InputStream in = Preconditions.assertNotNull(blobContentStream, "content stream")) {

@@ -26,8 +26,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Executor;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 import com.couchbase.lite.internal.BaseCollection;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.core.C4Collection;
@@ -919,7 +917,6 @@ public final class Collection extends BaseCollection
 
     // Low-level save method
     @GuardedBy("getDbLock()")
-    @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE")
     private void saveInTransaction(@NonNull Document document, @Nullable C4Document base, boolean deleting)
         throws CouchbaseLiteException {
         FLSliceResult body = null;
