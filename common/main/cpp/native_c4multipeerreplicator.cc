@@ -687,12 +687,13 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4MultipeerReplicator_g
 JNIEXPORT jobject
 JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4MultipeerReplicator_getStatus(
         JNIEnv *env,
-        jclass clazz,
+        jclass ignore,
         jlong peer,
         jint protocol)  {
     C4Error error{};
-    C4PeerSyncStatus status = c4peersync_getStatus((C4PeerSync *) peer, protocol, &error);
-    if (error.code > 0) {
+    C4PeerSyncStatus status = c4peersync_getStatus((C4PeerSync *) peer,
+                                                   (C4PeerSyncProtocol)protocol, &error);
+    if (error.code != 0) {
         throwError(env, error);
         return nullptr;
     }
