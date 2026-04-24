@@ -23,8 +23,6 @@ import androidx.annotation.Nullable;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicReference;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 import com.couchbase.lite.CouchbaseLiteError;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
@@ -84,7 +82,6 @@ public abstract class C4Peer implements AutoCloseable {
         /**
          * Cleanup: Release the native peer.
          */
-        @SuppressFBWarnings("JLM_JSR166_UTILCONCURRENT_MONITORENTER")
         public final void clean(boolean finalizing) {
             final C4Peer.PeerCleaner disposer = cleaner;
             if (disposer != null) {

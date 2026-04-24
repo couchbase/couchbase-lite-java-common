@@ -28,4 +28,14 @@
         <Bug pattern="SF_SWITCH_NO_DEFAULT" />
     </Match>
 
+    <!-- Constructor throws are pre-existing in the API design -->
+    <Match>
+        <Bug pattern="CT_CONSTRUCTOR_THROW" />
+    </Match>
+
+    <!-- Java 8 synthetic accessors and annotation staleness: not actionable -->
+    <Match>
+        <Bug pattern="AT_STALE_THREAD_WRITE_OF_PRIMITIVE" />
+    </Match>
+
 </FindBugsFilter>

@@ -23,8 +23,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 import com.couchbase.lite.CouchbaseLiteError;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.logging.Log;
@@ -70,7 +68,6 @@ public final class FileUtils {
         return deleteContents((fileOrDirectory == null) ? null : new File(fileOrDirectory));
     }
 
-    @SuppressFBWarnings({"RV_RETURN_VALUE_IGNORED_BAD_PRACTICE"})
     public static boolean deleteContents(File fileOrDirectory) {
         if ((fileOrDirectory == null) || (!fileOrDirectory.isDirectory())) { return true; }
 
