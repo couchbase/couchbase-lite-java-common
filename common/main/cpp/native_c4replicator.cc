@@ -21,6 +21,7 @@
 #include "native_glue.hh"
 #include "native_c4replutils.hh"
 #include "socket_factory.h"
+#include "fleece/FLSlice.h"
 #include "com_couchbase_lite_internal_core_impl_NativeC4Replicator.h"
 
 using namespace litecore;
@@ -610,9 +611,11 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_getCorrelationId(
         jclass ignored,
         jlong repl) {
     auto result = c4repl_getCorrelationID((C4Replicator *)repl);
-    return result
+    auto retVal = result
         ? UTF8ToJstring(env, (const char *)result.buf, result.size)
         : nullptr;
+    FLSliceResult_Release(result);
+    return retVal;
 }
 
 /*
