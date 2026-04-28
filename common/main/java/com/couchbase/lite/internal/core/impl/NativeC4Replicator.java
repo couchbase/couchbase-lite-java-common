@@ -118,6 +118,10 @@ public final class NativeC4Replicator implements C4Replicator.NativeImpl {
     public C4ReplicatorStatus nGetStatus(long peer) { return getStatus(peer); }
 
     // thread safe
+    @Nullable
+    @Override
+    public String nGetCorrelationId(long peer) { return getCorrelationId(peer); }
+
     @NonNull
     @Override
     public FLSliceResult nGetPendingDocIds(long peer, @NonNull String scope, @NonNull String collection)
@@ -229,6 +233,9 @@ public final class NativeC4Replicator implements C4Replicator.NativeImpl {
      */
     @NonNull
     private static native C4ReplicatorStatus getStatus(long peer);
+
+    @Nullable
+    private static native String getCorrelationId(long peer);
 
     /**
      * Returns a list of string ids for pending documents.

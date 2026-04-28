@@ -239,6 +239,21 @@ public abstract class AbstractReplicator extends BaseReplicator
     public ReplicatorConfiguration getConfig() { return new ReplicatorConfiguration(config); }
 
     /**
+     * The correlation ID that can be used to link this replication with
+     * its remote side logging
+     *
+     * @return The correlation ID of the replicator
+     */
+    @Nullable
+    public String getCorrelationId() {
+        try { return getOrCreateC4Replicator().getCorrelationId(); }
+        catch (LiteCoreException e) {
+            Log.e(LOG_DOMAIN, "Failed getting correlation ID", e);
+            return null;
+        }
+    }
+
+    /**
      * The replicator's current status: its activity level and progress.
      *
      * @return this replicator's status

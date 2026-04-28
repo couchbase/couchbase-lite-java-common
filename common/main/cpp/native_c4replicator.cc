@@ -604,6 +604,17 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_getStatus(
     return toJavaReplStatus(env, status);
 }
 
+JNIEXPORT jstring JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_getCorrelationId(
+        JNIEnv *env,
+        jclass ignored,
+        jlong repl) {
+    auto result = c4repl_getCorrelationID((C4Replicator *)repl);
+    return result
+        ? UTF8ToJstring(env, (const char *)result.buf, result.size)
+        : nullptr;
+}
+
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Replicator
  * Method:    getPendingDocIDs
