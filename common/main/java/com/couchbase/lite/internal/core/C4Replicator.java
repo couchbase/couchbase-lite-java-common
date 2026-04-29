@@ -234,6 +234,8 @@ public abstract class C4Replicator extends C4Peer {
         void nSetOptions(long replPeer, @Nullable byte[] options);
         @NonNull
         C4ReplicatorStatus nGetStatus(long replPeer);
+        @Nullable
+        String nGetCorrelationId(long replPeer);
         @NonNull
         FLSliceResult nGetPendingDocIds(long replPeer, @NonNull String scope, @NonNull String collection)
             throws LiteCoreException;
@@ -712,6 +714,9 @@ public abstract class C4Replicator extends C4Peer {
 
     @Nullable
     public C4ReplicatorStatus getStatus() { return withPeerOrNull(impl::nGetStatus); }
+
+    @Nullable
+    public String getCorrelationId() { return withPeerOrNull(impl::nGetCorrelationId); }
 
     public boolean isDocumentPending(@NonNull String docId, @NonNull String scope, @NonNull String collection)
         throws LiteCoreException {

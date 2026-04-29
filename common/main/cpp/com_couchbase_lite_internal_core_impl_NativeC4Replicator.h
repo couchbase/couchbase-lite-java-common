@@ -83,6 +83,15 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_getStatus
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Replicator
+ * Method:    getCorrelationId
+ * Signature: (J)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_getCorrelationId(
+    JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Replicator
  * Method:    getPendingDocIds
  * Signature: (JLjava/lang/String;Ljava/lang/String;)Lcom/couchbase/lite/internal/fleece/FLSliceResult;
  */

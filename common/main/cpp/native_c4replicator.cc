@@ -21,6 +21,7 @@
 #include "native_glue.hh"
 #include "native_c4replutils.hh"
 #include "socket_factory.h"
+#include "fleece/FLSlice.h"
 #include "com_couchbase_lite_internal_core_impl_NativeC4Replicator.h"
 
 using namespace litecore;
@@ -602,6 +603,19 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_getStatus(
         jlong repl) {
     C4ReplicatorStatus status = c4repl_getStatus((C4Replicator *) repl);
     return toJavaReplStatus(env, status);
+}
+
+JNIEXPORT jstring JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_getCorrelationId(
+        JNIEnv *env,
+        jclass ignored,
+        jlong repl) {
+    auto result = c4repl_getCorrelationID((C4Replicator *)repl);
+    auto retVal = result
+        ? UTF8ToJstring(env, (const char *)result.buf, result.size)
+        : nullptr;
+    FLSliceResult_Release(result);
+    return retVal;
 }
 
 /*
