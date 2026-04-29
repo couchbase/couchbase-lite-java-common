@@ -239,8 +239,9 @@ public abstract class AbstractReplicator extends BaseReplicator
     public ReplicatorConfiguration getConfig() { return new ReplicatorConfiguration(config); }
 
     /**
-     * The correlation ID that can be used to link this replication with
-     * its remote side logging
+     *  Gets the correlation ID of this replication so that it can be analyzed along
+     * with the logs from the remote side.  If not started, or unavailable, returns
+     * null
      *
      * @return The correlation ID of the replicator
      */
