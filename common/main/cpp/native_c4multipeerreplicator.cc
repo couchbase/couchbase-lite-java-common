@@ -312,7 +312,7 @@ namespace litecore::jni {
         if ((envState != JNI_OK) && (envState != JNI_EDETACHED))
             return;
 
-        jobject _status = env->NewObject(
+        jobject status = env->NewObject(
                 cls_C4PeerSyncStatus,
                 m_C4PeerSyncStatus_init,
                 (jint) protocol,
@@ -324,12 +324,12 @@ namespace litecore::jni {
                 cls_C4MultipeerReplicator,
                 m_C4MultipeerReplicator_onSyncStatusChanged,
                 (jlong) context,
-                _status);
+                status);
 
         if (envState == JNI_EDETACHED) {
             detachJVM("p2pStatusChanged");
         } else {
-            if (_status != nullptr) env->DeleteLocalRef(_status);
+            if (status != nullptr) env->DeleteLocalRef(status);
         }
     }
 
