@@ -9,4 +9,3 @@ Please submit issues to the [Community Edition Repository](https://github.com/co
 
 While PRs are most welcome, please be sure to open an issue int the CE repo before submitting one.  A PR
 could sit here for a very long time, without being noticed.
-
