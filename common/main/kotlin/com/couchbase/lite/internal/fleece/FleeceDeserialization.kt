@@ -26,27 +26,98 @@ import kotlinx.serialization.modules.*
 
 /** Decodes an object from a Fleece [FLValue] using Kotlin Serialization. */
 @ExperimentalSerializationApi
-fun <T> deserializeFromFleece(root: FLValue, deserializer: DeserializationStrategy<T>): T {
-    return ValueDecoder(root).decodeSerializableValue(deserializer)
-}
+fun <T> deserializeFromFleece(root: FLValue, deserializer: DeserializationStrategy<T>): T =
+    ValueDecoder(root).decodeSerializableValue(deserializer)
 
 /** Decodes an object from a Fleece [FLValue] using Kotlin Serialization. */
 @ExperimentalSerializationApi
-inline fun <reified T> deserializeFromFleece(root: FLValue): T = deserializeFromFleece(root, serializer())
+inline fun <reified T> deserializeFromFleece(root: FLValue): T =
+    deserializeFromFleece(root, serializer())
+
+/** Decodes an object from a [Collection<FLValue>] using Kotlin Serialization. */
+@ExperimentalSerializationApi
+fun <T> deserializeFromFleece(root: Collection<FLValue>, deserializer: DeserializationStrategy<T>): T =
+    CollectionRootDecoder(root).decodeSerializableValue(deserializer)
 
 
-// Decodes scalars, and delegates collections to [ArrayDecoder] or [MapDecoder].
-private class ValueDecoder(val value: FLValue): AbstractDecoder() {
-    protected var index = 0
+/** Decodes an object from a [Collection<FLValue>] using Kotlin Serialization. */
+@ExperimentalSerializationApi
+inline fun <reified T> deserializeFromFleece(root: Collection<FLValue>): T =
+    deserializeFromFleece(root, serializer())
+
+
+/** Decodes an object from a [Map] iterator using Kotlin Serialization. */
+@ExperimentalSerializationApi
+fun <T> deserializeFromFleece(iterator: Iterator<Map.Entry<String,FLValue>>,
+                              size: Int,
+                              deserializer: DeserializationStrategy<T>): T =
+    MapRootDecoder(iterator, size).decodeSerializableValue(deserializer)
+
+/** Decodes an object from a [Map] iterator using Kotlin Serialization. */
+@ExperimentalSerializationApi
+inline fun <reified T> deserializeFromFleece(iterator: Iterator<Map.Entry<String,FLValue>>,
+                                             size: Int): T =
+    deserializeFromFleece(iterator, size, serializer())
+
+
+/** Root decoder for a `Collection<FLValue>` */
+private class CollectionRootDecoder(val collection: Collection<FLValue>): AbstractDecoder() {
+    override val serializersModule: SerializersModule = EmptySerializersModule()
+
+    override fun decodeElementIndex(descriptor: SerialDescriptor): Int {
+        throw FleeceSerializationException("not a scalar value")
+    }
+
+    override fun beginStructure(descriptor: SerialDescriptor): CompositeDecoder {
+        return when (descriptor.kind) {
+            StructureKind.LIST -> ArrayDecoder(collection)
+            else -> throw FleeceSerializationException("unsupported SerialDescriptor kind ${descriptor.kind}")
+        }
+    }
+}
+
+
+/** Root decoder for a `Map<String,FLValue>` */
+private class MapRootDecoder(val iter: Iterator<Map.Entry<String,FLValue>>,
+                             val size: Int): AbstractDecoder()
+{
+    override val serializersModule: SerializersModule = EmptySerializersModule()
+
+    override fun decodeElementIndex(descriptor: SerialDescriptor): Int {
+        throw FleeceSerializationException("not a scalar value")
+    }
+
+    override fun beginStructure(descriptor: SerialDescriptor): CompositeDecoder {
+        return when (descriptor.kind) {
+            StructureKind.MAP -> {
+                val keyDescriptor = descriptor.getElementDescriptor(0)
+                if (keyDescriptor.kind != PrimitiveKind.STRING)
+                    throw FleeceSerializationException("Map keys must be Strings, not ${keyDescriptor.serialName}")
+                MapDecoder(iter, size)
+            }
+            StructureKind.CLASS -> {
+                ClassDecoder(iter)
+            }
+            else -> throw FleeceSerializationException("unsupported SerialDescriptor kind ${descriptor.kind}")
+        }
+    }
+}
+
+
+/** Base class of ValueDecoder and ArrayDecoder. */
+private abstract class AbstractValueDecoder(val size: Int): AbstractDecoder() {
+    protected var index = -1
 
     override val serializersModule: SerializersModule = EmptySerializersModule()
 
     override fun decodeSequentially(): Boolean = true
 
-    override fun decodeElementIndex(descriptor: SerialDescriptor): Int {
-        // There is only one item.
-        if (index > 0) return CompositeDecoder.DECODE_DONE else return index++
-    }
+    override fun decodeCollectionSize(descriptor: SerialDescriptor): Int = size
+
+    override fun decodeElementIndex(descriptor: SerialDescriptor): Int =
+        if (++index >= size) CompositeDecoder.DECODE_DONE else index
+
+    abstract val value: FLValue
 
     override fun decodeBoolean(): Boolean   = value.asBool()
     override fun decodeByte(): Byte         = decodeLong().toByte()
@@ -67,45 +138,25 @@ private class ValueDecoder(val value: FLValue): AbstractDecoder() {
 }
 
 
-// Decodes a Kotlin [List] from a [FLArray].
-private class ArrayDecoder(val array: FLArray): AbstractDecoder() {
-    private val size = array.count()
-    private var index = 0L
+/** Root decoder for a [FLValue].
+ *  Decodes scalars, and delegates collections to [ArrayDecoder] or [MapDecoder]. */
+private class ValueDecoder(override val value: FLValue): AbstractValueDecoder(1)
 
-    override val serializersModule: SerializersModule = EmptySerializersModule()
 
-    override fun decodeSequentially(): Boolean = true
-
-    override fun decodeCollectionSize(descriptor: SerialDescriptor): Int = size.toInt()
-
-    override fun decodeElementIndex(descriptor: SerialDescriptor): Int {
-        if (index == size) return CompositeDecoder.DECODE_DONE
-        return index.toInt()
-    }
-
-    private fun nextItem(): FLValue         = array[index++]
-
-    override fun decodeBoolean(): Boolean   = nextItem().asBool()
-    override fun decodeByte(): Byte         = decodeLong().toByte()
-    override fun decodeShort(): Short       = decodeLong().toShort()
-    override fun decodeInt(): Int           = decodeLong().toInt()
-    override fun decodeLong(): Long         = nextItem().asInt()
-    override fun decodeFloat(): Float       = nextItem().asFloat()
-    override fun decodeDouble(): Double     = nextItem().asDouble()
-    override fun decodeChar(): Char         = Char(decodeInt())
-    override fun decodeString(): String     = nextItem().asString()
-    override fun decodeEnum(enumDescriptor: SerialDescriptor): Int = decodeInt()
-
-    override fun beginStructure(descriptor: SerialDescriptor): CompositeDecoder =
-        decoderForStructure(nextItem(), descriptor)
+/** Decodes a Kotlin [List] from a Collection of FLValues, usually an FLArray. */
+private class ArrayDecoder(array: Collection<FLValue>): AbstractValueDecoder(array.size) {
+    val iter = array.iterator()
+    override val value get() = iter.next()
 }
 
 
-// Decodes a Kotlin [Map] from a [FLDict].
-private class MapDecoder(dict: FLDict): AbstractDecoder() {
-    private val count = dict.count().toInt()
+/** Decodes a Kotlin [Map] from a Map iterator. */
+private class MapDecoder(val iter: Iterator<Map.Entry<String,FLValue>>,
+                         val size: Int): AbstractDecoder()
+{
+    constructor(map: Map<String,FLValue>) :this(map.iterator(), map.size)
+
     private var index = 0
-    private val iter = dict.iterator()
     private var curKey: String? = null
     private var curValue: FLValue? = null
 
@@ -113,20 +164,19 @@ private class MapDecoder(dict: FLDict): AbstractDecoder() {
 
     override fun decodeSequentially() = true
 
-    override fun decodeCollectionSize(descriptor: SerialDescriptor): Int = count
+    override fun decodeCollectionSize(descriptor: SerialDescriptor): Int = size
 
     override fun decodeElementIndex(descriptor: SerialDescriptor): Int =
-        if (index < count) index else CompositeDecoder.DECODE_DONE
+        if (index < size) index else CompositeDecoder.DECODE_DONE
 
     // Advances the iterator and returns the key.
     private fun nextKey(): String {
         require(curKey == null)
-        curKey = iter.key
-        require(curKey != null) {"past end of Map"}
-        curValue = iter.value
-        iter.next()
+        val (key, value) = iter.next()
+        curKey = key
+        curValue = value
         index++
-        return curKey!!
+        return key
     }
 
     // Returns the current value without advancing.
@@ -158,9 +208,10 @@ private class MapDecoder(dict: FLDict): AbstractDecoder() {
 }
 
 
-// Decodes a Kotlin class instance from a FLDict.
-private class ClassDecoder(val dict: FLDict): CompositeDecoder {
-    private var iter = dict.iterator()
+/** Decodes a Kotlin class instance from a Map iterator. */
+private class ClassDecoder(val iter: Iterator<Map.Entry<String,FLValue>>): CompositeDecoder {
+    constructor(map: Map<String,FLValue>) :this(map.iterator())
+
     private var curKey: String? = null
     private var curValue: FLValue? = null
     private var elementIndex = -1
@@ -171,10 +222,10 @@ private class ClassDecoder(val dict: FLDict): CompositeDecoder {
         // "Decodes the index of the next element to be decoded. Index represents a position of the
         // current element in the serial descriptor element that can be found with
         // SerialDescriptor.getElementIndex." -- Kotlin API docs
-        val key = iter.key ?: return CompositeDecoder.DECODE_DONE
+        if (!iter.hasNext()) return CompositeDecoder.DECODE_DONE
+        val (key, value) = iter.next()
         curKey = key
-        curValue = iter.value
-        iter.next()
+        curValue = value
         elementIndex = descriptor.getElementIndex(key)
         return elementIndex
     }
@@ -190,7 +241,7 @@ private class ClassDecoder(val dict: FLDict): CompositeDecoder {
     override fun decodeBooleanElement(descriptor: SerialDescriptor, index: Int): Boolean   = nextValue(index).asBool()
     override fun decodeByteElement(descriptor: SerialDescriptor, index: Int): Byte         = decodeLong(index).toByte()
     override fun decodeShortElement(descriptor: SerialDescriptor, index: Int): Short       = decodeLong(index).toShort()
-    override fun decodeIntElement(descriptor: SerialDescriptor, index: Int): Int           = decodeLong(index).toInt() ?: 0
+    override fun decodeIntElement(descriptor: SerialDescriptor, index: Int): Int           = decodeLong(index).toInt()
     override fun decodeLongElement(descriptor: SerialDescriptor, index: Int): Long         = decodeLong(index)
     override fun decodeFloatElement(descriptor: SerialDescriptor, index: Int): Float       = nextValue(index).asFloat()
     override fun decodeDoubleElement(descriptor: SerialDescriptor, index: Int): Double     = nextValue(index).asDouble()
@@ -208,10 +259,10 @@ private class ClassDecoder(val dict: FLDict): CompositeDecoder {
         return deserializer.deserialize(ValueDecoder(nextValue(index)))
     }
 
-    override fun <T : Any> decodeNullableSerializableElement(descriptor: SerialDescriptor,
-                                                             index: Int,
-                                                             deserializer: DeserializationStrategy<T?>,
-                                                             previousValue: T?): T?
+    override fun <T: Any> decodeNullableSerializableElement(descriptor: SerialDescriptor,
+                                                            index: Int,
+                                                            deserializer: DeserializationStrategy<T?>,
+                                                            previousValue: T?): T?
     {
         val value = nextValue(index)
         if (value.type == FLValue.NULL)
@@ -223,26 +274,27 @@ private class ClassDecoder(val dict: FLDict): CompositeDecoder {
 }
 
 
-// Creates an appropriate CompositeDecoder for decoding a Fleece collection.
+// Creates an appropriate CompositeDecoder based on a SerialDescriptor.
 @ExperimentalSerializationApi
 private fun decoderForStructure(item: FLValue, descriptor: SerialDescriptor): CompositeDecoder {
     return when (descriptor.kind) {
         StructureKind.LIST -> {
             if (item.type != FLValue.ARRAY) {throw FleeceSerializationException("expected an array") }
-            ArrayDecoder(item.asFLArray())
+            ArrayDecoder(item.asFLArray().asCollection)
         }
         StructureKind.MAP -> {
             val keyDescriptor = descriptor.getElementDescriptor(0)
             if (keyDescriptor.kind != PrimitiveKind.STRING)
                 throw FleeceSerializationException("Map keys must be Strings, not ${keyDescriptor.serialName}")
             if (item.type != FLValue.DICT) {throw FleeceSerializationException("expected a dict") }
-            MapDecoder(item.asFLDict())
+            MapDecoder(item.asFLDict().asMap)
         }
         StructureKind.CLASS -> {
             if (item.type != FLValue.DICT) {throw FleeceSerializationException("expected a dict") }
-            ClassDecoder(item.asFLDict())
+            ClassDecoder(item.asFLDict().asMap)
         }
-        else ->
+        else -> {
             throw FleeceSerializationException("unsupported SerialDescriptor kind ${descriptor.kind}")
+        }
     }
 }
