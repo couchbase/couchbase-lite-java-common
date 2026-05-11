@@ -256,13 +256,10 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getSelectedBody2(
         JNIEnv *ignore1,
         jclass ignore2,
         jlong jdoc) {
-    C4Slice body = c4doc_getRevisionBody((C4Document *) jdoc);
-    if (body.size == 0)
-        return (jlong) nullptr;
-
-    FLValue data = FLValue_FromData(body, kFLTrusted);
-
-    return (jlong) FLValue_AsDict(data);
+    // NOTE: This use to call c4doc_getRevisionBody but that's no longer advisable
+    // since each call potentially invalidates the results of the previous one
+    // when using version vectors
+    return (jlong)c4doc_getProperties((C4Document *) jdoc);
 }
 
 // - Conflict resolution
