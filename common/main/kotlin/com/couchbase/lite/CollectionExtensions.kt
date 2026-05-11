@@ -52,13 +52,12 @@ fun <T: DocumentModel> Collection.getDocumentAs(id: String, deserializer: Deseri
     modelFromC4Doc(this, id, getC4Document(id), deserializer)
 
 
-/**
- * Saves a [DocumentModel] instance as a document in the collection, with a specified conflict handler.
- * If the model's [DocumentModel.documentMeta] property is null, it will be saved as a new document with the
- * given [docID], which must not be null.
- * Otherwise the [DocumentModel.documentMeta] property determines the document ID and prior revision ID, and the
- * [docID] parameter should be null.
- * After a successful save, the [DocumentModel.documentMeta] property is updated to the current state. */
+/** Saves a [DocumentModel] instance as a document in the collection, with a specified conflict handler.
+ *  If the model's [DocumentModel.documentMeta] property is null, it will be saved as a new document with the
+ *  given [docID], which must not be null.
+ *  Otherwise the [DocumentModel.documentMeta] property determines the document ID and prior revision ID, and the
+ *  [docID] parameter should be null.
+ *  After a successful save, the [DocumentModel.documentMeta] property is updated to the current state. */
 @ExperimentalSerializationApi
 inline fun <reified T: DocumentModel> Collection.save(model: T,
                                                       docID: String? = null,
@@ -80,7 +79,7 @@ fun <T: DocumentModel> Collection.save(model: T,
         doc = MutableDocument(docID)
     } else {
         require(meta.collection == this || meta.collection == null) {"saving document to wrong collection"}
-        require(docID == null || docID == meta.id) {"docID parameter does not match meta.id"}
+        require(docID == null || docID == meta.id) {"docID parameter does not match documentMeta.id"}
         doc = getDocument(meta.id)?.toMutable() ?: MutableDocument(meta.id)
     }
 
@@ -129,6 +128,31 @@ fun <T: DocumentModel> Collection.save(model: T,
  *
  *  Or it may return false to signal that it can't handle the conflict. */
 typealias ModelConflictHandler<T> = (T, T?)-> Boolean
+
+
+/** Deletes a model's document from the collection.
+ *  @throws CouchbaseLiteException if the [DocumentModel.documentMeta] property is null. */
+fun Collection.delete(model: DocumentModel, concurrencyControl: ConcurrencyControl = ConcurrencyControl.LAST_WRITE_WINS): Boolean {
+    val meta = model.documentMeta ?: throw CouchbaseLiteException("DocumentModel has no document ID")
+    require(meta.collection == this || meta.collection == null) {"deleting document from wrong collection"}
+    val doc = getDocument(meta.id) ?: return true
+    if (doc.revisionID != meta.revisionID && concurrencyControl == ConcurrencyControl.FAIL_ON_CONFLICT)
+        return false
+    if (!delete(doc, concurrencyControl))
+        return false
+    model.documentMeta = null
+    return true
+}
+
+
+/** Purges a model's document from the collection.
+ *  @throws CouchbaseLiteException if the [DocumentModel.documentMeta] property is null,
+ *                                 or the document doesn't exist in the collection. */
+fun Collection.purge(model: DocumentModel) {
+    val id = model.documentMeta?.id ?: throw CouchbaseLiteException("DocumentModel has no document ID")
+    purge(id)
+    model.documentMeta = null
+}
 
 
 /** Creates a [DocumentModel] instance from a [C4Document]. */

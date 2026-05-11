@@ -23,22 +23,22 @@ import kotlinx.serialization.descriptors.StructureKind
 import kotlinx.serialization.serializer
 
 
-/** Uses Kotlin Serialization to create an object of type [T] from the query row.
- *  If the [key] parameter is non-null, it uses the row's value for that key as the source,
- *  instead of the entire row.
+/** Uses Kotlin Serialization to create an object of type [T] from a query result.
+ *  If the [key] parameter is non-null, it uses the result's value for that key as the source,
+ *  instead of the entire result.
  *
  *  For example, if your query is `SELECT name, age, shoeSize FROM people` and you have a
- *  serializable Person class with properties name, age and shoeSize, you can call:
+ *  serializable `Person` class with properties `name`, `age` and `shoeSize`, you can call:
  *  `val person = result.data<Person>()`
  *
- *  Or you could use the query `SELECT * as person FROM people` and create the Person with
+ *  Or you could use the query `SELECT * as person FROM people` and create the `Person` with
  *  `val person = result.data<Person>("person")`.
  *  */
 @ExperimentalSerializationApi
 inline fun <reified T> Result.data(key: String? = null): T =
     data(serializer(), key)
 
-/** Uses Kotlin Serialization to create a [DocumentModel] instance of type [T] from the query row.
+/** Uses Kotlin Serialization to create a [DocumentModel] instance of type [T] from the query result.
  *  This is a specialization of the one-parameter [data] method that adds a [metaKey] parameter.
  *
  *  The [metaKey] parameter is the name of the result property whose value comes from the N1QL
@@ -80,7 +80,7 @@ fun <T> Result.data(deserializer: DeserializationStrategy<T>,
     } else {
         // Deserializing a single value from the result:
         val i = getIndexForKey(key)
-        if (i < 0) throw CouchbaseLiteError("Query row has no property '$key'")
+        if (i < 0) throw CouchbaseLiteError("Query result has no property '$key'")
         deserializeFromFleece(columns[i], deserializer)
     }
     if (result is DocumentModel && metaKey != null)
@@ -119,7 +119,7 @@ private class Entry(override val key: String, override val value: FLValue) : Map
 // Creates a [DocumentMeta] from the "meta" column of a Result. (Note: It can't set the `collection`.)
 private fun Result.getDocumentMeta(key: String): DocumentMeta? {
     val i = getIndexForKey(key)
-    if (i < 0) throw CouchbaseLiteError("Query row has no property '$key'")
+    if (i < 0) throw CouchbaseLiteError("Query result has no property '$key'")
     val col = flValues[i]
     if (col.type != FLValue.DICT) return null
     val meta = col.asFLDict()

@@ -1217,7 +1217,7 @@ class CollectionTest : BaseDbTest() {
     }
 
     //---------------------------------------------
-    //  Model-based API
+    //  Model-based (serialization) API
     //---------------------------------------------
 
     @Test
@@ -1249,6 +1249,10 @@ class CollectionTest : BaseDbTest() {
         Assert.assertEquals(2, faves.count())
         Assert.assertEquals("XTC", faves.getString(0))
         Assert.assertEquals("Elvis Costello", faves.getString(1))
+
+        // Delete the model. `model` is out of date, so it will fail, but `gotModel` is OK:
+        Assert.assertFalse(testCollection.delete(model, ConcurrencyControl.FAIL_ON_CONFLICT))
+        Assert.assertTrue(testCollection.delete(gotModel, ConcurrencyControl.FAIL_ON_CONFLICT))
     }
 }
 
