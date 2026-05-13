@@ -116,19 +116,31 @@ public final class ReplicationCollection implements AutoCloseable {
             revID,
             collToken,
             coll);
+
+        // This should never happen. If it does, abort and return false for security reasons.
         if (coll == null) {
-            Log.w(LOG_DOMAIN, "Request to filter unrecognized collection: " + scope + "." + name);
-            return true;
+            Log.w(LOG_DOMAIN,
+                    "Rejecting filter request for unrecognized collection %s.%s, returning false",
+                    scope, name);
+            return false;
         }
 
         final C4Filter filter = (isPush) ? coll.c4PushFilter : coll.c4PullFilter;
-        if (filter == null) { return true; }
 
-        // This shouldn't happen.
-        // If it does, we have no idea what is going on and shouldn't get in the way.
+        // This should never happen. If it does, abort and return false for security reasons.
+        if (filter == null) {
+            Log.w(LOG_DOMAIN,
+                    "Rejecting filter request, %s filter could not be found, returning false",
+                    isPush ? "push" : "pull");
+            return false;
+        }
+
+        // This should never happen. If it does, abort and return false for security reasons.
         if ((docID == null) || (revID == null)) {
-            Log.w(LOG_DOMAIN, "Ignoring filter request for null %s/%s", docID, revID);
-            return true;
+            Log.w(LOG_DOMAIN,
+                    "Rejecting filter request with null docID or revID: %s/%s, returning false",
+                    docID, revID);
+            return false;
         }
 
         final ClientTask<Boolean> task = new ClientTask<>(() -> filter.test(docID, revID, body, flags));
