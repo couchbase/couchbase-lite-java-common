@@ -325,6 +325,6 @@ public class FLValue {
     <T> T withContent(@NonNull Fn.NonNullFunction<Long, T> fn) { return fn.apply(peer); }
 
     @NonNull
-    FLArray asFLArray() { return FLArray.create(impl.nAsArray(peer)); }
+    public FLArray asFLArray() { return FLArray.create(impl.nAsArray(peer)); }
 }
 

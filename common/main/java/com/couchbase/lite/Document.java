@@ -622,6 +622,13 @@ public class Document implements DictionaryInterface, JSONEncodable, Iterable<St
         }
     }
 
+    // for use by CollectionExtensions.kt
+    void setContent(@NonNull FLDict data, boolean mutable) {
+        synchronized (lock) {
+            setContentLocked(data, mutable);
+        }
+    }
+
     @GuardedBy("lock")
     private void updateC4DocumentLocked(@Nullable C4Document c4Doc) {
         if (c4Document == c4Doc) { return; }
