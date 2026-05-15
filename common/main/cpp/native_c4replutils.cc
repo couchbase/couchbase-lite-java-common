@@ -17,11 +17,8 @@
 //
 
 #include <vector>
-//#include "c4PeerSync.h"
-#include "c4PeerSyncTypes.h"
 #include "native_glue.hh"
 #include "native_c4replutils.hh"
-#include "com_couchbase_lite_internal_core_impl_NativeC4MultipeerReplicator.h"
 
 using namespace litecore;
 using namespace litecore::jni;
