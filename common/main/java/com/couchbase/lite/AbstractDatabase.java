@@ -97,7 +97,7 @@ abstract class AbstractDatabase extends BaseDatabase
     private static final LogDomain DOMAIN = LogDomain.DATABASE;
 
     // Max time to wait for active processes to finish.
-    private static final int DB_CLOSE_PROCESS_TIMEOUT_SECS = 10;
+    private static final int DB_CLOSE_PROCESS_TIMEOUT_SECS = 30;
     // Backoff between BUSY retries on close.
     private static final int DB_CLOSE_RETRY_DELAY_SECS = 2;
     // Max number of BUSY retries before giving up.
@@ -1591,7 +1591,9 @@ abstract class AbstractDatabase extends BaseDatabase
         try {
             verifyActiveProcesses();
             if (!closeLatch.await(DB_CLOSE_PROCESS_TIMEOUT_SECS, TimeUnit.SECONDS)) {
-                throw new CouchbaseLiteException("Shutdown failed", CBLError.Domain.CBLITE, CBLError.Code.BUSY);
+                // Java-side process tracking can lag (stuck callbacks, stale entries);
+                // let LiteCore be the ground truth on whether close is actually possible.
+                Log.w(DOMAIN, "Timed out waiting for active processes to finish; attempting close anyway");
             }
 
             for (int i = 0; ; i++) {
