@@ -1252,9 +1252,13 @@ class DatabaseTest : BaseDbTest() {
 
         val dbName = getUniqueName("test_copy_db")
         val config = testDatabase.getConfig()
+        val dbPath = testDatabase.path!!
+
+        // Close the db before copying
+        closeDb(testDatabase)
 
         // Copy the db
-        Database.copy(File(testDatabase.path!!), dbName, config)
+        Database.copy(File(dbPath), dbName, config)
 
         // Verify that it exists
         Assert.assertTrue(Database.exists(dbName, File(config.directory)))
@@ -1269,7 +1273,7 @@ class DatabaseTest : BaseDbTest() {
             Assert.assertEquals(n + docs.size.toLong(), otherCollection.count)
 
             QueryBuilder.select(SelectResult.expression(Meta.id))
-                .from(DataSource.collection(testCollection))
+                .from(DataSource.collection(otherCollection))
                 .execute()
                 .use { rs ->
                     for (r in rs) {

@@ -439,13 +439,20 @@ class C4DatabaseTest : C4BaseTest() {
         createRev("doc002", REV_ID_1, fleeceBody)
         Assert.assertEquals(2L, c4Collection.documentCount)
 
-
         val dbName = getUniqueName("c4_copy_test_db")
         val dstParentDirPath = getScratchDirectoryPath(getUniqueName("c4_test_2"))
-        C4Database.copyDb(c4Database.dbPath!!, dstParentDirPath, dbName, testDbFlags)
+        val dbPath = c4Database.dbPath!!
+
+        // Close database before copying
+        c4Database.closeDb()
+        c4Database = null // prevent @after from closing the database again
+
+        C4Database.copyDb(dbPath, dstParentDirPath, dbName, testDbFlags)
         val copyDb = C4Database.getDatabase(dstParentDirPath, dbName, testDbFlags)
+        val copyCollection = copyDb.getCollection(c4Collection.scope, c4Collection.name)
+        assertNonNull(copyCollection)
         Assert.assertNotNull(copyDb)
-        Assert.assertEquals(2L, c4Collection.documentCount)
+        Assert.assertEquals(2L, copyCollection?.documentCount)
     }
 
     @Test
@@ -458,6 +465,11 @@ class C4DatabaseTest : C4BaseTest() {
         createRev(targetDb.defaultCollection, "doc001", REV_ID_1, fleeceBody)
         Assert.assertEquals(1L, targetDb.defaultCollection.documentCount)
         targetDb.close()
+
+        // Close database before copying
+        c4Database.closeDb()
+        c4Database = null // prevent @after from closing the database again
+
         try {
             C4Database.copyDb(
                 srcDbPath!!,
