@@ -165,8 +165,8 @@ class SerialExecutor implements ExecutionService.CloseableExecutor {
 
         try { executor.execute(() -> {
             currentThread = Thread.currentThread().getId();
-            nextTask.run();
-            currentThread = -1;
+            try { nextTask.run(); }
+            finally { currentThread = -1; }
         }); }
         catch (RuntimeException e) {
             Log.w(LogDomain.DATABASE, "Catastrophic executor failure (Serial Executor)!", e);

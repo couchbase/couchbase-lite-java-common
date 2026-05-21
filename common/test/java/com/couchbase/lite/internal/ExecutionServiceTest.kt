@@ -210,6 +210,50 @@ class ExecutionServiceTest : BaseTest() {
         Assert.assertTrue(executor.stop(5, TimeUnit.SECONDS)) // everything should be done shortly
     }
 
+    @Test
+    fun testInsideSerialExecutor() {
+        val executor = cblService.serialExecutor
+        val finishLatch = CountDownLatch(1)
+
+        Assert.assertFalse(executor.isInsideExecutor())
+
+        val insideExecutor = BooleanArray(1)
+        executor.execute {
+            insideExecutor[0] = executor.isInsideExecutor()
+            finishLatch.countDown()
+        }
+
+        Assert.assertTrue(finishLatch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
+        Assert.assertTrue(insideExecutor[0])
+        Assert.assertFalse(executor.isInsideExecutor())
+    }
+
+    @Test
+    fun testInsideConcurrentExecutor() {
+        val executor = getExecutionService(CBLExecutor("Inside concurrent test worker", 2, 2, LinkedBlockingQueue()))
+            .concurrentExecutor
+
+        val startLatch = CountDownLatch(2)
+        val finishLatch = CountDownLatch(2)
+        val insideExecutor = BooleanArray(2)
+
+        Assert.assertFalse(executor.isInsideExecutor())
+
+        for (i in 0..1) {
+            executor.execute {
+                startLatch.countDown()
+                Assert.assertTrue(startLatch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
+                insideExecutor[i] = executor.isInsideExecutor()
+                finishLatch.countDown()
+            }
+        }
+
+        Assert.assertTrue(finishLatch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
+        Assert.assertTrue(insideExecutor[0])
+        Assert.assertTrue(insideExecutor[1])
+        Assert.assertFalse(executor.isInsideExecutor())
+    }
+
     // The Concurrent Executor throws on fail
     @Test
     fun testConcurrentExecutorThrowAndDumpOnFail() {
