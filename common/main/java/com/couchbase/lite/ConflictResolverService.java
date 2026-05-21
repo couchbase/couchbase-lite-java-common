@@ -66,7 +66,13 @@ class ConflictResolutionTask implements ConflictResolutionTaskInterface {
 
     @Override
     public void run() {
-        if (!cancelled.get()) { db.resolveReplicationConflict(resolver, rDoc, this); }
+        if (cancelled.get()) {
+            // Cancelled tasks must still complete so removePendingTask runs,
+            // otherwise the resolver gets stuck in STOPPING.
+            onResolved(null);
+            return;
+        }
+        db.resolveReplicationConflict(resolver, rDoc, this);
     }
 
     public void cancel() { cancelled.set(true); }
@@ -132,10 +138,12 @@ class ConflictResolverService {
             @Nullable ConflictResolver resolver,
             @NonNull ConflictResolutionCompletion onFinished) {
         synchronized (lock) {
+            // Remove from pendingResolutions BEFORE calling the completion so that callers
+            // checking hasPendingResolutions() inside the completion see an accurate count.
             final ConflictResolutionTask  resolutionTask =
                     new ConflictResolutionTask(database, resolver, doc, (t, d) -> {
-                        onFinished.completed(t, d);
                         removePendingTask(t);
+                        onFinished.completed(t, d);
                     });
             if (state != ConflictResolverState.RUNNING) {
                 resolutionTask.cancel();
@@ -163,6 +171,12 @@ class ConflictResolverService {
     public boolean isActive() {
         synchronized (lock) {
             return state != ConflictResolverState.STOPPED;
+        }
+    }
+
+    public boolean isRunning() {
+        synchronized (lock) {
+            return state == ConflictResolverState.RUNNING;
         }
     }
 
