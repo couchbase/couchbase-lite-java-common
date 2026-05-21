@@ -66,6 +66,14 @@ public abstract class AbstractReplicator extends BaseReplicator
     implements Listenable<ReplicatorChange, ReplicatorChangeListener> {
     private static final LogDomain LOG_DOMAIN = LogDomain.REPLICATOR;
 
+    // Lifecycle state.  Drives start/stop/close transitions and gates the post-STOPPED teardown.
+    //   STOPPED:    initial, or fully stopped after a previous run
+    //   RUNNING:    started
+    //   STOPPING:   stop() called; c4 STOPPED notification not yet observed
+    //   RESTARTING: stop() then start() called while c4 still STOPPING. LiteCore will auto-restart.
+    //   CLOSED:     terminal
+    private enum State { STOPPED, RUNNING, STOPPING, RESTARTING, CLOSED }
+
     static class ReplicatorCookieStore implements CBLCookieStore {
         @NonNull
         private final Database db;
@@ -98,7 +106,8 @@ public abstract class AbstractReplicator extends BaseReplicator
             CouchbaseLiteInternal.getExecutionService().getConcurrentExecutor();
 
     @NonNull
-    private final ConflictResolverService conflictResolverService = new ConflictResolverService();
+    @GuardedBy("getReplicatorLock()")
+    private ConflictResolverService conflictResolverService = new ConflictResolverService();
 
     @NonNull
     private final ImmutableReplicatorConfiguration config;
@@ -121,9 +130,9 @@ public abstract class AbstractReplicator extends BaseReplicator
     @GuardedBy("getReplicatorLock()")
     private ReplicatorStatus status = ReplicatorStatus.INIT;
 
-    // This is pretty arbitrary.  There's actually no reason that one couldn't restert a closed replicator
     @GuardedBy("getReplicatorLock()")
-    private boolean closed;
+    @NonNull
+    private State state = State.STOPPED;
 
     @GuardedBy("getReplicatorLock()")
     @Nullable
@@ -175,26 +184,49 @@ public abstract class AbstractReplicator extends BaseReplicator
     public void start(boolean resetCheckpoint) {
         Log.i(LOG_DOMAIN, "Replicator(%s) starting: %s", getId(), this);
 
-        getDatabase().addActiveReplicator(this);
+        final ConflictResolverService toRegister;
+        synchronized (getReplicatorLock()) {
+            switch (state) {
+                case CLOSED:
+                    throw new CouchbaseLiteError("Attempt to operate on a closed replicator");
+                case RUNNING:
+                case RESTARTING:
+                    Log.d(LOG_DOMAIN, "Replicator(%s) already %s; ignoring start", getId(), state);
+                    return;
+                case STOPPED:
+                case STOPPING:
+                    break;
+                default:
+                    throw new CouchbaseLiteError("Unknown state: " + state);
+            }
 
-        getDatabase().registerProcess(
-                new AbstractDatabase.ActiveProcess<ConflictResolverService>(conflictResolverService) {
-                    @Override
-                    public void stop() {
-                        conflictResolverService.shutdown(false, () -> {
-                        });
-                    }
+            // Install a new resolver service. The old one's shutdown completion unregisters it
+            // later, once its remaining tasks drain. Discard pending notifications here as they
+            // are now obsoleted upon restarting.
+            if (!conflictResolverService.isRunning()) {
+                Log.i(LOG_DOMAIN, "Replicator(%s) installing a conflict resolver service", getId());
+                conflictResolverService = new ConflictResolverService();
+                pendingStatusNotifications.clear();
+            }
+            toRegister = conflictResolverService;
 
-                    @Override
-                    public boolean isActive() {
-                        // Service is active if it's not in STOPPED state
-                        return conflictResolverService.isActive();
-                    }
-                });
+            state = (state == State.STOPPING) ? State.RESTARTING : State.RUNNING;
+        }
 
         final C4Replicator c4Repl;
         try { c4Repl = getOrCreateC4Replicator(); }
-        catch (LiteCoreException e) { throw new CouchbaseLiteError("Failed to create replicator", e); }
+        catch (LiteCoreException e) {
+            // Roll back the state transition so the caller can retry.
+            // Nothing was registered with the database yet.
+            synchronized (getReplicatorLock()) {
+                if (state == State.RUNNING || state == State.RESTARTING) { state = State.STOPPED; }
+            }
+            throw new CouchbaseLiteError("Failed to create replicator", e);
+        }
+
+        getDatabase().addActiveReplicator(this);
+        getDatabase().registerProcess(makeResolverProcess(toRegister));
+
         synchronized (getReplicatorLock()) {
             c4Repl.start(resetCheckpoint);
 
@@ -214,6 +246,23 @@ public abstract class AbstractReplicator extends BaseReplicator
         Log.d(LOG_DOMAIN, "Replicator(%s) started: %s", getId(), this);
     }
 
+    @NonNull
+    private AbstractDatabase.ActiveProcess<ConflictResolverService> makeResolverProcess(
+        @NonNull ConflictResolverService service) {
+        return new AbstractDatabase.ActiveProcess<ConflictResolverService>(service) {
+            // Self-unregister when the resolver reaches STOPPED.  Needed because the DB.close
+            // path may iterate activeProcesses in any order — if this stop() runs before
+            // AbstractReplicator.stop(), the resolver enters STOPPING with this completion
+            // attached and a later self-unregister attempt from stop() would be a no-op.
+            @Override
+            public void stop() {
+                service.shutdown(false, () -> getDatabase().unregisterProcess(service));
+            }
+            @Override
+            public boolean isActive() { return service.isActive(); }
+        };
+    }
+
     /**
      * Stop a running replicator, first cancelling any pending conflict resolutions.
      * This method does not wait for the replicator to stop.
@@ -221,12 +270,23 @@ public abstract class AbstractReplicator extends BaseReplicator
      * STOPPED, to change listeners.
      */
     public void stop() {
-        final C4Replicator c4repl = getC4Replicator();
-        Log.i(LOG_DOMAIN, "Replicator(%s) stopped: %s", getId(), this);
+        Log.i(LOG_DOMAIN, "Replicator(%s) stopping: %s", getId(), this);
+
+        final C4Replicator c4repl;
+        final ConflictResolverService toShutdown;
+        synchronized (getReplicatorLock()) {
+            if (state != State.RUNNING && state != State.RESTARTING) {
+                Log.d(LOG_DOMAIN, "Replicator(%s) not running (state=%s); ignoring stop", getId(), state);
+                return;
+            }
+            state = State.STOPPING;
+            c4repl = getC4Replicator();
+            toShutdown = conflictResolverService;
+        }
         if (c4repl == null) { return; }
 
-        conflictResolverService.shutdown(false, () -> {});
-
+        // Self-unregister when the resolver reaches STOPPED.
+        toShutdown.shutdown(false, () -> getDatabase().unregisterProcess(toShutdown));
         c4repl.stop();
     }
 
@@ -239,7 +299,7 @@ public abstract class AbstractReplicator extends BaseReplicator
     public ReplicatorConfiguration getConfig() { return new ReplicatorConfiguration(config); }
 
     /**
-     *  Gets the correlation ID of this replication so that it can be analyzed along
+     * Gets the correlation ID of this replication so that it can be analyzed along
      * with the logs from the remote side.  If not started, or unavailable, returns
      * null
      *
@@ -399,7 +459,7 @@ public abstract class AbstractReplicator extends BaseReplicator
     // release the resources and then forget about them.
 
     /**
-     * Immediatly close the replicator and free its resources.
+     * Immediately close the replicator and free its resources.
      * We recommend the use of this method on Replicators that are in the STOPPED state.  If the
      * replicator is not stopped, this method will make a best effort attempt to stop it but
      * will not wait to confirm that it was stopped cleanly.
@@ -407,27 +467,38 @@ public abstract class AbstractReplicator extends BaseReplicator
      * This includes calls to getPendingDocIds and isDocPending.
      */
     public void close() {
-        HashSet<ReplicatorChangeListenerToken> listeners = null;
-        ReplicatorStatus newStatus = null;
+        final Set<ReplicatorChangeListenerToken> listeners;
+        final ReplicatorChange change;
+        final ConflictResolverService currentResolver;
 
         synchronized (getReplicatorLock()) {
-            if (closed) { return; }
-            closed = true;
+            if (state == State.CLOSED) { return; }
+            state = State.CLOSED;
+            currentResolver = conflictResolverService;
+            pendingStatusNotifications.clear();
 
             if (status.getActivityLevel() != ReplicatorActivityLevel.STOPPED) {
-                listeners = new HashSet<>(changeListeners);
-                newStatus = new ReplicatorStatus(ReplicatorActivityLevel.STOPPED, status.getProgress(), null);
+                final ReplicatorStatus newStatus
+                    = new ReplicatorStatus(ReplicatorActivityLevel.STOPPED, status.getProgress(), null);
                 status = newStatus;
+                listeners = new HashSet<>(changeListeners);
+                change = new ReplicatorChange((Replicator) this, newStatus);
+            } else {
+                listeners = Collections.emptySet();
+                change = null;
             }
         }
+
+        // Same self-unregister pattern as stop(): the resolver removes itself from the DB when
+        // it actually reaches STOPPED.
+        currentResolver.shutdown(false, () -> getDatabase().unregisterProcess(currentResolver));
 
         // there is the potential for a race here...
         closeC4Replicator();
         Log.i(LOG_DOMAIN, "Replicator(%s) closed: %s", getId(), this);
 
-        if ((listeners == null) || listeners.isEmpty()) { return; }
-
-        postChange(true, new ReplicatorChange((Replicator) this, newStatus), listeners);
+        getDatabase().removeActiveReplicator(this);
+        postChange(change, listeners);
     }
 
     /**
@@ -436,7 +507,7 @@ public abstract class AbstractReplicator extends BaseReplicator
      * @return true iff the replicator is closed.
      */
     public boolean isClosed() {
-        synchronized (getReplicatorLock()) { return closed; }
+        synchronized (getReplicatorLock()) { return state == State.CLOSED; }
     }
 
     @NonNull
@@ -682,7 +753,11 @@ public abstract class AbstractReplicator extends BaseReplicator
     private C4Replicator getOrCreateC4Replicator() throws LiteCoreException {
         // createReplicatorForTarget is going to seize this lock anyway: force in-order seizure
         synchronized (getDatabase().getDbLock()) {
-            if (closed) { throw new CouchbaseLiteError("Attempt to operate on a closed replicator"); }
+            synchronized (getReplicatorLock()) {
+                if (state == State.CLOSED) {
+                    throw new CouchbaseLiteError("Attempt to operate on a closed replicator");
+                }
+            }
 
             C4Replicator c4Repl = getC4Replicator();
             if (c4Repl != null) {
@@ -704,6 +779,7 @@ public abstract class AbstractReplicator extends BaseReplicator
     private void statusChanged(@NonNull C4ReplicatorStatus c4Status) {
         final ReplicatorChange change;
         final Set<ReplicatorChangeListenerToken> listenerTokens;
+        final ConflictResolverService currentResolver;
         synchronized (getReplicatorLock()) {
             Log.i(
                 LOG_DOMAIN,
@@ -718,26 +794,47 @@ public abstract class AbstractReplicator extends BaseReplicator
             if (conflictResolverService.hasPendingResolutions()) { pendingStatusNotifications.add(c4Status); }
             if (!pendingStatusNotifications.isEmpty()) { return; }
 
-            // Update my properties:
             updateStatus(c4Status);
 
-            // Post notification
-            // Replicator.getStatus() creates a copy of Status.
-            change = new ReplicatorChange((Replicator) this, this.getStatus());
+            // Drive the lifecycle state on STOPPED. Teardown is decided by the source state:
+            //   STOPPING  -> STOPPED (user-initiated stop completed): teardown
+            //   RUNNING   -> STOPPED (autonomous stop):               teardown
+            //   RESTARTING-> RUNNING (LiteCore auto-restart bridge):  do NOT teardown
+            if (isStopped(c4Status)) {
+                switch (state) {
+                    case STOPPING:
+                    case RUNNING:
+                        state = State.STOPPED;
+                        currentResolver = conflictResolverService;
+                        break;
+                    case RESTARTING:
+                        Log.i(LOG_DOMAIN, "%s: LiteCore auto-restart, RESTARTING -> RUNNING", getId());
+                        state = State.RUNNING;
+                        currentResolver = null;
+                        break;
+                    default:
+                        currentResolver = null;
+                }
+            }
+            else { currentResolver = null; }
 
+            change = new ReplicatorChange((Replicator) this, this.getStatus());
             listenerTokens = new HashSet<>(changeListeners);
         }
 
-        postChange(isStopped(c4Status), change, listenerTokens);
+        if (currentResolver != null) {
+            // Shut down the resolver and let it self-unregister via its completion when it
+            // reaches STOPPED.  wait=true lets in-flight tasks complete (autonomous stop case).
+            // In the user-stop case it was already shut down via stop()/close() and this call
+            // is a no-op; the resolver self-unregistered via stop()'s completion.
+            currentResolver.shutdown(true, () -> getDatabase().unregisterProcess(currentResolver));
+            getDatabase().removeActiveReplicator(this);
+        }
+        postChange(change, listenerTokens);
     }
 
-    // this will probably make this instance eligible for garbage collection...
-    private void postChange(boolean isStopped, ReplicatorChange change, Set<ReplicatorChangeListenerToken> listeners) {
-        if (isStopped) {
-            getDatabase().removeActiveReplicator(this);
-            getDatabase().unregisterProcess(conflictResolverService);
-        }
-
+    private void postChange(@Nullable ReplicatorChange change, @NonNull Set<ReplicatorChangeListenerToken> listeners) {
+        if (change == null) { return; }
         Fn.forAll(listeners, token -> token.postChange(change));
     }
 
@@ -817,12 +914,10 @@ public abstract class AbstractReplicator extends BaseReplicator
             rDoc.getCollection(),
             rDoc.getID());
 
-        conflictResolverService.addConflict(
-                rDoc,
-                db,
-                resolver,
-                this::onConflictResolved
-        );
+        // Capture the current resolver under the lock — the field may be swapped by start()
+        final ConflictResolverService service;
+        synchronized (getReplicatorLock()) { service = conflictResolverService; }
+        service.addConflict(rDoc, db, resolver, this::onConflictResolved);
     }
 
     private void removeDocumentReplicationListener(@NonNull ListenerToken token) {
