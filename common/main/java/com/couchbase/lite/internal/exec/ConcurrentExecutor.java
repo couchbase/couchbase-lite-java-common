@@ -49,7 +49,8 @@ class ConcurrentExecutor implements ExecutionService.CloseableExecutor {
     @GuardedBy("this")
     private int running;
 
-    private long currentThread = -1;
+    @NonNull
+    private final ThreadLocal<Boolean> insideExecutor = new ThreadLocal<>();
 
     ConcurrentExecutor(@NonNull ThreadPoolExecutor executor) {
         Preconditions.assertNotNull(executor, "executor");
@@ -76,7 +77,7 @@ class ConcurrentExecutor implements ExecutionService.CloseableExecutor {
         Preconditions.assertNotNull(task, "task");
         synchronized (this) {
             if (stopLatch != null) { throw new ExecutorClosedException("Executor has been stopped"); }
-            executeTask(new InstrumentedTask(task, this::finishTask));
+            executeTask(new InstrumentedTask(wrapTask(task), this::finishTask));
         }
     }
 
@@ -107,9 +108,7 @@ class ConcurrentExecutor implements ExecutionService.CloseableExecutor {
     }
 
     @Override
-    public boolean isInsideExecutor() {
-        return Thread.currentThread().getId() == currentThread;
-    }
+    public boolean isInsideExecutor() { return Boolean.TRUE.equals(insideExecutor.get()); }
 
     @NonNull
     @Override
@@ -137,14 +136,26 @@ class ConcurrentExecutor implements ExecutionService.CloseableExecutor {
         if (latch != null) { latch.countDown(); }
     }
 
+    @NonNull
+    private Runnable wrapTask(@NonNull Runnable task) {
+        return new Runnable() {
+            @Override
+            public void run() {
+                insideExecutor.set(true);
+                try { task.run(); }
+                finally { insideExecutor.remove(); }
+            }
+
+            @NonNull
+            @Override
+            public String toString() { return task.toString(); }
+        };
+    }
+
     @GuardedBy("this")
     private void executeTask(@NonNull InstrumentedTask newTask) {
         try {
-            executor.execute(() -> {
-                currentThread = Thread.currentThread().getId();
-                newTask.run();
-                currentThread = -1;
-            });
+            executor.execute(newTask);
             running++;
         }
         catch (RuntimeException e) {
