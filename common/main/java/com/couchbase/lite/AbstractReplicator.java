@@ -213,12 +213,20 @@ public abstract class AbstractReplicator extends BaseReplicator
             state = (state == State.STOPPING) ? State.RESTARTING : State.RUNNING;
         }
 
+        final C4Replicator c4Repl;
+        try { c4Repl = getOrCreateC4Replicator(); }
+        catch (LiteCoreException e) {
+            // Roll back the state transition so the caller can retry.
+            // Nothing was registered with the database yet.
+            synchronized (getReplicatorLock()) {
+                if (state == State.RUNNING || state == State.RESTARTING) { state = State.STOPPED; }
+            }
+            throw new CouchbaseLiteError("Failed to create replicator", e);
+        }
+
         getDatabase().addActiveReplicator(this);
         getDatabase().registerProcess(makeResolverProcess(toRegister));
 
-        final C4Replicator c4Repl;
-        try { c4Repl = getOrCreateC4Replicator(); }
-        catch (LiteCoreException e) { throw new CouchbaseLiteError("Failed to create replicator", e); }
         synchronized (getReplicatorLock()) {
             c4Repl.start(resetCheckpoint);
 
@@ -242,8 +250,14 @@ public abstract class AbstractReplicator extends BaseReplicator
     private AbstractDatabase.ActiveProcess<ConflictResolverService> makeResolverProcess(
         @NonNull ConflictResolverService service) {
         return new AbstractDatabase.ActiveProcess<ConflictResolverService>(service) {
+            // Self-unregister when the resolver reaches STOPPED.  Needed because the DB.close
+            // path may iterate activeProcesses in any order — if this stop() runs before
+            // AbstractReplicator.stop(), the resolver enters STOPPING with this completion
+            // attached and a later self-unregister attempt from stop() would be a no-op.
             @Override
-            public void stop() { service.shutdown(false, () -> { }); }
+            public void stop() {
+                service.shutdown(false, () -> getDatabase().unregisterProcess(service));
+            }
             @Override
             public boolean isActive() { return service.isActive(); }
         };
@@ -794,7 +808,7 @@ public abstract class AbstractReplicator extends BaseReplicator
                         currentResolver = conflictResolverService;
                         break;
                     case RESTARTING:
-                        Log.i(LOG_DOMAIN, "%s: LiteCore auto-restart bridge: RESTARTING -> RUNNING", getId());
+                        Log.i(LOG_DOMAIN, "%s: LiteCore auto-restart, RESTARTING -> RUNNING", getId());
                         state = State.RUNNING;
                         currentResolver = null;
                         break;
@@ -809,12 +823,12 @@ public abstract class AbstractReplicator extends BaseReplicator
         }
 
         if (currentResolver != null) {
-            // If the resolver is still RUNNING (autonomous stop never called shutdown), shut
-            // it down now and let any in-flight tasks complete (wait=true).  In the user-stop
-            // case it was already shut down via stop()/close() — this call is a no-op.
-            currentResolver.shutdown(true, () -> { });
+            // Shut down the resolver and let it self-unregister via its completion when it
+            // reaches STOPPED.  wait=true lets in-flight tasks complete (autonomous stop case).
+            // In the user-stop case it was already shut down via stop()/close() and this call
+            // is a no-op; the resolver self-unregistered via stop()'s completion.
+            currentResolver.shutdown(true, () -> getDatabase().unregisterProcess(currentResolver));
             getDatabase().removeActiveReplicator(this);
-            getDatabase().unregisterProcess(currentResolver);
         }
         postChange(change, listenerTokens);
     }
@@ -900,12 +914,10 @@ public abstract class AbstractReplicator extends BaseReplicator
             rDoc.getCollection(),
             rDoc.getID());
 
-        conflictResolverService.addConflict(
-                rDoc,
-                db,
-                resolver,
-                this::onConflictResolved
-        );
+        // Capture the current resolver under the lock — the field may be swapped by start()
+        final ConflictResolverService service;
+        synchronized (getReplicatorLock()) { service = conflictResolverService; }
+        service.addConflict(rDoc, db, resolver, this::onConflictResolved);
     }
 
     private void removeDocumentReplicationListener(@NonNull ListenerToken token) {
