@@ -776,6 +776,7 @@ public abstract class AbstractReplicator extends BaseReplicator
         }
     }
 
+    @SuppressWarnings("PMD.ImplicitSwitchFallThrough")
     private void statusChanged(@NonNull C4ReplicatorStatus c4Status) {
         final ReplicatorChange change;
         final Set<ReplicatorChangeListenerToken> listenerTokens;
