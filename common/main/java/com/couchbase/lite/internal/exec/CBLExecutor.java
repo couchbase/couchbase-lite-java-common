@@ -130,7 +130,7 @@ public class CBLExecutor extends ThreadPoolExecutor {
                 }
             });
 
-        allowCoreThreadTimeOut(true);
+        allowCoreThreadTimeOut(false);
 
         this.name = name;
     }
