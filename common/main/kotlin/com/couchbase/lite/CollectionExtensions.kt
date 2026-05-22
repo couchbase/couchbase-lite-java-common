@@ -54,7 +54,7 @@ fun <T: DocumentModel> Collection.getDocumentAs(id: String, deserializer: Deseri
 
 /** Saves a [DocumentModel] instance as a document in the collection, with a specified conflict handler.
  *  If the model's [DocumentModel.documentMeta] property is null, it will be saved as a new document with the
- *  given [docID], which must not be null.
+ *  given [docID], or if [docID] is null, with an auto-generated ID.
  *  Otherwise the [DocumentModel.documentMeta] property determines the document ID and prior revision ID, and the
  *  [docID] parameter should be null.
  *  After a successful save, the [DocumentModel.documentMeta] property is updated to the current state. */
@@ -75,7 +75,6 @@ fun <T: DocumentModel> Collection.save(model: T,
     val meta = model.documentMeta
     val doc: MutableDocument
     if (meta == null) {
-        require(docID != null) { "docID argument must be given when saving a new document" }
         doc = MutableDocument(docID)
     } else {
         require(meta.collection == this || meta.collection == null) {"saving document to wrong collection"}
