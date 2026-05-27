@@ -142,6 +142,22 @@ public final class StateMachine<T extends Enum<T>> {
     }
 
     /**
+     * Idempotent transition.  Returns true if the state machine is already in
+     * {@code target}, or if it can legally transition there.  Returns false if
+     * no such transition is legal from the current state (e.g. {@code target}
+     * is unreachable from a terminal state).  Unlike {@link #setState(Enum)},
+     * a no-op "already in target" outcome is silent — no debug exception
+     * trace is logged.
+     *
+     * @param target the desired state.
+     * @return true if the current state ended up equal to {@code target}.
+     */
+    public boolean enterState(@NonNull T target) {
+        if (state == target) { return true; }
+        return setState(target);
+    }
+
+    /**
      * Set the new state.
      * If it is legal to transition to the new state, from the current state, do so,
      * returning the now-previous state.  If the transition is illegal do nothing and return null.
