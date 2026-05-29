@@ -428,12 +428,40 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
     @Override
     public void coreAcksWrite(long n) { Log.d(LOG_DOMAIN, "%s.coreAckReceive: %d", this, n); }
 
-    // Core wants to break the connection
+    /**
+     * Core wants to break the connection.
+     *
+     * <p>C4SocketFactory.requestClose callback (kC4NoFraming mode).  LiteCore
+     * calls this method once per socket to have us send the WebSocket close
+     * frame to the remote — by calling {@link SocketToRemote#closeRemote},
+     * which calls OkHttp's {@code ws.close()}.  In a local close it sends
+     * our initial close; in a remote close it sends the echo for a close
+     * the remote initiated.
+     *
+     * <p>Local close (e.g. {@code replicator.stop()}):
+     * <pre>
+     *   1. LiteCore invokes this method directly.
+     *   2. ensureState advances OPEN → CLOSING; closeRemote sends the close frame.
+     *   3. Server echoes; OkHttp delivers it via remoteRequestsClose (no-op — state already CLOSING).
+     *   4. OkHttp → remoteClosed (CLOSING → CLOSED, c4socket_closed).
+     * </pre>
+     *
+     * <p>Remote close (remote-initiated):
+     * <pre>
+     *   1. Server sends close; OkHttp delivers it via remoteRequestsClose, which advances
+     *      OPEN → CLOSING and notifies LiteCore (c4socket_closeRequested).
+     *   2. LiteCore drains in-flight work, then calls this method back.
+     *   3. ensureState sees state already CLOSING and proceeds; closeRemote sends the close echo.
+     *   4. OkHttp → remoteClosed (CLOSING → CLOSED, c4socket_closed).
+     * </pre>
+     */
     @Override
     public final void coreRequestsClose(@NonNull CloseStatus status) {
         Log.d(LOG_DOMAIN, "%s.coreRequestsClose: %s", this, status);
 
-        if (!changeState(SocketState.CLOSING)) { return; }
+        // State may already be CLOSING in a remote close (remoteRequestsClose ran first).
+        // Refuse only when CLOSING is unreachable (e.g. already CLOSED).
+        if (!ensureState(SocketState.CLOSING)) { return; }
 
         // We've told Core to leave the connection to us, so it might pass us the HTTP status
         // If it does, we need to convert it to a WS status for the other side.
@@ -564,6 +592,13 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
     // change state.
     private boolean assertState(@NonNull SocketState... expectedStates) {
         synchronized (getLock()) { return state.assertState(expectedStates); }
+    }
+
+    // Idempotent transition to {@code target}: succeeds if we are already there
+    // or can legally transition there.  Returned under getLock() so the check
+    // and the transition are atomic.
+    private boolean ensureState(@NonNull SocketState target) {
+        synchronized (getLock()) { return state.enterState(target); }
     }
 
     @Nullable
