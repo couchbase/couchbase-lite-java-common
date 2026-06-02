@@ -37,14 +37,14 @@ private class FLArrayAsCollection(val array: FLArray): Collection<FLValue> {
 
     override fun iterator(): Iterator<FLValue> {
         return object: Iterator<FLValue> {
-            var iter = array.iterator()
+            var i = 0L
+            val end = array.count()
 
-            override fun hasNext(): Boolean = iter.value != null
+            override fun hasNext(): Boolean = i < end
 
             override fun next(): FLValue {
-                val value = iter.value ?: throw IndexOutOfBoundsException()
-                iter.next()
-                return value
+                if (i >= end) {throw IndexOutOfBoundsException()}
+                return array[i++]
             }
         }
     }
@@ -64,43 +64,47 @@ private class FLDictAsMap(val dict: FLDict): Map<String,FLValue> {
     override fun containsKey(key: String): Boolean = (dict.get(key) != null)
 
     override fun containsValue(value: FLValue): Boolean {
-        val iter = dict.iterator()
+        dict.iterator().use { iter ->
         while (iter.key != null) {
             if (iter.value == value) return true
             iter.next()
         }
+            }
         return false
     }
 
     class Entry(override val key: String, override val value: FLValue) : Map.Entry<String,FLValue>
 
     override val entries: Set<Map.Entry<String, FLValue>> get() {
-        val iter = dict.iterator()
         return buildSet {
-            while (true) {
-                val key = iter.key ?: break
-                add(Entry(key, iter.value))
-                iter.next()
+            dict.iterator().use { iter ->
+                while (true) {
+                    val key = iter.key ?: break
+                    add(Entry(key, iter.value))
+                    iter.next()
+                }
             }
         }
     }
 
     override val keys: Set<String> get() {
-        val iter = dict.iterator()
         return buildSet {
-            while (true) {
-                add(iter.key ?: break)
-                iter.next()
+            dict.iterator().use { iter ->
+                while (true) {
+                    add(iter.key ?: break)
+                    iter.next()
+                }
             }
         }
     }
 
     override val values: Collection<FLValue> get() {
-        val iter = dict.iterator()
         return buildList {
-            while (iter.key != null) {
-                add(iter.value)
-                iter.next()
+            dict.iterator().use { iter ->
+                while (iter.key != null) {
+                    add(iter.value)
+                    iter.next()
+                }
             }
         }
     }

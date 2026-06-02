@@ -27,25 +27,26 @@ import kotlinx.serialization.modules.*
 /** Uses Kotlin Serialization to encode an arbitrary object or collection to Fleece.
  *  @param serializer  The SerializationStrategy to use.
  *  @param value  The object to encode.
- *  @param encoder  A Fleece [FLEncoder] to use; defaults to a fresh instance.
- *  @return  The encoded Fleece data. */
+ *  @param flEncoder  A Fleece [FLEncoder] to use; defaults to a fresh instance.
+ *  @return  The encoded Fleece data as an immovable [FLSliceResult]. (If you need a regular byte
+ *           array instead, call `getContent()` on it.) */
 @ExperimentalSerializationApi
 fun <T> serializeToFleece(serializer: SerializationStrategy<T>,
                           value: T,
-                          encoder: FLEncoder? = null): ByteArray
+                          flEncoder: FLEncoder? = null): FLSliceResult
 {
-    val encoder = FleeceRootEncoder(encoder)
+    val encoder = FleeceRootEncoder(flEncoder)
     encoder.encodeSerializableValue(serializer, value)
     return encoder.container!!
 }
 
 /** Uses Kotlin Serialization to encode an arbitrary object or collection to Fleece.
  *  @param value  The object to encode.
- *  @param encoder  A Fleece [FLEncoder] to use; defaults to a fresh instance.
+ *  @param flEncoder  A Fleece [FLEncoder] to use; defaults to a fresh instance.
  *  @return  The encoded Fleece data. */
 @ExperimentalSerializationApi
-inline fun <reified T> serializeToFleece(value: T, encoder: FLEncoder? = null): ByteArray =
-    serializeToFleece(serializer(), value, encoder)
+inline fun <reified T> serializeToFleece(value: T, flEncoder: FLEncoder? = null): FLSliceResult =
+    serializeToFleece(serializer(), value, flEncoder)
 
 
 class FleeceSerializationException(message: String): Exception(message)
@@ -79,7 +80,7 @@ private interface FleeceParentEncoder {
 /** The root-level Encoder. It just expects a [beginCollection] or [beginStructure] call. */
 private class FleeceRootEncoder(encoder: FLEncoder?) : AbstractEncoder(), FleeceParentEncoder {
     override val flEncoder = encoder ?: FLEncoder.getManagedEncoder()
-    var container: ByteArray? = null
+    var container: FLSliceResult? = null
 
     override val serializersModule: SerializersModule = EmptySerializersModule()
 
@@ -94,7 +95,7 @@ private class FleeceRootEncoder(encoder: FLEncoder?) : AbstractEncoder(), Fleece
 
     override fun childFinished() {
         require(container == null)
-        container = flEncoder.finish()
+        container = flEncoder.finish2()
     }
 }
 

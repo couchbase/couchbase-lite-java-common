@@ -19,8 +19,8 @@ data class User(val name: String, val age: Age)
 value class Age(val years: UInt)
 
 
-private fun fleeceToJSON(container: ByteArray): String =
-    FLValue.fromData(container).toJSON()!!
+private fun fleeceToJSON(container: FLSliceResult): String =
+    FLValue.fromData(container)!!.toJSON()!!
 
 private fun encode(fn: FLEncoder.()->Boolean): FLValue {
     val encoder = FLEncoder.getManagedEncoder()
@@ -33,15 +33,17 @@ private fun encode(fn: FLEncoder.()->Boolean): FLValue {
 class SerializationTests: BaseTest() {
     @Test
     fun encodeList() {
-        val container = serializeToFleece(listOf("hello", "there"))
-        Assert.assertEquals("[\"hello\",\"there\"]", fleeceToJSON(container))
+        serializeToFleece(listOf("hello", "there")).use { container ->
+            Assert.assertEquals("[\"hello\",\"there\"]", fleeceToJSON(container))
+        }
     }
 
     @Test
     fun encodeMap() {
-        val container = serializeToFleece(mapOf("key" to "value", "foo" to "bar"))
-        val json = fleeceToJSON(container)
-        Assert.assertEquals("""{"foo":"bar","key":"value"}""", json)
+        serializeToFleece(mapOf("key" to "value", "foo" to "bar")).use { container ->
+            val json = fleeceToJSON(container)
+            Assert.assertEquals("""{"foo":"bar","key":"value"}""", json)
+        }
     }
 
     @Test
@@ -60,38 +62,45 @@ class SerializationTests: BaseTest() {
     @Test
     fun encodeSimpleClass() {
         val data = User("kotlin", Age(17u))
-        val container = serializeToFleece(data)
+        serializeToFleece(data).use { container ->
         val json = fleeceToJSON(container)
         Assert.assertEquals("""{"age":17,"name":"kotlin"}""", json)
+            }
     }
 
     @Test
     fun encodeNestedClasses() {
         val data = Project("kotlinx.serialization", User("kotlin", Age(17u)), 9000)
-        val container = serializeToFleece(data)
-        val json = fleeceToJSON(container)
-        Assert.assertEquals(
-            """{"name":"kotlinx.serialization","owner":{"age":17,"name":"kotlin"},"votes":9000}""",
-            json
-        )
+        serializeToFleece(data).use { container ->
+            val json = fleeceToJSON(container)
+            Assert.assertEquals(
+                """{"name":"kotlinx.serialization","owner":{"age":17,"name":"kotlin"},"votes":9000}""",
+                json
+            )
+        }
     }
 
     @Test
     fun encodeNestedClassesWithNull() {
         val data = Project("kotlinx.serialization", null, 9000)
-        val container = serializeToFleece(data)
-        val json = fleeceToJSON(container)
-        // "owner" appears with a null value because Project.owner doesn't default to null.
-        Assert.assertEquals("""{"name":"kotlinx.serialization","owner":null,"votes":9000}""", json)
+        serializeToFleece(data).use { container ->
+            val json = fleeceToJSON(container)
+            // "owner" appears with a null value because Project.owner doesn't default to null.
+            Assert.assertEquals(
+                """{"name":"kotlinx.serialization","owner":null,"votes":9000}""",
+                json
+            )
+        }
     }
 
     @Test
     fun encodeNestedClassesWithOptionalNull() {
         val data = ProjectOpt("kotlinx.serialization", null, 9000)
-        val container = serializeToFleece(data)
-        val json = fleeceToJSON(container)
-        // "owner" is omitted because ProjectOpt.owner has a default value of null.
-        Assert.assertEquals("""{"name":"kotlinx.serialization","votes":9000}""", json)
+        serializeToFleece(data).use { container ->
+            val json = fleeceToJSON(container)
+            // "owner" is omitted because ProjectOpt.owner has a default value of null.
+            Assert.assertEquals("""{"name":"kotlinx.serialization","votes":9000}""", json)
+        }
     }
 
 
@@ -190,10 +199,10 @@ class SerializationTests: BaseTest() {
 
     @Test fun roundTripNestedClassesWithNull() {
         val data = Project("Fleece", null, 9000)
-        val encoded = serializeToFleece(data)
-        print(fleeceToJSON(encoded))
-        val user = deserializeFromFleece<Project>(FLValue.fromData(encoded))
-        Assert.assertEquals(Project("Fleece", null, 9000), user)
-
+        serializeToFleece(data).use { encoded ->
+            print(fleeceToJSON(encoded))
+            val user = deserializeFromFleece<Project>(FLValue.fromData(encoded)!!)
+            Assert.assertEquals(Project("Fleece", null, 9000), user)
+        }
     }
 }

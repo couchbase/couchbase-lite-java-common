@@ -52,18 +52,25 @@ fun <T: DocumentModel> Collection.getDocumentAs(id: String, deserializer: Deseri
     modelFromC4Doc(this, id, getC4Document(id), deserializer)
 
 
-/** Saves a [DocumentModel] instance as a document in the collection, with a specified conflict handler.
- *  If the model's [DocumentModel.documentMeta] property is null, it will be saved as a new document with the
- *  given [docID], or if [docID] is null, with an auto-generated ID.
- *  Otherwise the [DocumentModel.documentMeta] property determines the document ID and prior revision ID, and the
- *  [docID] parameter should be null.
- *  After a successful save, the [DocumentModel.documentMeta] property is updated to the current state. */
+/** Saves a [DocumentModel] instance as a document in the collection.
+ *  After a successful save, its [DocumentModel.documentMeta] property is updated to the current state.
+ *  @param model  The [DocumentModel] instance to save.
+ *  @param docID  The document ID to save a new unsaved model as, or `null` to generate a unique ID.
+ *                If the model has already been saved, this should be omitted or left `null`.
+ *  @param conflictHandler  A callback to resolve conflicts between the model and a more recently
+ *                          saved document revision. If `null` (the default), the last-writer-wins
+ *                          strategy is used: the save always succeeds, overwriting any
+ *                          conflicting revision.
+ *  @return  True on success, false on an unresolved conflict.
+ *  */
 @ExperimentalSerializationApi
 inline fun <reified T: DocumentModel> Collection.save(model: T,
                                                       docID: String? = null,
                                                       noinline conflictHandler: ModelConflictHandler<T>? = null) =
     save(model, serializer(), serializer(), docID, conflictHandler)
 
+/** Saves a [DocumentModel] instance as a document in the collection, explicitly passing the
+ *  serialization strategy. (This overload is rarely needed.) */
 @ExperimentalSerializationApi
 fun <T: DocumentModel> Collection.save(model: T,
                                        serializer: SerializationStrategy<T>,
@@ -84,8 +91,10 @@ fun <T: DocumentModel> Collection.save(model: T,
 
     // Subroutine that calls the ModelConflictHandler & updates the model accordingly:
     fun handleConflict(doc: MutableDocument?, curDoc: Document?): Boolean {
+        if (conflictHandler == null)
+            return true // conflict handler defaults to last-write-wins
         val curModel = curDoc?.let {modelFromC4Doc(this, it.id, it.c4doc, deserializer)}
-        val ok = conflictHandler!!(model, curModel)
+        val ok = conflictHandler(model, curModel)
         if (ok)
             doc?.setContentFromModel(model, serializer)
         return ok
@@ -118,14 +127,15 @@ fun <T: DocumentModel> Collection.save(model: T,
 
 /** Model-based conflict handler callback, used by [Collection.save] with [DocumentModel] objects.
  *  The first parameter is the [DocumentModel] you are saving.
- *  The second parameter is a [DocumentModel] deserialized from the conflicting revision in the collection,
- *  or null if the document has been deleted.
+ *  The second parameter is a [DocumentModel] deserialized from the conflicting revision in the
+ *  collection, or `null` if the document has been deleted.
  *
- *  The function may modify the first [DocumentModel] -- the one being saved -- to incorporate changes from
- *  the other [DocumentModel] (the revision in the database), then return true. (But it should NOT modify
- *  its [DocumentModel.documentMeta] property.)
+ *  The callback may modify the first [DocumentModel] -- the one being saved -- to incorporate
+ *  changes from the other [DocumentModel] (the revision in the database), then return true.
+ *  (But it must NOT modify its [DocumentModel.documentMeta] property.)
  *
- *  Or it may return false to signal that it can't handle the conflict. */
+ *  Or it may return false to signal that it can't handle the conflict, in which case the
+ *  [Collection.save] method will return false without saving anything. */
 typealias ModelConflictHandler<T> = (T, T?)-> Boolean
 
 
@@ -171,6 +181,6 @@ private fun <T:DocumentModel> modelFromC4Doc(collection: Collection,
 /** Extension of [MutableDocument], that updates its content from a [DocumentModel] object. */
 private fun <T:DocumentModel> MutableDocument.setContentFromModel(model: T, serializer: SerializationStrategy<T>) {
     val body = serializeToFleece(serializer, model)
-    val root = FLValue.fromData(body).asFLDict()
+    val root = FLValue.fromData(body)!!.asFLDict()
     setContent(root, false)
 }
