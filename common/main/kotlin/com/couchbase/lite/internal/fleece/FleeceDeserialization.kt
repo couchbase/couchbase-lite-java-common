@@ -127,7 +127,7 @@ private abstract class AbstractValueDecoder(val size: Int): AbstractDecoder() {
     override fun decodeLong(): Long         = value.asInt()
     override fun decodeFloat(): Float       = value.asFloat()
     override fun decodeDouble(): Double     = value.asDouble()
-    override fun decodeString(): String     = value.asString()
+    override fun decodeString(): String     = value.asString() ?: ""
 
     override fun decodeInline(descriptor: SerialDescriptor): Decoder = this
 
@@ -194,7 +194,7 @@ private class MapDecoder(val iter: Iterator<Map.Entry<String,FLValue>>,
     // a key or a value. It checks if we've read the next entry, and if not advances the iterator
     // and returns the key. Otherwise it returns the current value.
     override fun decodeString(): String =
-        if (curValue == null) nextKey() else nextValue().asString()
+        if (curValue == null) nextKey() else nextValue().asString() ?: ""
 
     // The other decode methods are only called for values.
     override fun decodeBoolean(): Boolean   = nextValue().asBool()
@@ -246,7 +246,7 @@ private class ClassDecoder(val iter: Iterator<Map.Entry<String,FLValue>>): Compo
     override fun decodeFloatElement(descriptor: SerialDescriptor, index: Int): Float       = nextValue(index).asFloat()
     override fun decodeDoubleElement(descriptor: SerialDescriptor, index: Int): Double     = nextValue(index).asDouble()
     override fun decodeCharElement(descriptor: SerialDescriptor, index: Int): Char         = Char(decodeLong(index).toInt())
-    override fun decodeStringElement(descriptor: SerialDescriptor, index: Int): String     = nextValue(index).asString()
+    override fun decodeStringElement(descriptor: SerialDescriptor, index: Int): String     = nextValue(index).asString() ?: ""
 
     override fun decodeInlineElement(descriptor: SerialDescriptor, index: Int): Decoder =
         ValueDecoder(nextValue(index))
