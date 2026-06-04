@@ -180,7 +180,5 @@ private fun <T:DocumentModel> modelFromC4Doc(collection: Collection,
 
 /** Extension of [MutableDocument], that updates its content from a [DocumentModel] object. */
 private fun <T:DocumentModel> MutableDocument.setContentFromModel(model: T, serializer: SerializationStrategy<T>) {
-    val body = serializeToFleece(serializer, model)
-    val root = FLValue.fromData(body)!!.asFLDict()
-    setContent(root, false)
+    setContent(serializeToFleece(serializer, model), false)
 }
