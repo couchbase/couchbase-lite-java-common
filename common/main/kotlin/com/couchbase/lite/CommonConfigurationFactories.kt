@@ -15,6 +15,7 @@
 //
 package com.couchbase.lite
 
+import com.couchbase.lite.internal.getCollectionConfigs
 import com.couchbase.lite.internal.logging.Log
 import com.couchbase.lite.logging.FileLogSink
 import com.couchbase.lite.logging.LogSinks
@@ -31,7 +32,30 @@ val CollectionConfigurationFactory: CollectionConfiguration? = null
 /**
  *
  * @see com.couchbase.lite.CollectionConfiguration
+ * @deprecated Use CollectionConfiguration?.newConfig(collection: Collection, channels: List<String>?, documentIDs: List<String>?, pullFilter: ReplicationFilter?, pushFilter: ReplicationFilter?, conflictResolver: ConflictResolver?)
  */
+@Deprecated(
+    "Use CollectionConfiguration?.newConfig(collection: Collection, channels: List<String>?, documentIDs: List<String>?, pullFilter: ReplicationFilter?, pushFilter: ReplicationFilter?, conflictResolver: ConflictResolver?)",
+    replaceWith = ReplaceWith("CollectionConfiguration?.newConfig(collection: Collection, channels: List<String>?, documentIDs: List<String>?, pullFilter: ReplicationFilter?, pushFilter: ReplicationFilter?, conflictResolver: ConflictResolver?)")
+)
+fun CollectionConfiguration?.newConfig(
+    channels: List<String>? = null,
+    documentIDs: List<String>? = null,
+    pullFilter: ReplicationFilter? = null,
+    pushFilter: ReplicationFilter? = null,
+    conflictResolver: ConflictResolver? = null
+): CollectionConfiguration {
+    val config = CollectionConfiguration()
+
+    (channels ?: this?.channels)?.let { config.channels = it }
+    (documentIDs ?: this?.documentIDs)?.let { config.documentIDs = it }
+    (pushFilter ?: this?.pushFilter)?.let { config.pushFilter = it }
+    (pullFilter ?: this?.pullFilter)?.let { config.pullFilter = it }
+    (conflictResolver ?: this?.conflictResolver)?.let { config.conflictResolver = it }
+
+    return config
+}
+
 fun CollectionConfiguration?.newConfig(
     collection: Collection,
     channels: List<String>? = null,
@@ -170,6 +194,48 @@ fun FileLogSink?.install(
 }
 
 /**
+ * Configuration factory for new LogFileConfigurations
+ *
+ * Usage:
+ *      val logFileConfig = LogFileConfigurationFactory.newConfig(...)
+ */
+val LogFileConfigurationFactory: LogFileConfiguration? = null
+
+/**
+ * Create a LogFileConfiguration, overriding the receiver's
+ * values with the passed parameters:
+ *
+ * @param directory (required) the directory in which the logs files are stored.
+ * @param maxSize the max size of the log file in bytes.
+ * @param maxRotateCount the number of rotated logs that are saved.
+ * @param usePlainText whether or not to log in plaintext.
+ *
+ * @see com.couchbase.lite.LogFileConfiguration
+ * @deprecated Use FileLogSink?.install(String?, LogLevel?, Long?, Int?, Boolean?)
+ */
+@Deprecated(
+    "Use FileLogSink?.install(String?, LogLevel?, Long?, Int?, Boolean?)",
+    replaceWith = ReplaceWith("FileLogSink?.install(dir: String?, level: LogLevel?, maxSize: Long?, maxRotate: Int?, plaintxt: Boolean?)")
+)
+fun LogFileConfiguration?.newConfig(
+    directory: String? = null,
+    maxSize: Long? = null,
+    maxRotateCount: Int? = null,
+    usePlainText: Boolean? = null
+): LogFileConfiguration {
+    val config = LogFileConfiguration(
+        directory ?: this?.directory
+        ?: throw IllegalArgumentException("A LogFileConfiguration must specify a directory")
+    )
+
+    (maxSize ?: this?.maxSize)?.let { config.maxSize = it }
+    (maxRotateCount ?: this?.maxRotateCount)?.let { config.maxRotateCount = it }
+    (usePlainText ?: this?.usesPlaintext())?.let { config.setUsePlaintext(it) }
+
+    return config
+}
+
+/**
  * Create a FullTextIndexConfiguration, overriding the receiver's
  * values with the passed parameters:
  *
@@ -203,6 +269,29 @@ fun FullTextIndexConfiguration?.create(
 )
 fun ValueIndexConfiguration?.create(vararg expressions: String = emptyArray()) = this.newConfig(*expressions)
 
+/**
+ * Create a LogFileConfiguration, overriding the receiver's
+ * values with the passed parameters:
+ *
+ * @param directory (required) the directory in which the logs files are stored.
+ * @param maxSize the max size of the log file in bytes.
+ * @param maxRotateCount the number of rotated logs that are saved.
+ * @param usePlainText whether or not to log in plaintext.
+ *
+ * @see com.couchbase.lite.LogFileConfiguration
+ * @deprecated Use FileLogSink?.install(String?, LogLevel?, Long?, Int?, Boolean?)
+ */
+@Deprecated(
+    "Use FileLogSink?.install(String?, LogLevel?, Long?, Int?, Boolean?)",
+    replaceWith = ReplaceWith("FileLogSink?.install(dir: String?, level: LogLevel?, maxSize: Long?, maxRotate: Int?, plaintxt: Boolean?)")
+)
+fun LogFileConfiguration?.create(
+    directory: String? = null,
+    maxSize: Long? = null,
+    maxRotateCount: Int? = null,
+    usePlainText: Boolean? = null
+) = this.newConfig(directory, maxSize, maxRotateCount, usePlainText)
+
 
 // If the source config contains anything other than exactly the
 // database default collection, we are about to lose information.
@@ -235,4 +324,26 @@ internal fun copyReplConfig(
     (heartbeat ?: src?.heartbeat)?.let { dst.heartbeat = it }
     (enableAutoPurge ?: src?.isAutoPurgeEnabled)?.let { dst.setAutoPurgeEnabled(it) }
     (acceptParentDomainCookies ?: src?.isAcceptParentDomainCookies)?.let { dst.setAcceptParentDomainCookies(it) }
+}
+
+@Suppress("DEPRECATION")
+internal fun copyLegacyReplConfig(
+    src: ReplicatorConfiguration?,
+    dst: ReplicatorConfiguration,
+    pinnedServerCertificate: ByteArray?,
+    channels: List<String>?,
+    documentIDs: List<String>?,
+    pushFilter: ReplicationFilter?,
+    pullFilter: ReplicationFilter?,
+    conflictResolver: ConflictResolver?
+) {
+    (pinnedServerCertificate ?: src?.pinnedServerCertificate)?.let { dst.setPinnedServerCertificate(it) }
+
+    // copy the default collection configuration, if it exists
+    val srcConfig = src?.database?.defaultCollection?.let { getCollectionConfigs(src)?.get(it) }
+    (channels ?: srcConfig?.channels)?.let { dst.channels = it }
+    (documentIDs ?: srcConfig?.documentIDs)?.let { dst.documentIDs = it }
+    (pushFilter ?: srcConfig?.pushFilter)?.let { dst.pushFilter = it }
+    (pullFilter ?: srcConfig?.pullFilter)?.let { dst.pullFilter = it }
+    (conflictResolver ?: srcConfig?.conflictResolver)?.let { dst.conflictResolver = it }
 }

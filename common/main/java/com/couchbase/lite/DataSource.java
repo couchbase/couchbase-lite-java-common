@@ -57,6 +57,27 @@ public class DataSource {
     }
 
     /**
+     * Create a database as a data source.
+     *
+     * @param database the database used as a source of data for query.
+     * @return {@code DataSource.Database} object.
+     * @deprecated use DataSource.collection(Collection)
+     */
+    @Deprecated
+    @NonNull
+    public static As database(@NonNull Database database) {
+        Preconditions.assertNotNull(database, "database");
+
+        final Collection defaultCollection;
+        try { defaultCollection = database.getDefaultCollection(); }
+        catch (CouchbaseLiteException e) { throw new IllegalArgumentException("Database not open", e); }
+
+        final As source = new As(defaultCollection);
+        source.as(database.getName());
+        return source;
+    }
+
+    /**
      * Create a collection as a data source.
      *
      * @param collection the collection used as a source of data for query.

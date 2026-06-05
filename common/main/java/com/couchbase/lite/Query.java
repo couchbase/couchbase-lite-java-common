@@ -101,4 +101,13 @@ public interface Query {
      */
     @NonNull
     ListenerToken addChangeListener(@Nullable Executor executor, @NonNull QueryChangeListener listener);
+
+    /**
+     * Removes a change listener wih the given listener token.
+     *
+     * @param token The listener token.
+     * @deprecated Use ListenerToken.remove()
+     */
+    @Deprecated
+    void removeChangeListener(@NonNull ListenerToken token);
 }
