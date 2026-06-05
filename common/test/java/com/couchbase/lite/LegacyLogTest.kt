@@ -239,7 +239,7 @@ class LegacyLogTest : BaseDbTest() {
 
             val rex = Regex("cbl_(debug|verbose|info|warning|error)_\\d+\\.cbllog")
             for (file in files) {
-                Assert.assertTrue(file.name.matches(rex))
+                Assert.assertTrue(file.name.contains("crash") || file.name.matches(rex))
             }
         }
     }
@@ -253,8 +253,9 @@ class LegacyLogTest : BaseDbTest() {
         testWithConfiguration(LogLevel.DEBUG, config) {
             // This should create two files for each of the 5 levels except verbose (debug, info, warning, error):
             // 1k of logs plus .5k headers. There should be only one file at the verbose level (just the headers)
+            // plus a log for crashes
             write1KBToLog()
-            Assert.assertEquals((4 * 2) + 1, logFiles.size)
+            Assert.assertEquals((4 * 2) + 2, logFiles.size)
         }
     }
 
@@ -278,6 +279,10 @@ class LegacyLogTest : BaseDbTest() {
             writeAllLogs(uuidString)
 
             for (log in logFiles) {
+                if(log.name.contains("crash")) {
+                    continue;
+                }
+
                 Assert.assertFalse(getLogContents(log).contains(uuidString))
             }
 
@@ -288,7 +293,7 @@ class LegacyLogTest : BaseDbTest() {
             Assert.assertNotNull(tempDir!!.listFiles())
             for (log in logFiles!!) {
                 val fn = log.name.lowercase(Locale.getDefault())
-                if (fn.startsWith("cbl_debug_") || fn.startsWith("cbl_verbose_")) {
+                if (fn.startsWith("cbl_debug_") || fn.startsWith("cbl_verbose_") || fn.startsWith("cbl_crash")) {
                     Assert.assertFalse(getLogContents(log).contains(uuidString))
                 } else {
                     Assert.assertTrue(getLogContents(log).contains(uuidString))
@@ -302,6 +307,10 @@ class LegacyLogTest : BaseDbTest() {
         testWithConfiguration(LogLevel.VERBOSE, LogFileConfiguration(scratchDirPath!!).setUsePlaintext(true)) {
             write1KBToLog()
             for (log in logFiles) {
+                if(log.name.contains("crash")) {
+                    continue;
+                }
+
                 var logLine: String
                 BufferedReader(FileReader(log)).use {
                     logLine = it.readLine()
@@ -328,7 +337,7 @@ class LegacyLogTest : BaseDbTest() {
             Log.e(LogDomain.DATABASE, message, error)
 
             for (log in logFiles) {
-                if (!log.name.contains("verbose")) {
+                if (!log.name.contains("verbose") && !log.name.contains("crash")) {
                     Assert.assertTrue(getLogContents(log).contains(uuid))
                 }
             }
@@ -349,7 +358,7 @@ class LegacyLogTest : BaseDbTest() {
             Log.e(LogDomain.DATABASE, message, error, uuid2)
 
             for (log in logFiles) {
-                if (!log.name.contains("verbose")) {
+                if (!log.name.contains("verbose") && !log.name.contains("crash")) {
                     val content = getLogContents(log)
                     Assert.assertTrue(content.contains(uuid1))
                     Assert.assertTrue(content.contains(uuid2))
