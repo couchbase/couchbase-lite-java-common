@@ -26,6 +26,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.logging.Log;
@@ -55,7 +56,9 @@ class SerialExecutor implements ExecutionService.CloseableExecutor {
     @Nullable
     private CountDownLatch stopLatch;
 
-    private long currentThread = -1;
+    // Id of the pool thread currently running a task for this executor
+    @NonNull
+    private final AtomicLong currentThread = new AtomicLong(-1);
 
     SerialExecutor(@NonNull ThreadPoolExecutor executor) {
         Preconditions.assertNotNull(executor, "executor");
@@ -120,7 +123,7 @@ class SerialExecutor implements ExecutionService.CloseableExecutor {
 
     @Override
     public boolean isInsideExecutor() {
-        return Thread.currentThread().getId() == currentThread;
+        return Thread.currentThread().getId() == currentThread.get();
     }
 
     @NonNull
@@ -164,9 +167,13 @@ class SerialExecutor implements ExecutionService.CloseableExecutor {
         if (nextTask == null) { return; }
 
         try { executor.execute(() -> {
-            currentThread = Thread.currentThread().getId();
+            final long tid = Thread.currentThread().getId();
+            currentThread.set(tid);
             try { nextTask.run(); }
-            finally { currentThread = -1; }
+            finally {
+                // Clear only if unchanged: the next task may already have claimed it.
+                currentThread.compareAndSet(tid, -1);
+            }
         }); }
         catch (RuntimeException e) {
             Log.w(LogDomain.DATABASE, "Catastrophic executor failure (Serial Executor)!", e);
