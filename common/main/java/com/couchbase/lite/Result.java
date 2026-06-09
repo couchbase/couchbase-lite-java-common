@@ -523,13 +523,27 @@ public final class Result
     public Iterator<String> iterator() { return getKeys().iterator(); }
 
     //---------------------------------------------
+    // package access -- for use by QueryExtensions.kt
+    //---------------------------------------------
+
+    @NonNull
+    List<FLValue> getFLValues() { return values; }
+
+    @NonNull
+    List<String> getColumnNames() { return context.getResultSet().getColumnNames(); }
+
+    int getIndexForKey(String key) {
+        final int index = context.getResultSet().getColumnIndex(Preconditions.assertNotNull(key, "key"));
+        if (index < 0) { return -1; }
+        if ((missingColumns & (1L << index)) != 0) { return -1; }
+        return (!isInBounds(index)) ? -1 : index;
+    }
+
+    //---------------------------------------------
     // private access
     //---------------------------------------------
 
     private int getColumnCount() { return context.getResultSet().getColumnCount(); }
-
-    @NonNull
-    private List<String> getColumnNames() { return context.getResultSet().getColumnNames(); }
 
     @Nullable
     private Object getFleeceAt(int index) {
@@ -544,13 +558,6 @@ public final class Result
     private FLValue getFLValueAt(int index) {
         assertValid(index);
         return values.get(index);
-    }
-
-    private int getIndexForKey(@Nullable String key) {
-        final int index = context.getResultSet().getColumnIndex(Preconditions.assertNotNull(key, "key"));
-        if (index < 0) { return -1; }
-        if ((missingColumns & (1L << index)) != 0) { return -1; }
-        return (!isInBounds(index)) ? -1 : index;
     }
 
     @NonNull
