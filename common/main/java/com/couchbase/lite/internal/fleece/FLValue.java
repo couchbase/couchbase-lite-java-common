@@ -73,7 +73,7 @@ public class FLValue {
         long nAsInt(long value);
         float nAsFloat(long value);
         double nAsDouble(long value);
-        @NonNull
+        @Nullable
         String nAsString(long value);
         long nAsArray(long value);
         long nAsDict(long value);
@@ -269,7 +269,7 @@ public class FLValue {
      *
      * @return String
      */
-    @NonNull
+    @Nullable
     public String asString() { return impl.nAsString(peer); }
 
     @NonNull
@@ -325,6 +325,6 @@ public class FLValue {
     <T> T withContent(@NonNull Fn.NonNullFunction<Long, T> fn) { return fn.apply(peer); }
 
     @NonNull
-    FLArray asFLArray() { return FLArray.create(impl.nAsArray(peer)); }
+    public FLArray asFLArray() { return FLArray.create(impl.nAsArray(peer)); }
 }
 

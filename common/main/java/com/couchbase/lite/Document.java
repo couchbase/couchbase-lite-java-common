@@ -33,6 +33,7 @@ import com.couchbase.lite.internal.core.C4Document;
 import com.couchbase.lite.internal.fleece.FLDict;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
+import com.couchbase.lite.internal.fleece.FLValue;
 import com.couchbase.lite.internal.fleece.JSONEncodable;
 import com.couchbase.lite.internal.fleece.MRoot;
 import com.couchbase.lite.internal.utils.ClassUtils;
@@ -132,6 +133,12 @@ public class Document implements DictionaryInterface, JSONEncodable, Iterable<St
     @GuardedBy("lock")
     @Nullable
     private String revId;
+
+    // Set by setData(FLSliceResult,boolean) to keep the Fleece backing store from being GC'd.
+    // (This is kind of a hack, and it's only used ephemerally by Kotlin serialization.)
+    @GuardedBy("lock")
+    @Nullable
+    private FLSliceResult extraBackingStore;
 
     //---------------------------------------------
     // Constructors
@@ -619,6 +626,15 @@ public class Document implements DictionaryInterface, JSONEncodable, Iterable<St
         synchronized (lock) {
             updateC4DocumentLocked(c4doc);
             setContentLocked(((c4doc == null) || c4doc.isRevDeleted()) ? null : c4doc.getSelectedBody2(), mutable);
+        }
+    }
+
+    // for use by CollectionExtensions.kt
+    void setContent(@NonNull FLSliceResult fleeceData, boolean mutable) {
+        synchronized (lock) {
+            var data = FLValue.fromData(fleeceData).asFLDict();
+            extraBackingStore = fleeceData;
+            setContentLocked(data, mutable);
         }
     }
 
