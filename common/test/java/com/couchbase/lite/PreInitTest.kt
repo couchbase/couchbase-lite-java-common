@@ -47,4 +47,11 @@ class PreInitTest : BaseTest() {
     fun testCreateDatabaseBeforeInit() {
         Assert.assertThrows(CouchbaseLiteError::class.java) { Database("fail") }
     }
+
+    @Test
+    fun testCreateReplConfigBeforeInit() {
+        Assert.assertThrows(CouchbaseLiteError::class.java) {
+            ReplicatorConfiguration(URLEndpoint(URI("wss://foo.bar")))
+        }
+    }
 }

@@ -27,9 +27,8 @@ import com.couchbase.lite.internal.utils.Preconditions;
 
 
 public class CollectionConfiguration {
-    @NonNull
-    private final Collection collection;
     @Nullable
+    private Collection collection;
     private List<String> channels;
     @Nullable
     private List<String> documentIDs;
@@ -43,6 +42,41 @@ public class CollectionConfiguration {
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
+
+    /**
+     * Creates a configuration instance.
+     *
+     * @deprecated This constructor is deprecated. Use {@link #CollectionConfiguration(Collection)}
+     * and setter methods to configure channels, filters, and a custom conflict resolver.
+     */
+    @Deprecated
+    public CollectionConfiguration() { }
+
+    /**
+     * Creates a configuration instance.
+     *
+     * @deprecated This constructor is deprecated. Use {@link #CollectionConfiguration(Collection)}
+     * and setter methods to configure channels, filters, and a custom conflict resolver.
+     *
+     * @param channels           The list of channels to pull from Sync Gateway.
+     * @param documentIDs        The list of document IDs to filter replication.
+     * @param pullFilter         The filter function for pulling documents.
+     * @param pushFilter         The filter function for pushing documents.
+     * @param conflictResolver   The custom conflict resolver.
+     */
+    @Deprecated
+    public CollectionConfiguration(
+        @Nullable List<String> channels,
+        @Nullable List<String> documentIDs,
+        @Nullable ReplicationFilter pullFilter,
+        @Nullable ReplicationFilter pushFilter,
+        @Nullable ConflictResolver conflictResolver) {
+        this.channels = channels;
+        this.documentIDs = documentIDs;
+        this.pullFilter = pullFilter;
+        this.pushFilter = pushFilter;
+        this.conflictResolver = conflictResolver;
+    }
 
     /**
      * Creates a new configuration instance for the given collection.
@@ -182,7 +216,7 @@ public class CollectionConfiguration {
     /**
      * Returns the collection.
      */
-    @NonNull
+    @Nullable
     public final Collection getCollection() {
         return collection;
     }
@@ -235,13 +269,13 @@ public class CollectionConfiguration {
     @NonNull
     public String toString() {
         return "CollectionConfiguration{"
-                + "("
-                + (pullFilter != null ? "<" : "")
-                + (conflictResolver != null ? "!" : "")
-                + (pushFilter != null ? ">" : "")
-                + "): "
-                + channels + ", "
-                + documentIDs + "}"
-                + ", collection=" + collection.getFullName();
+            + "("
+            + ((pullFilter != null) ? "<" : "")
+            + ((conflictResolver != null) ? "!" : "")
+            + ((pushFilter != null) ? ">" : "")
+            + "): "
+            + channels + ", "
+            + documentIDs + "}"
+            + (collection != null ? ", collection=" + collection.getFullName() : "");
     }
 }
