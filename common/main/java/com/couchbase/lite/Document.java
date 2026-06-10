@@ -136,6 +136,8 @@ public class Document implements DictionaryInterface, JSONEncodable, Iterable<St
 
     // Set by setData(FLSliceResult,boolean) to keep the Fleece backing store from being GC'd.
     // (This is kind of a hack, and it's only used ephemerally by Kotlin serialization.)
+    @SuppressFBWarnings("URF_UNREAD_FIELD")
+    @SuppressWarnings("PMD.SingularField")
     @GuardedBy("lock")
     @Nullable
     private FLSliceResult extraBackingStore;
@@ -632,9 +634,10 @@ public class Document implements DictionaryInterface, JSONEncodable, Iterable<St
     // for use by CollectionExtensions.kt
     void setContent(@NonNull FLSliceResult fleeceData, boolean mutable) {
         synchronized (lock) {
-            var data = FLValue.fromData(fleeceData).asFLDict();
+            final FLValue body = FLValue.fromData(fleeceData);
+            if (body == null) { throw new CouchbaseLiteError("Failed parsing fleece data"); }
             extraBackingStore = fleeceData;
-            setContentLocked(data, mutable);
+            setContentLocked(body.asFLDict(), mutable);
         }
     }
 
