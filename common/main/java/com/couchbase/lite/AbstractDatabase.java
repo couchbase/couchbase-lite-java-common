@@ -648,7 +648,7 @@ abstract class AbstractDatabase extends BaseDatabase
     /**
      * The number of documents in the default collection.
      *
-     * @return the number of documents in the database, 0 if database is closed.
+     * @return the number of documents in the database.
      * @deprecated Use getDefaultCollection().getCount()
      */
     @Deprecated
