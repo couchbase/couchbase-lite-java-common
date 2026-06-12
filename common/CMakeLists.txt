@@ -57,10 +57,54 @@ else()
     set(BUILD_ROOT "${PROJECT_SOURCE_DIR}/../../ce/android")
 endif()
 
-add_library( LiteCore STATIC IMPORTED )
-set_property( TARGET LiteCore PROPERTY
-    IMPORTED_LOCATION "${PROJECT_SOURCE_DIR}/../lite-core/android/${ANDROID_ABI}/lib/libLiteCoreFull.a"
-)
+# Set LITECORE_SRC_DIR to the path of a couchbase-lite-core source checkout to build
+# LiteCore from source instead of linking the pre-built static library.  This permits
+# stepping into and modifying LiteCore code.  EE builds require the couchbase-lite-core-EE
+# checkout to be a sibling of the couchbase-lite-core checkout.
+set(LITECORE_SRC_DIR "" CACHE PATH "Path to a couchbase-lite-core source checkout; empty to use the pre-built library")
+
+if(LITECORE_SRC_DIR)
+    message( STATUS "LITECORE: built from source at " ${LITECORE_SRC_DIR} )
+
+    set(LITECORE_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+    if(BUILD_ENTERPRISE)
+        # required for P2P discovery on Android
+        set(EMBEDDED_MDNS ON CACHE BOOL "" FORCE)
+    endif()
+
+    add_subdirectory("${LITECORE_SRC_DIR}" litecore EXCLUDE_FROM_ALL)
+
+    # The same libraries that LiteCore's own shared library links
+    # (transitively pulls in sqlite, zlib, mbedtls, mDNSResponder, etc.)
+    set(LITECORE_LIBS LiteCoreObjects BLIPObjects FleeceObjects)
+    if(BUILD_ENTERPRISE)
+        list(APPEND LITECORE_LIBS
+            LiteCoreREST_Objects
+            LiteCoreWebSocket
+            LiteCoreListener_Objects
+            LiteCoreP2P
+        )
+    endif()
+
+    set(LITECORE_INCLUDES
+        "${LITECORE_SRC_DIR}/C/include"
+        "${LITECORE_SRC_DIR}/C/Cpp_include"
+        "${LITECORE_SRC_DIR}/vendor/fleece/API"
+    )
+    if(BUILD_ENTERPRISE)
+        list(APPEND LITECORE_INCLUDES "${LITECORE_SRC_DIR}/../couchbase-lite-core-EE/P2P/include")
+    endif()
+else()
+    message( STATUS "LITECORE: pre-built" )
+
+    add_library( LiteCore STATIC IMPORTED )
+    set_property( TARGET LiteCore PROPERTY
+        IMPORTED_LOCATION "${PROJECT_SOURCE_DIR}/../lite-core/android/${ANDROID_ABI}/lib/libLiteCoreFull.a"
+    )
+
+    set(LITECORE_LIBS LiteCore)
+    set(LITECORE_INCLUDES "${PROJECT_SOURCE_DIR}/../lite-core/android/${ANDROID_ABI}/include")
+endif()
 
 add_library( LiteCoreJNI SHARED
     ${JNI_SRC}/native_c4.cc
@@ -91,7 +135,7 @@ add_library( LiteCoreJNI SHARED
 
 target_include_directories( LiteCoreJNI PUBLIC
     ${JNI_SRC}/
-    "${PROJECT_SOURCE_DIR}/../lite-core/android/${ANDROID_ABI}/include"
+    ${LITECORE_INCLUDES}
 )
 
 target_link_options(
@@ -101,7 +145,7 @@ target_link_options(
 )
 
 target_link_libraries( LiteCoreJNI
-    LiteCore
+    ${LITECORE_LIBS}
     # Below are needed on Android.  If this gets moved to Java as well this will need
     # to be changed
     "log"
