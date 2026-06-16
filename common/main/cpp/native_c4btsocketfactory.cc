@@ -79,6 +79,7 @@ static void btOpen(C4Socket*       socket,
     jint envState = attachJVM(&env, "btOpen");
     if (envState != JNI_OK && envState != JNI_EDETACHED) return;
 
+    // Balanced by the c4socket_release in NativeC4Socket_closed.
     c4socket_retain(socket);
 
     // addr->hostname carries the CBL peer-ID / BT MAC address as a C4Slice.
@@ -177,6 +178,9 @@ static void btAttached(C4Socket* socket) {
     }
 
     jstring jPeerID = env->NewStringUTF((const char *)ctx->peerID.buf);
+
+    // Balanced by the c4socket_release in NativeC4Socket_closed. Mirrors btOpen.
+    c4socket_retain(socket);
 
     env->CallStaticVoidMethod(
             cls_C4BTSocketFactory, m_attached,
