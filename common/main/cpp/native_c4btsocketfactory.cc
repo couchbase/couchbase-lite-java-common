@@ -177,7 +177,7 @@ static void btAttached(C4Socket* socket) {
         return;
     }
 
-    jstring jPeerID = env->NewStringUTF((const char *)ctx->peerID.buf);
+    jstring jPeerID = toJString(env, ctx->peerID);
 
     // Balanced by the c4socket_release in NativeC4Socket_closed. Mirrors btOpen.
     c4socket_retain(socket);
