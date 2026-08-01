@@ -50,6 +50,11 @@ if(NOT CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_definitions(-DDEBUG)
 endif()
 
+# Matches the LITECORE_SANITIZE option in couchbase-lite-core: the imported
+# libLiteCoreFull.a must be an ASan-instrumented (debug) build when this is ON,
+# since this is the final link that pulls in the ASan runtime.
+option(LITECORE_SANITIZE "Enables the address sanitizer (Clang only)" OFF)
+
 if(BUILD_ENTERPRISE)
     add_definitions(-DCOUCHBASE_ENTERPRISE)
     set(BUILD_ROOT "${PROJECT_SOURCE_DIR}/../../ee/android")
@@ -99,6 +104,18 @@ target_link_options(
     -Wl,-z,max-page-size=16384,--version-script=${BUILD_ROOT}/etc/ld/jni_android.ld
     -Wl,--undefined-version
 )
+
+if(LITECORE_SANITIZE)
+    target_compile_options(
+        LiteCoreJNI PRIVATE
+        -fsanitize=address
+        -fno-omit-frame-pointer
+    )
+    target_link_options(
+        LiteCoreJNI PRIVATE
+        -fsanitize=address
+    )
+endif()
 
 target_link_libraries( LiteCoreJNI
     LiteCore
