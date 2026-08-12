@@ -318,7 +318,10 @@ public final class LogSinksImpl implements LogSinks {
 
     private void warnIfNoFileLogSink() {
         final FileLogSink sink = fileLogSink;
-        if ((sink != null) && (sink.getLevel() != LogLevel.NONE) && !warned.getAndSet(true)) { return; }
+        if ((sink != null) && (sink.getLevel() != LogLevel.NONE)) { return; }
+        // Warn only once
+        if (warned.getAndSet(true)) { return; }
+
         ((AbstractLogSink) new ConsoleLogSink(LogLevel.WARNING, LogDomain.DATABASE)).writeLog(
             LogLevel.WARNING,
             LogDomain.DATABASE,
