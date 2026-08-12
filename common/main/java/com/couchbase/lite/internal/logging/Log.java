@@ -145,6 +145,48 @@ public final class Log {
     }
 
     /**
+     * Send a VERBOSE message.
+     *
+     * @param domain The log domain.
+     * @param msg    The message you would like logged.
+     */
+    public static void v(@NonNull LogDomain domain, @NonNull String msg) { log(LogLevel.VERBOSE, domain, null, msg); }
+
+    /**
+     * Send a VERBOSE message and log the exception.
+     *
+     * @param domain The log domain.
+     * @param msg    The message you would like logged.
+     * @param err    An exception to log
+     */
+    public static void v(@NonNull LogDomain domain, @NonNull String msg, @Nullable Throwable err) {
+        log(LogLevel.VERBOSE, domain, err, msg);
+    }
+
+    /**
+     * Send a VERBOSE message.
+     *
+     * @param domain The log domain.
+     * @param msg    The string you would like logged plus format specifiers.
+     * @param args   Variable number of Object args to be used as params to formatString.
+     */
+    public static void v(@NonNull LogDomain domain, @NonNull String msg, Object... args) {
+        log(LogLevel.VERBOSE, domain, null, msg, args);
+    }
+
+    /**
+     * Send a VERBOSE message and log the exception.
+     *
+     * @param domain The log domain.
+     * @param msg    The string you would like logged plus format specifiers.
+     * @param err    An exception to log
+     * @param args   Variable number of Object args to be used as params to formatString.
+     */
+    public static void v(@NonNull LogDomain domain, @NonNull String msg, @Nullable Throwable err, Object... args) {
+        log(LogLevel.VERBOSE, domain, err, msg, args);
+    }
+
+    /**
      * Send a WARN message.
      *
      * @param domain The log domain.
