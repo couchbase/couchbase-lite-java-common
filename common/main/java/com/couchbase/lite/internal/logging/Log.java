@@ -164,7 +164,7 @@ public final class Log {
     }
 
     /**
-     * Send an VERBOSE message.
+     * Send a VERBOSE message.
      *
      * @param domain The log domain.
      * @param msg    The string you would like logged plus format specifiers.
