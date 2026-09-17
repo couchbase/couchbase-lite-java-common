@@ -328,7 +328,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getCookies(
     C4Error error{};
     C4StringResult res = c4db_getCookies((C4Database *) jdb, address, &error);
     if (!res) {
-        throwError(env, error);
+        if (error.code != 0)
+            throwError(env, error);
         return nullptr;
     }
 

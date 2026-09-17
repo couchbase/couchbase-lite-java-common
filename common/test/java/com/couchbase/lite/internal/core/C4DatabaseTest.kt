@@ -25,6 +25,7 @@ import com.couchbase.lite.internal.utils.VerySlowTest
 import org.junit.Assert
 import org.junit.Test
 import java.io.File
+import java.net.URI
 import java.nio.charset.StandardCharsets
 import kotlin.experimental.and
 
@@ -584,6 +585,20 @@ class C4DatabaseTest : C4BaseTest() {
         val blobs = c4Database.blobStore
         Assert.assertNotNull(blobs)
         // NOTE: BlobStore is from the database. Not necessary to call free()?
+    }
+
+    // CBL-8797: getCookies for a URL with no stored cookies must return null,
+    // not throw a LiteCoreException with domain 0 and code 0.
+    @Test
+    fun testGetCookies() {
+        Assert.assertNull(c4Database.getCookies(URI("http://bar.com")))
+
+        c4Database.setCookie(URI("http://foo.com"), "session=xyzzy; path=/", false)
+        Assert.assertNull(c4Database.getCookies(URI("http://bar.com")))
+
+        val cookies = c4Database.getCookies(URI("http://foo.com"))
+        Assert.assertNotNull(cookies)
+        Assert.assertTrue(cookies!!.contains("session=xyzzy"))
     }
 
     // - Utility methods
