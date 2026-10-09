@@ -15,6 +15,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
+#include <vector>
 #include "native_glue.hh"
 #include "com_couchbase_lite_internal_core_impl_NativeC4CollectionObserver.h"
 #include "com_couchbase_lite_internal_core_impl_NativeC4DocumentObserver.h"
@@ -291,13 +292,13 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4CollectionObserver_getChanges
         jclass ignore,
         jlong observer,
         jint maxChanges) {
-    auto *c4changes = new C4CollectionChange[maxChanges];
+    std::vector<C4CollectionChange> c4changes(maxChanges);
 
-    auto observation = c4dbobs_getChanges((C4CollectionObserver *) observer, c4changes, (uint32_t) maxChanges);
+    auto observation = c4dbobs_getChanges((C4CollectionObserver *) observer, c4changes.data(), (uint32_t) maxChanges);
 
-    auto changes = c4DocChangesToJavaArray(env, c4changes, observation.numChanges, observation.external);
+    auto changes = c4DocChangesToJavaArray(env, c4changes.data(), observation.numChanges, observation.external);
 
-    c4dbobs_releaseChanges(c4changes, observation.numChanges);
+    c4dbobs_releaseChanges(c4changes.data(), observation.numChanges);
 
     return changes;
 }
