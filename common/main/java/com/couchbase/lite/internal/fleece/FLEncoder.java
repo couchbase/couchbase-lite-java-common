@@ -151,7 +151,9 @@ public abstract class FLEncoder extends C4NativePeer {
             enc.write(options);
             return enc.finish();
         }
-        catch (LiteCoreException e) { Log.w(LogDomain.REPLICATOR, "Failed encoding map: " + options, e); }
+        catch (LiteCoreException e) {
+            Log.w(LogDomain.REPLICATOR, "Failed encoding map with keys: " + options.keySet(), e);
+        }
 
         return null;
     }

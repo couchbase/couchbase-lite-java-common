@@ -57,10 +57,10 @@ public final class URLEndpoint implements Endpoint {
 
         final String scheme = url.getScheme();
         if (!(SCHEME_STD.equals(scheme) || SCHEME_TLS.equals(scheme))) {
-            throw new IllegalArgumentException(Log.formatStandardMessage("InvalidSchemeURLEndpoint", url.toString()));
+            throw new IllegalArgumentException(Log.formatStandardMessage("InvalidSchemeURLEndpoint", scheme));
         }
 
-        if (url.getUserInfo() != null) {
+        if (hasEmbeddedCredentials(url)) {
             throw new IllegalArgumentException(Log.lookupStandardMessage("InvalidEmbeddedCredentialsInURL"));
         }
 
@@ -80,4 +80,12 @@ public final class URLEndpoint implements Endpoint {
      */
     @NonNull
     public URI getURL() { return url; }
+
+    // A password may itself contain an unescaped '@' (e.g., "ws://user:p@ss@host/db").
+    // java.net.URI can't parse that authority, so getUserInfo() returns null: check the raw authority too.
+    private static boolean hasEmbeddedCredentials(@NonNull URI url) {
+        if (url.getRawUserInfo() != null) { return true; }
+        final String authority = url.getRawAuthority();
+        return (authority != null) && (authority.indexOf('@') >= 0);
+    }
 }
