@@ -136,5 +136,27 @@ class CBLWebSocketTest : BaseTest() {
             closeStatus
         )
     }
+
+    // The values of credential headers must never be logged; header names are case-insensitive
+    @Test
+    fun testRedactHeadersNeverIncludesCredentials() {
+        val headers = mapOf(
+            "Set-Cookie" to "SyncGatewaySession=secret1; Path=/db",
+            "cookie" to "lb=secret2",
+            "AUTHORIZATION" to "Bearer secret3",
+            "Proxy-Authorization" to "Basic secret4",
+            "Content-Type" to "application/json"
+        )
+
+        val str = AbstractCBLWebSocket.redactHeaders(headers)
+
+        listOf("secret1", "secret2", "secret3", "secret4").forEach { Assert.assertFalse(str, str.contains(it)) }
+        listOf("Set-Cookie=***", "cookie=***", "AUTHORIZATION=***", "Proxy-Authorization=***")
+            .forEach { Assert.assertTrue(str, str.contains(it)) }
+        Assert.assertTrue(str, str.contains("Content-Type=application/json"))
+    }
+
+    @Test
+    fun testRedactNullHeaders() = Assert.assertEquals("{}", AbstractCBLWebSocket.redactHeaders(null))
 }
 
