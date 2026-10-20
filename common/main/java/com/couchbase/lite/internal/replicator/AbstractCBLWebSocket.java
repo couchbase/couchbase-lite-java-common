@@ -86,7 +86,6 @@ import com.couchbase.lite.internal.sockets.SocketToRemote;
 import com.couchbase.lite.internal.utils.ClassUtils;
 import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.StateMachine;
-import com.couchbase.lite.internal.utils.StringUtils;
 
 
 /**
@@ -488,7 +487,7 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
 
     @Override
     public void remoteOpened(int code, @Nullable Map<String, Object> headers) {
-        Log.d(LOG_DOMAIN, "%s.remoteOpened: %s", this, headers);
+        Log.d(LOG_DOMAIN, "%s.remoteOpened: %d", this, code);
         if (!changeState(SocketState.OPEN)) { return; }
         toCore.ackOpenToCore(code, encodeHeaders(headers));
     }
@@ -557,7 +556,6 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
         }
         catch (LiteCoreException e) {
             Log.w(LOG_DOMAIN, "CBLWebSocket failed to encode response headers", e);
-            Log.d(LOG_DOMAIN, StringUtils.toString(headers));
         }
 
         return null;
