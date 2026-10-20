@@ -42,13 +42,9 @@ import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.KeyManager;
@@ -147,17 +143,6 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
     public static final String HEADER_USER_AGENT = "User-Agent";
     public static final String HEADER_AUTH = "Authorization";
     public static final String HEADER_PROXY_AUTH = "Proxy-Authorization";
-
-    private static final String HEADER_COOKIE = "Cookie";
-    private static final String HEADER_SET_COOKIE = "Set-Cookie";
-
-    // The values of these headers may contain credentials: never log them.
-    private static final Set<String> REDACTED_HEADERS = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
-        HEADER_AUTH.toLowerCase(Locale.ROOT),
-        HEADER_PROXY_AUTH.toLowerCase(Locale.ROOT),
-        HEADER_COOKIE.toLowerCase(Locale.ROOT),
-        HEADER_SET_COOKIE.toLowerCase(Locale.ROOT))));
-    private static final String REDACTED = "***";
 
     private static final String CHALLENGE_BASIC = "Basic";
 
@@ -502,7 +487,7 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
 
     @Override
     public void remoteOpened(int code, @Nullable Map<String, Object> headers) {
-        Log.d(LOG_DOMAIN, "%s.remoteOpened: %s", this, redactHeaders(headers));
+        Log.d(LOG_DOMAIN, "%s.remoteOpened: %d", this, code);
         if (!changeState(SocketState.OPEN)) { return; }
         toCore.ackOpenToCore(code, encodeHeaders(headers));
     }
@@ -549,26 +534,6 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
     @NonNull
     SocketState getSocketState() { return state.getCurrentState(); }
 
-    // Stringify HTTP headers for logging, replacing the values of headers that may contain credentials.
-    // Header names are case-insensitive (RFC 9110).
-    @VisibleForTesting
-    @NonNull
-    static String redactHeaders(@Nullable Map<String, ?> headers) {
-        final StringBuilder buf = new StringBuilder("{");
-        if (headers != null) {
-            int i = 0;
-            for (Map.Entry<String, ?> header: headers.entrySet()) {
-                if (i++ > 0) { buf.append(", "); }
-                final String name = header.getKey();
-                buf.append(name).append('=')
-                    .append(((name != null) && REDACTED_HEADERS.contains(name.toLowerCase(Locale.ROOT)))
-                        ? REDACTED
-                        : header.getValue());
-            }
-        }
-        return buf.append('}').toString();
-    }
-
     //-------------------------------------------------------------------------
     // private methods
     //-------------------------------------------------------------------------
@@ -591,7 +556,6 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
         }
         catch (LiteCoreException e) {
             Log.w(LOG_DOMAIN, "CBLWebSocket failed to encode response headers", e);
-            Log.d(LOG_DOMAIN, "Response headers: %s", redactHeaders(headers));
         }
 
         return null;
