@@ -8,6 +8,7 @@ import com.couchbase.lite.LogDomain
 import com.couchbase.lite.LogLevel
 import com.couchbase.lite.getC4Db
 import com.couchbase.lite.internal.QueryLanguage
+import com.couchbase.lite.internal.core.C4Constants
 import com.couchbase.lite.internal.core.C4Log
 import com.couchbase.lite.internal.core.C4Query
 import com.couchbase.lite.internal.core.C4TestUtils
@@ -43,7 +44,8 @@ private class TestConsoleLogSink(level: LogLevel, domains: Set<LogDomain>? = nul
 
 private class SingleLineLogSink(private val prefix: String? = null) : BaseLogSink(LogLevel.DEBUG) {
     private var level: LogLevel? = null
-    private var domain: LogDomain? = null
+    var domain: LogDomain? = null
+        private set
     private var message: String? = null
     private var latch = CountDownLatch(1)
 
@@ -662,6 +664,17 @@ class LogTest : BaseDbTest() {
         finishLatch.countDown()
 
         Assert.assertTrue(success)
+    }
+
+    @Test
+    fun testTLSLogDomain() {
+        val sink = SingleLineLogSink("TLS TEST")
+        LogSinks.get().custom = sink
+        Assert.assertEquals(C4Constants.LogLevel.WARNING, C4TestUtils.getLogLevel(C4Constants.LogDomain.TLS))
+
+        C4TestUtils.forceLog(C4Constants.LogDomain.TLS, C4Constants.LogLevel.WARNING, "TLS TEST")
+        Assert.assertNotNull(sink.awaitMessage())
+        Assert.assertEquals(LogDomain.NETWORK, sink.domain)
     }
 
     @Test
