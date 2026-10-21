@@ -133,6 +133,15 @@ public final class C4Log {
         LOGGING_DOMAIN_FROM_C4 = Collections.unmodifiableMap(m);
     }
 
+    // LiteCore domains that are mapped, but whose level is left at the LiteCore default
+    @NonNull
+    private static final Set<String> MAPPED_ONLY_C4_LOGGING_DOMAINS;
+    static {
+        final Set<String> s = new HashSet<>();
+        s.add(C4Constants.LogDomain.TLS);
+        MAPPED_ONLY_C4_LOGGING_DOMAINS = Collections.unmodifiableSet(s);
+    }
+
     @NonNull
     private static final Map<LogDomain, Set<String>> LOGGING_DOMAIN_TO_C4;
     private static final Set<String> KNOWN_C4_LOGGING_DOMAINS;
@@ -140,6 +149,8 @@ public final class C4Log {
         final Set<String> s = new HashSet<>();
         final Map<LogDomain, Set<String>> m = new HashMap<>();
         for (Map.Entry<String, LogDomain> entry: LOGGING_DOMAIN_FROM_C4.entrySet()) {
+            if (MAPPED_ONLY_C4_LOGGING_DOMAINS.contains(entry.getKey())) { continue; }
+
             final LogDomain domain = entry.getValue();
 
             Set<String> domains = m.get(domain);
