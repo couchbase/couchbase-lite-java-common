@@ -57,10 +57,10 @@ public final class URLEndpoint implements Endpoint {
 
         final String scheme = url.getScheme();
         if (!(SCHEME_STD.equals(scheme) || SCHEME_TLS.equals(scheme))) {
-            throw new IllegalArgumentException(Log.formatStandardMessage("InvalidSchemeURLEndpoint", url.toString()));
+            throw new IllegalArgumentException(Log.formatStandardMessage("InvalidSchemeURLEndpoint", scheme));
         }
 
-        if (url.getUserInfo() != null) {
+        if ((url.getRawAuthority() != null) && url.getRawAuthority().contains("@")) {
             throw new IllegalArgumentException(Log.lookupStandardMessage("InvalidEmbeddedCredentialsInURL"));
         }
 
