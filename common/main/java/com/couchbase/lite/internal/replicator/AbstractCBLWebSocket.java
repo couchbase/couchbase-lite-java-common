@@ -820,7 +820,6 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
         if (responseCount(resp) >= MAX_AUTH_RETRIES) { return null; }
 
         final List<Challenge> challenges = resp.challenges();
-        Log.d(LOG_DOMAIN, "challenges: %s", challenges);
         if (challenges == null) { return null; }
 
         for (Challenge challenge: challenges) {
