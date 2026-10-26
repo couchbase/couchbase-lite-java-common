@@ -205,8 +205,12 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4_getVersion(JNIEnv *env, jcla
 JNIEXPORT void JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4_debug(JNIEnv *env, jclass ignore, jboolean debugging) {
     c4log_enableFatalExceptionBacktrace();
+    // On Windows, LiteCore can hang while capturing the backtrace
+    // that warn-on-errors logs with each error. Leave it off there until that is fixed.
+#ifndef _MSC_VER
     if (debugging)
         c4log_warnOnErrors(true);
+#endif
 }
 
 /*
