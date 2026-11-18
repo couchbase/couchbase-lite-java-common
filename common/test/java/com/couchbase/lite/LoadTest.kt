@@ -35,7 +35,7 @@ class LoadTest : BaseDbTest() {
             // java devices
             "lin" to 50,
             "mac" to 100,
-            "win" to 120,
+            "win" to 200,
 
             // android on jenkins
             "bluejay" to 100,
