@@ -82,6 +82,11 @@ class LogTest : BaseDbTest() {
     private val logFiles: Array<File>
         get() = assertNonNull(tempDir?.listFiles())
 
+    // The log files for the levels, without the crash log: Windows creates that only when there is a crash,
+    // and elsewhere it is empty and may be the newest file.
+    private val levelLogFiles: List<File>
+        get() = logFiles.filter { it.name.endsWith(".cbllog") }
+
     @Before
     fun setUpLogTest() {
         scratchDirPath = getScratchDirectoryPath(getUniqueName("log-dir"))
@@ -304,14 +309,11 @@ class LogTest : BaseDbTest() {
         testWithConfiguration(LogLevel.INFO, FileLogSink.Builder().setDirectory(scratchDirPath!!)) {
             Log.i(LogDomain.DATABASE, "TEST INFO")
 
-            val files = logFiles
-            Assert.assertTrue(files.isNotEmpty())
-
-            val lastModifiedFile = getMostRecent(files)
-            Assert.assertNotNull(lastModifiedFile)
+            val files = getLevelLogFiles("info")
+            Assert.assertEquals(1, files.size)
 
             val bytes = ByteArray(4)
-            FileInputStream(lastModifiedFile!!).use { inStr -> Assert.assertEquals(4, inStr.read(bytes)) }
+            FileInputStream(files[0]).use { inStr -> Assert.assertEquals(4, inStr.read(bytes)) }
             Assert.assertEquals(0xCF.toByte(), bytes[0])
             Assert.assertEquals(0xB2.toByte(), bytes[1])
             Assert.assertEquals(0xAB.toByte(), bytes[2])
@@ -349,9 +351,8 @@ class LogTest : BaseDbTest() {
         ) {
             // This should create two files for each of the 5 levels except verbose (debug, info, warning, error):
             // 1k of logs plus .5k headers. There should be only one file at the verbose level (just the headers)
-            // and the crash log file
             write1KBToLog()
-            Assert.assertEquals((4 * 2) + 2, logFiles.size)
+            Assert.assertEquals((4 * 2) + 1, levelLogFiles.size)
         }
     }
 
@@ -367,11 +368,11 @@ class LogTest : BaseDbTest() {
         ) {
             // This should create several files for each of the 5 levels except verbose (debug, info, warning, error):
             // 1k of logs plus .5k headers. Although lots of files are created they should be trimmed to only 3
-            // at each level.  There should be only one file at the verbose level (just the headers) and the crash log file
+            // at each level.  There should be only one file at the verbose level (just the headers)
             repeat(21) {
                 write1KBToLog()
             }
-            Assert.assertEquals((4 * 3) + 2, logFiles.size)
+            Assert.assertEquals((4 * 3) + 1, levelLogFiles.size)
         }
     }
 
@@ -739,4 +740,6 @@ class LogTest : BaseDbTest() {
     }
 
     private fun getMostRecent(files: Array<File>?) = files?.maxByOrNull { it.lastModified() }
+
+    private fun getLevelLogFiles(level: String) = levelLogFiles.filter { it.name.startsWith("cbl_${level}_") }
 }
